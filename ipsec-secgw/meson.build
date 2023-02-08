@@ -1,13 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright(c) 2017 Intel Corporation
+# Copyright(c) 2018 Intel Corporation
 
-# meson file, for building this example as part of a main DPDK build.
-#
-# To build this example as a standalone application with an already-installed
-# DPDK instance, use 'make'
+project('ipsec', 'C', 
+    license: 'BSD',
+    default_options: ['buildtype=debug'],
+	meson_version: '>= 0.51.0'
+)
 
-deps += ['security', 'lpm', 'acl', 'hash', 'ip_frag', 'ipsec', 'eventdev', 'telemetry']
-allow_experimental_apis = true
+project_name = 'ipsec'
+
+deps = []
+deps += dependency('libdpdk')
+
 sources = files(
         'esp.c',
         'event_helper.c',
@@ -23,3 +27,7 @@ sources = files(
         'sp4.c',
         'sp6.c',
 )
+
+executable(project_name, sources,
+	dependencies : deps,
+	install: false)
