@@ -28,6 +28,13 @@ sources = files(
         'sp6.c',
 )
 
+allow_experimental_apis = true
+
+if allow_experimental_apis
+        cflags += '-DALLOW_EXPERIMENTAL_API'
+endif
+
 executable(project_name, sources,
 	dependencies : deps,
+        c_args: cflags,
 	install: false)
