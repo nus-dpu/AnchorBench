@@ -12,6 +12,11 @@ project_name = 'ipsec'
 deps = []
 deps += dependency('libdpdk')
 
+machine_args = []
+
+default_cflags = machine_args
+cflags = default_cflags
+
 sources = files(
         'esp.c',
         'event_helper.c',
