@@ -40,12 +40,8 @@ struct subs_template_cfg {
     enum subs_template_running_mode mode;
     /* App DPDK configuration struct */
     struct application_dpdk_config *dpdk_cfg;
-    /* RegEx PCI address to use */
-    struct doca_pci_bdf pci_address;
-    /* DOCA device */
-    struct doca_dev *dev;
-    /* DOCA RegEx interface */
-	struct doca_regex *doca_reg;
+    /* DOCA ports */
+    struct doca_flow_port **ports;
 };
 
 struct subs_template_worker_ctx {

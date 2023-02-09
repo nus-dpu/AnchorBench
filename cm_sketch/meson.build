@@ -10,7 +10,7 @@ project('SHA_CREATE', 'C',
 	meson_version: '>= 0.61.2'
 )
 
-project_name = 'subs_template'
+project_name = 'cm_sketch'
 
 # Comment this line to restore warnings of experimental DOCA features
 add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c'])

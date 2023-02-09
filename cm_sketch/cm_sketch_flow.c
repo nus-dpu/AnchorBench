@@ -5,9 +5,9 @@
 #include "flow_pipes_manager.h"
 #include "offload_rules.h"
 
-#include "subs_template.h"
+#include "cm_sketch.h"
 
-DOCA_LOG_REGISTER(SUBS_TEMPLATE::FLOW);
+DOCA_LOG_REGISTER(CM_SKETCH::FLOW);
 
 #define MAX_PORT_STR_LEN 128	   	/* Maximal length of doca port name */
 #define DEFAULT_TIMEOUT_US (10000) 	/* Timeout for processing pipe entries */
@@ -154,10 +154,10 @@ static struct doca_flow_port* port_create(uint8_t portid){
 /*
  * Initialize application's ports
  *
- * @app_config [in]: configuration of subs_template
+ * @app_config [in]: configuration of cm_sketch
  * @return: Zero on success and negative value otherwise
  */
-static int init_ports(struct subs_template_cfg *app_config){
+static int init_ports(struct cm_sketch_cfg *app_config){
 	int portid, destory_portid;
 
 	struct doca_flow_port **ports = (struct doca_flow_port**)malloc(
@@ -191,9 +191,9 @@ exit_failure:
 /*
  * Destroy application's ports
  *
- * @app_config [in]: configuration of subs_template
+ * @app_config [in]: configuration of cm_sketch
  */ 
-static void destroy_ports(struct subs_template_cfg *app_config){
+static void destroy_ports(struct cm_sketch_cfg *app_config){
 	int portid;
 	struct doca_flow_port *port;
 
@@ -207,10 +207,10 @@ static void destroy_ports(struct subs_template_cfg *app_config){
 /*
  * Initialize pipes
  *
- * @app_config [in]: configuration of subs_template
+ * @app_config [in]: configuration of cm_sketch
  * @return: Zero on success and negative value otherwise
  */
-static int init_pipes(struct subs_template_cfg *app_config){
+static int init_pipes(struct cm_sketch_cfg *app_config){
 	uint16_t portid;
 	for (portid = 0; portid < app_config->dpdk_cfg->port_config.nb_ports; portid++) {
 		// TODO: add your building pipe logic here
@@ -220,10 +220,10 @@ static int init_pipes(struct subs_template_cfg *app_config){
 /*
  * Warpper of initialization process of doca flow
  *
- * @app_config [in]: configuration of subs_template
+ * @app_config [in]: configuration of cm_sketch
  * @return: Zero on success and other value otherwise
  */
-doca_error_t applictaion_doca_flow_init(struct subs_template_cfg *app_config){
+doca_error_t applictaion_doca_flow_init(struct cm_sketch_cfg *app_config){
 	struct doca_flow_error err = {0};
 	struct doca_flow_cfg flow_cfg = {0};
 	doca_error_t result;
@@ -249,7 +249,7 @@ doca_error_t applictaion_doca_flow_init(struct subs_template_cfg *app_config){
 	}
 
 	// create pipe manager under interactive mode
-	if(app_config->mode == SUBS_TEMPLATE_MODE_INTERACTIVE){
+	if(app_config->mode == CM_SKETCH_MODE_INTERACTIVE){
 		result = create_pipes_manager(&pipes_manager);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to create pipes manager");
