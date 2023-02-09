@@ -600,6 +600,7 @@ ipsec_enqueue(ipsec_xform_fn xform_func, struct ipsec_ctx *ipsec_ctx,
 	struct ipsec_sa *sa;
 	struct rte_ipsec_session *ips;
 
+	printf("[%s:%d] nb pkts: %d...\n", __func__, __LINE__, nb_pkts);
 	for (i = 0; i < nb_pkts; i++) {
 		if (unlikely(sas[i] == NULL)) {
 			free_pkts(&pkts[i], 1);
@@ -614,6 +615,7 @@ ipsec_enqueue(ipsec_xform_fn xform_func, struct ipsec_ctx *ipsec_ctx,
 		priv->sa = sa;
 		ips = ipsec_get_primary_session(sa);
 
+		printf("[%s:%d] ips type: %d...\n", __func__, __LINE__, ips->type);
 		switch (ips->type) {
 		case RTE_SECURITY_ACTION_TYPE_LOOKASIDE_PROTOCOL:
 			priv->cop.type = RTE_CRYPTO_OP_TYPE_SYMMETRIC;
@@ -719,11 +721,13 @@ ipsec_inline_dequeue(ipsec_xform_fn xform_func, struct ipsec_ctx *ipsec_ctx,
 	struct rte_mbuf *pkt;
 
 	nb_pkts = 0;
+	printf("[%s:%d] ol_pkts_cnt: %d, nb_pkts: %d, max_pkts: %d...\n", __func__, __LINE__, ipsec_ctx->ol_pkts_cnt, nb_pkts, max_pkts);
 	while (ipsec_ctx->ol_pkts_cnt > 0 && nb_pkts < max_pkts) {
 		pkt = ipsec_ctx->ol_pkts[--ipsec_ctx->ol_pkts_cnt];
 		rte_prefetch0(pkt);
 		priv = get_priv(pkt);
 		sa = priv->sa;
+		printf("[%s:%d] all xform func...\n", __func__, __LINE__);
 		ret = xform_func(pkt, sa, &priv->cop);
 		if (unlikely(ret)) {
 			free_pkts(&pkt, 1);
@@ -799,6 +803,7 @@ ipsec_inbound(struct ipsec_ctx *ctx, struct rte_mbuf *pkts[],
 
 	inbound_sa_lookup(ctx->sa_ctx, pkts, sas, nb_pkts);
 
+	printf("[%s:%d] enqueue ipsec(esp_inbound), nb_pkts: %d...\n", __func__, __LINE__, nb_pkts);
 	ipsec_enqueue(esp_inbound, ctx, pkts, sas, nb_pkts);
 
 	return ipsec_inline_dequeue(esp_inbound_post, ctx, pkts, len);

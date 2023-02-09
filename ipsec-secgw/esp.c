@@ -103,6 +103,7 @@ esp_inbound(struct rte_mbuf *m, struct ipsec_sa *sa,
 		case RTE_CRYPTO_CIPHER_3DES_CBC:
 		case RTE_CRYPTO_CIPHER_AES_CBC:
 			/* Copy IV at the end of crypto operation */
+			printf("[%s:%d] Copy IV at the end of crypto operation\n", __func__, __LINE__);
 			rte_memcpy(iv_ptr, iv, sa->iv_len);
 			break;
 		case RTE_CRYPTO_CIPHER_AES_CTR:
@@ -121,6 +122,7 @@ esp_inbound(struct rte_mbuf *m, struct ipsec_sa *sa,
 		case RTE_CRYPTO_AUTH_NULL:
 		case RTE_CRYPTO_AUTH_SHA1_HMAC:
 		case RTE_CRYPTO_AUTH_SHA256_HMAC:
+			printf("[%s:%d] authentication algo: %d\n", __func__, __LINE__, sa->auth_algo);
 			sym_cop->auth.data.offset = ip_hdr_len;
 			sym_cop->auth.data.length = sizeof(struct rte_esp_hdr) +
 				sa->iv_len + payload_len;

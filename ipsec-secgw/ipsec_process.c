@@ -306,10 +306,13 @@ ipsec_process(struct ipsec_ctx *ctx, struct ipsec_traffic *trf)
 
 	n = sa_group(trf->ipsec.saptr, trf->ipsec.pkts, grp, trf->ipsec.num);
 
+	printf("sa group: %d...\n", n);
 	for (i = 0; i != n; i++) {
 
 		pg = grp + i;
 		sa = ipsec_mask_saptr(pg->id.ptr);
+
+		printf("ipsec sa: %p...\n", sa);
 
 		/* fallback to cryptodev with RX packets which inline
 		 * processor was unable to process
@@ -326,6 +329,7 @@ ipsec_process(struct ipsec_ctx *ctx, struct ipsec_traffic *trf)
 
 		/* process packets inline */
 		else {
+			printf("process packets inline...\n");
 			switch (ips->type) {
 			/* enqueue packets to crypto dev */
 			case RTE_SECURITY_ACTION_TYPE_NONE:

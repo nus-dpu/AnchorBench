@@ -381,11 +381,13 @@ prepare_one_packet(struct rte_mbuf *pkt, struct ipsec_traffic *t)
 			RTE_ETHER_HDR_LEN);
 		adjust_ipv4_pktlen(pkt, iph4, 0);
 
+		printf("[%s:%d] next proto id: %d\n", __func__, __LINE__, iph4->next_proto_id);
 		switch (iph4->next_proto_id) {
 		case IPPROTO_ESP:
 			t->ipsec.pkts[(t->ipsec.num)++] = pkt;
 			break;
 		case IPPROTO_UDP:
+			printf("[%s:%d] iph4 proto is UDP! encap: %d\n", __func__, __LINE__, app_sa_prm.udp_encap);
 			if (app_sa_prm.udp_encap == 1) {
 				ip4_hdr_len = ((iph4->version_ihl &
 					RTE_IPV4_HDR_IHL_MASK) *
@@ -405,6 +407,7 @@ prepare_one_packet(struct rte_mbuf *pkt, struct ipsec_traffic *t)
 		default:
 			t->ip4.data[t->ip4.num] = &iph4->next_proto_id;
 			t->ip4.pkts[(t->ip4.num)++] = pkt;
+			printf("[%s:%d] t->ip4.num: %d\n", __func__, __LINE__, t->ip4.num);
 		}
 		pkt->l2_len = 0;
 		pkt->l3_len = sizeof(*iph4);
@@ -689,6 +692,7 @@ inbound_sp_sa(struct sp_ctx *sp, struct sa_ctx *sa, struct traffic_type *ip,
 	struct rte_mbuf *m;
 	uint32_t i, j, res, sa_idx;
 
+	// printf("[%s:%d] ip num: %d, sp: %p...\n", __func__, __LINE__, ip->num, sp);
 	if (ip->num == 0 || sp == NULL)
 		return;
 
@@ -774,16 +778,21 @@ process_pkts_inbound(struct ipsec_ctx *ipsec_ctx,
 	n_ip4 = traffic->ip4.num;
 	n_ip6 = traffic->ip6.num;
 
+	// printf("[%s:%d] process inbound packet...\n", __func__, __LINE__);
+
 	if (app_sa_prm.enable == 0) {
+		printf("[%s:%d] ipsec inbound(num: %d)...\n", __func__, __LINE__, traffic->ipsec.num);
 		nb_pkts_in = ipsec_inbound(ipsec_ctx, traffic->ipsec.pkts,
 				traffic->ipsec.num, MAX_PKT_BURST);
 		split46_traffic(traffic, traffic->ipsec.pkts, nb_pkts_in);
 	} else {
+		// printf("[%s:%d] inbound sa lookup...\n", __func__, __LINE__);
 		inbound_sa_lookup(ipsec_ctx->sa_ctx, traffic->ipsec.pkts,
 			traffic->ipsec.saptr, traffic->ipsec.num);
 		ipsec_process(ipsec_ctx, traffic);
 	}
 
+	// printf("[%s:%d] check inbound sp sa...\n", __func__, __LINE__);
 	inbound_sp_sa(ipsec_ctx->sp4_ctx,
 		ipsec_ctx->sa_ctx, &traffic->ip4, n_ip4,
 		&core_statistics[lcoreid].inbound.spd4);
@@ -1099,6 +1108,8 @@ process_pkts(struct lcore_conf *qconf, struct rte_mbuf **pkts,
 
 	prepare_traffic(pkts, &traffic, nb_pkts);
 
+	printf("[%s:%d] traffic ipsec num: %d...\n", __func__, __LINE__, traffic.ipsec.num);
+
 	if (unlikely(single_sa)) {
 		if (is_unprotected_port(portid))
 			process_pkts_inbound_nosp(&qconf->inbound, &traffic);
@@ -1304,6 +1315,7 @@ ipsec_poll_mode_worker(void)
 					pkts, MAX_PKT_BURST);
 
 			if (nb_rx > 0) {
+				printf("==========>> Process pkts...\n");
 				core_stats_update_rx(nb_rx);
 				process_pkts(qconf, pkts, nb_rx, portid);
 			}

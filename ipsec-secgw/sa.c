@@ -1304,6 +1304,7 @@ sa_add_rules(struct sa_ctx *sa_ctx, const struct ipsec_sa entries[],
 			case RTE_CRYPTO_CIPHER_3DES_CBC:
 			case RTE_CRYPTO_CIPHER_AES_CBC:
 			case RTE_CRYPTO_CIPHER_AES_CTR:
+				printf("Doing crypto cipher...\n");
 				iv_length = sa->iv_len;
 				break;
 			default:
@@ -1719,6 +1720,8 @@ inbound_sa_lookup(struct sa_ctx *sa_ctx, struct rte_mbuf *pkts[],
 	uint32_t i;
 	void *result_sa;
 	struct ipsec_sa *sa;
+
+	// printf("[%s:%d] perform inbound sa lookup...\n", __func__, __LINE__);
 
 	sad_lookup(&sa_ctx->sad, pkts, sa_arr, nb_pkts);
 
