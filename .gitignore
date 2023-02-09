@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/linux,c,visualstudiocode,executable
-# Edit at https://www.toptal.com/developers/gitignore?templates=linux,c,visualstudiocode,executable
+# Created by https://www.toptal.com/developers/gitignore/api/linux,c,meson,ninja,visualstudiocode,executable
+# Edit at https://www.toptal.com/developers/gitignore?templates=linux,c,meson,ninja,visualstudiocode,executable
 
 ### C ###
 # Prerequisites
@@ -80,6 +80,32 @@ dkms.conf
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
+### Meson ###
+# subproject directories
+/subprojects/*
+!/subprojects/*.wrap
+
+# Meson Directories
+meson-logs
+meson-private
+
+# Meson Files
+meson_benchmark_setup.dat
+meson_test_setup.dat
+sanitycheckcpp.cc     # C++ specific
+sanitycheckcpp.exe    # C++ specific
+
+# Ninja
+build.ninja
+.ninja_deps
+.ninja_logs
+
+# Misc
+compile_commands.json
+
+### Ninja ###
+.ninja_log
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json
@@ -99,4 +125,4 @@ dkms.conf
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/linux,c,visualstudiocode,executable
+# End of https://www.toptal.com/developers/gitignore/api/linux,c,meson,ninja,visualstudiocode,executable
