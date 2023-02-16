@@ -21,6 +21,7 @@ common_src_path = '../' + 'common/src'
 
 inc_dirs = [
 	include_directories(common_src_path),
+	include_directories(common_path),
 	include_directories('..'),
 ]
 
@@ -33,6 +34,9 @@ sources = files(
 	common_src_path + '/flow_parser.c',
 	common_path + '/common.c',
 )
+
+# With enabling GPU support, languages variable will contain CUDA language
+languages = ['c', 'cpp']
 
 add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: languages)
 

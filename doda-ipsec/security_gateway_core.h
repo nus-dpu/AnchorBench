@@ -13,7 +13,7 @@
 #include <doca_ipsec.h>
 #include <doca_flow.h>
 
-#include <samples/common.h>
+#include <common.h>
 
 #define DEFAULT_TIMEOUT_US 10000	/* default timeout for processing entries */
 #define MAX_FILE_NAME 255		/* Maximum file name length */
