@@ -119,7 +119,7 @@ create_doca_flow_port(int port_id, struct doca_flow_error *error, struct doca_fl
 	port_cfg.type = DOCA_FLOW_PORT_DPDK_BY_ID;
 	snprintf(port_id_str, max_port_str_len, "%d", port_cfg.port_id);
 	port_cfg.devargs = port_id_str;
-	DOCA_LOG_INFO("start doca flow for port %d...\n", port_id);
+	DOCA_LOG_INFO("start doca flow for port %d...", port_id);
 	*port = doca_flow_port_start(&port_cfg, error);
 	if (*port == NULL)
 		return -1;
@@ -138,6 +138,7 @@ static void
 check_for_valid_entry(struct doca_flow_pipe_entry *entry, enum doca_flow_entry_status status,
 		      enum doca_flow_entry_op op, void *user_ctx)
 {
+	DOCA_LOG_INFO("check for valid entry callback...");
 	if (status != DOCA_FLOW_ENTRY_STATUS_SUCCESS) {
 		DOCA_LOG_ERR("Failed to add entry");
 		if (user_ctx != NULL)
@@ -159,24 +160,14 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 	memset(&flow_cfg, 0, sizeof(flow_cfg));
 
 	/* init doca flow with crypto shared resources */
-	if (0) {
-		flow_cfg.queues = 8;
-		flow_cfg.mode_args = "vnf,hws";
-		flow_cfg.cb = check_for_valid_entry;
-		flow_cfg.nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_CRYPTO] = 1024;
-		result = doca_flow_init(&flow_cfg, &error);
-		if (result < 0) {
-			DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
-			return -1;
-		}
-	} else {
-		flow_cfg.queues = 8;
-		flow_cfg.mode_args = "vnf";
-		result = doca_flow_init(&flow_cfg, &error);
-		if (result < 0) {
-			DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
-			return -1;
-		}
+	flow_cfg.queues = 8;
+	flow_cfg.mode_args = "vnf,hws";
+	flow_cfg.cb = check_for_valid_entry;
+	flow_cfg.nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_CRYPTO] = 1024;
+	result = doca_flow_init(&flow_cfg, &error);
+	if (result < 0) {
+		DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
+		return -1;
 	}
 
 	for (port_id = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
