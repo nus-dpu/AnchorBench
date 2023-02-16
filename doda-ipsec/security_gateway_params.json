@@ -5,7 +5,7 @@
     },
     "doca_program_flags":{
         // -r - Path to json file with rules for encrypt and decrypt
-        "rules": "/application/security_gateway/security_gateway_rules.json",
+        "rules": "../security_gateway_rules.json",
     
         // -u - PCI address for the encrypt port
         "unsecured": "03:00.0",
