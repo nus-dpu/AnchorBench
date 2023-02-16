@@ -66,14 +66,6 @@ struct security_gateway_core_ctx {
 };
 
 /*
- * Initialize dpdk ports and queues
- *
- * @app_dpdk_config [in/out]: application dpdk config struct
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
-doca_error_t dpdk_queues_and_ports_init(struct application_dpdk_config *app_dpdk_config);
-
-/*
  * Open DOCA devices according to the pci-address input and probe dpdk ports
  *
  * @app_cfg [in/out]: application configuration structure

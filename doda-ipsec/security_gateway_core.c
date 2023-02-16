@@ -1,3 +1,21 @@
+#include <json-c/json.h>
+#include <signal.h>
+
+#include <rte_ethdev.h>
+
+#include <doca_argp.h>
+#include <doca_flow.h>
+#include <doca_log.h>
+#include <doca_dev.h>
+#include <doca_dpdk.h>
+
+#include <dpdk_utils.h>
+#include <offload_rules.h>
+#include <utils.h>
+#include <flow_parser.h>
+
+#include "security_gateway_core.h"
+
 doca_error_t
 dpdk_queues_and_ports_init(struct application_dpdk_config *app_dpdk_config)
 {
