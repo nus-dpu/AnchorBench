@@ -18,11 +18,10 @@ deps += dependency('doca-common')
 
 common_path = 'common'
 common_src_path = 'common/src'
-common_dir_path = '..' + common_src_path
+common_dir_path = '../' + common_src_path
 
 inc_dirs = [
-	include_directories(common_src_path),
-	include_directories(common_path),
+	include_directories(common_dir_path),
 	include_directories('..'),
 ]
 
