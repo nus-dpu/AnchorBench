@@ -11,6 +11,7 @@ project_name = 'security_gateway'
 
 deps = []
 deps += dependency('libdpdk')
+deps += dependency('json-c')
 deps += dependency('doca-argp')
 deps += dependency('doca-ipsec')
 deps += dependency('doca-flow')
