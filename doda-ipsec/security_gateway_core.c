@@ -159,27 +159,25 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 	memset(&flow_cfg, 0, sizeof(flow_cfg));
 
 	/* init doca flow with crypto shared resources */
-#if 0
-	flow_cfg.queues = 8;
-	flow_cfg.mode_args = "vnf,hws";
-	flow_cfg.cb = check_for_valid_entry;
-	flow_cfg.nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_CRYPTO] = 1024;
-	result = doca_flow_init(&flow_cfg, &error);
-	if (result < 0) {
-		DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
-		return -1;
+	if (0) {
+		flow_cfg.queues = 8;
+		flow_cfg.mode_args = "vnf,hws";
+		flow_cfg.cb = check_for_valid_entry;
+		flow_cfg.nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_CRYPTO] = 1024;
+		result = doca_flow_init(&flow_cfg, &error);
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
+			return -1;
+		}
+	} else {
+		flow_cfg.queues = 8;
+		flow_cfg.mode_args = "vnf";
+		result = doca_flow_init(&flow_cfg, &error);
+		if (result < 0) {
+			DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
+			return -1;
+		}
 	}
-#endif
-
-	flow_cfg.queues = port_cfg->nb_queues;
-	flow_cfg.mode_args = "vnf";
-	result = doca_flow_init(&flow_cfg, &error);
-	if (result < 0) {
-		DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
-		return -1;
-	}
-
-	uint16_t index;
 
 	for (port_id = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
 		DOCA_LOG_INFO("search for the probed devices...");
