@@ -82,5 +82,18 @@ int main(int argc, char **argv) {
 		goto dpdk_cleanup;
 	}
 
-    return 0;
+doca_flow_cleanup:
+	doca_flow_cleanup(nb_ports, ports);
+dpdk_cleanup:
+	/* DPDK cleanup */
+	dpdk_queues_and_ports_fini(&dpdk_config);
+dpdk_destroy:
+	dpdk_fini();
+argp_destroy:
+	free(encrypt_rules);
+	free(decrypt_rules);
+	/* ARGP cleanup */
+	doca_argp_destroy();
+
+	return exit_status;
 }
