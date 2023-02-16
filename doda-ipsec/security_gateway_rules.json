@@ -1,0 +1,32 @@
+{
+	"encrypt_rules": [
+		{
+			"protocol": "tcp",
+			"src-ip": "10.1.20.208",
+			"dst-ip": "10.1.3.216",
+			"src-port": 3333,
+			"dst-port": 55,
+			"encap-dst-ip": "1.1.1.1",
+			"spi": 5
+		},
+		{
+			"protocol": "udp",
+			"src-ip": "10.1.20.208",
+			"dst-ip": "10.1.3.216",
+			"src-port": 3333,
+			"dst-port": 55,
+			"encap-dst-ip": "1.1.1.1",
+			"spi": 6
+		},
+	],
+	"decrypt_rules": [
+		{
+			"dst-ip": "1.1.1.1",
+			"spi": 5
+		},
+		{
+			"dst-ip": "1.1.1.1",
+			"spi": 6
+		},
+	],
+}

@@ -1,0 +1,19 @@
+{
+    "doca_general_flags":{
+        // -l - sets the log level for the application DEBUG=60, CRITICAL=20
+        "log-level": 60,
+    },
+    "doca_program_flags":{
+        // -r - Path to json file with rules for encrypt and decrypt
+        "rules": "/application/security_gateway/security_gateway_rules.json",
+    
+        // -u - PCI address for the encrypt port
+        "unsecured": "03:00.0",
+    
+        // -s - PCI address for the decrypt port
+        "secured": "03:00.1",
+    
+        // -o - offload mode
+        "offload": "full",
+    }
+}
