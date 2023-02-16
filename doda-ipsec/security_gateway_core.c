@@ -170,8 +170,9 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 		return -1;
 	}
 
+	DOCA_LOG_INFO("search for the probed devices...");
+
 	for (port_id = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
-		DOCA_LOG_INFO("search for the probed devices...");
 		/* search for the probed devices */
 		if (!rte_eth_dev_is_valid_port(port_id))
 			continue;
