@@ -82,8 +82,6 @@ int main(int argc, char **argv) {
 		goto dpdk_cleanup;
 	}
 
-doca_flow_cleanup:
-	doca_flow_cleanup(nb_ports, ports);
 dpdk_cleanup:
 	/* DPDK cleanup */
 	dpdk_queues_and_ports_fini(&dpdk_config);
