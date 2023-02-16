@@ -586,6 +586,7 @@ dpdk_ports_init(struct application_dpdk_config *app_config)
 	for (port_id = 0, n = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
 		if (!rte_eth_dev_is_valid_port(port_id))
 			continue;
+        DOCA_LOG_INFO("Init dpdk port %d...", port_id);
 		result = port_init(mbuf_pool, port_id, app_config);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Cannot init port %" PRIu8, port_id);

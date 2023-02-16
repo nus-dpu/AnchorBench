@@ -79,6 +79,8 @@ int main(int argc, char **argv) {
 		goto dpdk_destroy;
 	}
 
+	DOCA_LOG_INFO("Init doca flow...");
+
     ret = security_gateway_init_doca_flow(&app_cfg, ports);
 	if (ret < 0) {
 		DOCA_LOG_ERR("Failed to init DOCA Flow");
