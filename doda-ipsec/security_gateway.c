@@ -60,12 +60,16 @@ int main(int argc, char **argv) {
 		goto argp_destroy;
 	}
 
+	DOCA_LOG_INFO("Init device...");
+
     result = security_gateway_init_devices(&app_cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to open DOCA devices: %s", doca_get_error_string(result));
 		exit_status = EXIT_FAILURE;
 		goto argp_destroy;
 	}
+
+	DOCA_LOG_INFO("Update queues and ports...");
 
     /* Update queues and ports */
 	result = dpdk_queues_and_ports_init(&dpdk_config);
