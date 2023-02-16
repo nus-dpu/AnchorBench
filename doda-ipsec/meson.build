@@ -23,6 +23,7 @@ common_dir_path = '..' + common_src_path
 inc_dirs = [
 	include_directories(common_src_path),
 	include_directories(common_path),
+	include_directories('..'),
 ]
 
 machine_args = []
@@ -49,5 +50,6 @@ endif
 executable(project_name,
         sources,
         dependencies: deps,
+	include_directories : inc_dirs,
         c_args: cflags,
         install: false)
