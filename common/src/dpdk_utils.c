@@ -589,7 +589,7 @@ dpdk_ports_init(struct application_dpdk_config *app_config)
         DOCA_LOG_INFO("Init dpdk port %d...", port_id);
 		result = port_init(mbuf_pool, port_id, app_config);
 		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Cannot init port %" PRIu8, port_id);
+			DOCA_LOG_ERR("Cannot init port %d" PRIu8, port_id);
 			dpdk_ports_fini(app_config, port_id);
 #ifdef GPU_SUPPORT
 			if (app_config->pipe.gpu_support)
