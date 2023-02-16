@@ -119,6 +119,7 @@ create_doca_flow_port(int port_id, struct doca_flow_error *error, struct doca_fl
 	port_cfg.type = DOCA_FLOW_PORT_DPDK_BY_ID;
 	snprintf(port_id_str, max_port_str_len, "%d", port_cfg.port_id);
 	port_cfg.devargs = port_id_str;
+	DOCA_LOG_INFO("start doca flow for port %d...\n", port_id);
 	*port = doca_flow_port_start(&port_cfg, error);
 	if (*port == NULL)
 		return -1;
@@ -158,6 +159,7 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 	memset(&flow_cfg, 0, sizeof(flow_cfg));
 
 	/* init doca flow with crypto shared resources */
+#if 0
 	flow_cfg.queues = 8;
 	flow_cfg.mode_args = "vnf,hws";
 	flow_cfg.cb = check_for_valid_entry;
@@ -167,8 +169,20 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 		DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
 		return -1;
 	}
+#endif
+
+	flow_cfg.queues = port_cfg->nb_queues;
+	flow_cfg.mode_args = "vnf";
+	result = doca_flow_init(&flow_cfg, &error);
+	if (result < 0) {
+		DOCA_LOG_ERR("Failed to init DOCA Flow - %s (%u)", error.message, error.type);
+		return -1;
+	}
+
+	uint16_t index;
 
 	for (port_id = 0; port_id < RTE_MAX_ETHPORTS; port_id++) {
+		DOCA_LOG_INFO("search for the probed devices...");
 		/* search for the probed devices */
 		if (!rte_eth_dev_is_valid_port(port_id))
 			continue;
@@ -180,6 +194,7 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 			doca_flow_cleanup(nb_ports, ports);
 			return -1;
 		}
+		DOCA_LOG_INFO("create doca flow for port %d...", port_id);
 		result = create_doca_flow_port(port_id, &error, &ports[port_idx]->port);
 		if (result < 0) {
 			DOCA_LOG_ERR("Failed to init DOCA Flow port - %s (%u)", error.message, error.type);
