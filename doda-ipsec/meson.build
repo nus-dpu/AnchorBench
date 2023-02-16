@@ -24,11 +24,6 @@ inc_dirs = [
 	include_directories('..'),
 ]
 
-machine_args = []
-
-default_cflags = machine_args
-cflags = default_cflags
-
 sources = files(
         project_name + '.c',
         project_name + '_core.c',
@@ -39,15 +34,10 @@ sources = files(
 	common_path + '/common.c',
 )
 
-allow_experimental_apis = true
-
-if allow_experimental_apis
-        cflags += '-DALLOW_EXPERIMENTAL_API'
-endif
+add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: languages)
 
 executable(project_name,
         sources,
         dependencies: deps,
 	include_directories : inc_dirs,
-        c_args: cflags,
         install: false)
