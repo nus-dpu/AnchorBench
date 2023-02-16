@@ -161,7 +161,7 @@ security_gateway_init_doca_flow(struct security_gateway_config *app_cfg, struct 
 
 	/* init doca flow with crypto shared resources */
 	flow_cfg.queues = 8;
-	flow_cfg.mode_args = "vnf,hws";
+	flow_cfg.mode_args = "vnf";
 	flow_cfg.cb = check_for_valid_entry;
 	flow_cfg.nr_shared_resources[DOCA_FLOW_SHARED_RESOURCE_CRYPTO] = 1024;
 	result = doca_flow_init(&flow_cfg, &error);
