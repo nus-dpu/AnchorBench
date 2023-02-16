@@ -16,12 +16,11 @@ deps += dependency('doca-ipsec')
 deps += dependency('doca-flow')
 deps += dependency('doca-common')
 
-common_path = 'common'
-common_src_path = 'common/src'
-common_dir_path = '../' + common_src_path
+common_path = '../' + 'common'
+common_src_path = '../' + 'common/src'
 
 inc_dirs = [
-	include_directories(common_dir_path),
+	include_directories(common_src_path),
 	include_directories('..'),
 ]
 
@@ -33,10 +32,10 @@ cflags = default_cflags
 sources = files(
         project_name + '.c',
         project_name + '_core.c',
-	common_dir_path + '/dpdk_utils.c',
-	common_dir_path + '/offload_rules.c',
-	common_dir_path + '/utils.c',
-	common_dir_path + '/flow_parser.c',
+	common_src_path + '/dpdk_utils.c',
+	common_src_path + '/offload_rules.c',
+	common_src_path + '/utils.c',
+	common_src_path + '/flow_parser.c',
 	common_path + '/common.c',
 )
 
