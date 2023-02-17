@@ -30,7 +30,7 @@
 #include <doca_mmap.h>
 #include <doca_regex_mempool.h>
 
-#include <samples/common.h>
+#include <common.h>
 
 #include <dpdk_utils.h>
 #include <offload_rules.h>
