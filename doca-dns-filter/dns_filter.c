@@ -10,6 +10,11 @@
  * provided with the software product.
  *
  */
+#include <rte_errno.h>
+#include <rte_ethdev.h>
+#include <rte_malloc.h>
+#include <rte_sft.h>
+#include <dpdk_utils.h>
 
 #include <doca_argp.h>
 #include <doca_log.h>
@@ -94,7 +99,6 @@ main(int argc, char **argv)
     uint16_t lcore_index = 0;
 	int current_lcore = 0, nb_queues = app_cfg.dpdk_cfg->port_config.nb_queues;
 	struct dns_worker_ctx *worker_ctx = NULL;
-	doca_error_t result;
 
 	DOCA_LOG_INFO("%d cores are used as workers", nb_queues);
 
