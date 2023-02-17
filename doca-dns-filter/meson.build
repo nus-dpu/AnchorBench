@@ -10,6 +10,8 @@ project('dns_filter', 'C',
 project_name = 'dns_filter'
 
 deps = []
+deps += dependency('libdpdk')
+deps += dependency('json-c')
 deps += dependency('doca-argp')
 deps += dependency('doca-flow')
 deps += dependency('doca-common')
