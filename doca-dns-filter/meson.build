@@ -1,41 +1,49 @@
-#
-# Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES, ALL RIGHTS RESERVED.
-#
-# This software product is a proprietary product of NVIDIA CORPORATION &
-# AFFILIATES (the "Company") and all right, title, and interest in and to the
-# software product, including all associated intellectual property rights, are
-# and shall remain exclusively with the Company.
-#
-# This software product is governed by the End User License Agreement
-# provided with the software product.
-#
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright(c) 2018 Intel Corporation
 
-app_dependencies += dependency('doca-argp')
-app_dependencies += dependency('doca-flow')
-app_dependencies += dependency('doca-common')
-app_dependencies += dependency('doca-regex')
-app_dependencies += declare_dependency(link_args : '-lresolv')
+project('dns_filter', 'C', 
+    license: 'BSD',
+    default_options: ['buildtype=debug'],
+	meson_version: '>= 0.51.0'
+)
 
-app_srcs += files([
-	'dns_filter_core.c',
-	common_dir_path + '/dpdk_utils.c',
-	common_dir_path + '/offload_rules.c',
-	common_dir_path + '/utils.c',
-	samples_dir_path + '/common.c',
-])
+project_name = 'dns_filter'
 
-vanilla_app_srcs = [
-	APP_NAME + '.c',
+deps += dependency('doca-argp')
+deps += dependency('doca-flow')
+deps += dependency('doca-common')
+deps += dependency('doca-regex')
+deps += declare_dependency(link_args : '-lresolv')
+
+common_path = '../' + 'common'
+common_src_path = '../' + 'common/src'
+
+inc_dirs = [
+	include_directories(common_src_path),
+	include_directories(common_path),
+	include_directories('..'),
 ]
 
-c_args = []
+sources = files([
+	project_name + '.c',
+	project_name + '_core.c',
+	common_src_path + '/dpdk_utils.c',
+	common_src_path + '/offload_rules.c',
+	common_src_path + '/utils.c',
+	common_src_path + '/flow_parser.c',
+	common_path + '/common.c',
+])
 
-executable(DOCA_PREFIX + APP_NAME,
-	app_srcs + vanilla_app_srcs,
-	c_args : c_args,
-	dependencies : app_dependencies,
-	include_directories : app_inc_dirs,
-	install: install_apps)
+# With enabling GPU support, languages variable will contain CUDA language
+languages = ['c', 'cpp']
+
+add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: languages)
+
+executable(project_name,
+        sources,
+        dependencies: deps,
+	include_directories : inc_dirs,
+        install: false)
 
 # Only relevant if gRPC is supported
 if get_option('enable_grpc_support')
