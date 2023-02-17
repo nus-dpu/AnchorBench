@@ -77,18 +77,50 @@ main(int argc, char **argv)
 	}
 
 	/* Init DNS filter */
-	result = dns_filter_init(&app_cfg);
-	if (result != DOCA_SUCCESS) {
-		exit_status = EXIT_FAILURE;
-		goto dpdk_cleanup;
-	}
+	// result = dns_filter_init(&app_cfg);
+	// if (result != DOCA_SUCCESS) {
+	// 	exit_status = EXIT_FAILURE;
+	// 	goto dpdk_cleanup;
+	// }
 
-	/* Trigger threads (DNS workers) and start processing packets, one thread per queue */
-	result = dns_worker_lcores_run(&app_cfg);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to run all dns workers");
-		exit_status = EXIT_FAILURE;
-		goto dns_filter_cleanup;
+	// /* Trigger threads (DNS workers) and start processing packets, one thread per queue */
+	// result = dns_worker_lcores_run(&app_cfg);
+	// if (result != DOCA_SUCCESS) {
+	// 	DOCA_LOG_ERR("Failed to run all dns workers");
+	// 	exit_status = EXIT_FAILURE;
+	// 	goto dns_filter_cleanup;
+	// }
+
+    uint16_t lcore_index = 0;
+	int current_lcore = 0, nb_queues = app_cfg.dpdk_cfg->port_config.nb_queues;
+	struct dns_worker_ctx *worker_ctx = NULL;
+	doca_error_t result;
+
+	DOCA_LOG_INFO("%d cores are used as workers", nb_queues);
+
+	/* Init DNS workers to start processing packets */
+	while ((current_lcore < RTE_MAX_LCORE) && (lcore_index < nb_queues)) {
+		current_lcore = rte_get_next_lcore(current_lcore, true, false);
+
+		/* Create worker context */
+		worker_ctx = (struct dns_worker_ctx *)rte_zmalloc(NULL, sizeof(struct dns_worker_ctx), 0);
+		if (worker_ctx == NULL) {
+			DOCA_LOG_ERR("RTE malloc failed");
+			force_quit = true;
+			return DOCA_ERROR_NO_MEMORY;
+		}
+		worker_ctx->app_cfg = app_cfg;
+		worker_ctx->queue_id = lcore_index;
+
+		/* Launch the worker to start process packets */
+		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, current_lcore) != 0) {
+			DOCA_LOG_ERR("Remote launch failed");
+			result = DOCA_ERROR_DRIVER;
+			goto queries_cleanup;
+		}
+
+		worker_ctx++;
+		lcore_index++;
 	}
 
 	/* Wait all threads to be done */
