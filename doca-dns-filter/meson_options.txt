@@ -1,0 +1,2 @@
+option('enable_grpc_support', type: 'boolean', value: false,
+	description: 'Enable all gRPC based DOCA applications.')
