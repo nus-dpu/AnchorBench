@@ -9,6 +9,9 @@ project('dns_filter', 'C',
 
 project_name = 'dns_filter'
 
+option('enable_grpc_support', type: 'boolean', value: false,
+	description: 'Enable all gRPC based DOCA applications.')
+
 deps = []
 deps += dependency('doca-argp')
 deps += dependency('doca-flow')
