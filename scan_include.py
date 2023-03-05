@@ -15,8 +15,8 @@ import glob
 # add all local include files
 include_dirs = [
     "include",
-    "include/{}_utils".format(sys.argv[1]),
-    "include/{}_{}".format(sys.argv[1], sys.argv[2])
+    "include/apps",
+    "include/{}_utils".format(sys.argv[1])
 ]
 
 # optional: add doca headers files of applications and samples

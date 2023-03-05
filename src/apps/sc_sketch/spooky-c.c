@@ -64,7 +64,7 @@
 
 #include <memory.h>
 
-#include "spooky-c.h"
+#include "sc_sketch/spooky-c.h"
 
 // SC_CONST: a constant which:
 //  * is not zero

@@ -11,7 +11,7 @@ import sys
 import glob
 
 # add all local source files
-sources = glob.glob("./src/*.c") + glob.glob("./src/sc_utils/*.c") + glob.glob("./src/sc_{}/*.c".format(sys.argv[1]))
+sources = glob.glob("./src/*.c") + glob.glob("./src/sc_utils/*.c") + glob.glob("./src/apps/sc_{}/*.c".format(sys.argv[1]))
 
 # optional: add doca source files (i.e. application and sample code)
 if(sys.argv[2] == "true" and sys.argv[4][0:3] == '1.5'):

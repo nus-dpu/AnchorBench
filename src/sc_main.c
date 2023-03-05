@@ -27,7 +27,7 @@ const char* dpdk_conf_path = "../conf/dpdk.conf";
 
 /* path to the application configuration file */
 #if defined(APP_SKETCH)
-  const char* app_conf_path = "../conf/sketch.conf";
+  const char* app_conf_path = "../conf/apps/sketch.conf";
 #else
   const char* app_conf_path = "";
 #endif // APP_*
@@ -247,7 +247,7 @@ static int _init_env(struct sc_config *sc_config, int argc, char **argv){
       rte_argc += 2;
     }
   #endif // SC_HAS_DOCA
-  
+
   for(i=0; i<rte_argc; i++){
     if(i!=0){
       sprintf(rte_init_str, "%s %s", rte_init_str, rte_argv[i]);
