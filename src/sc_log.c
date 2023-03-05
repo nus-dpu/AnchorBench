@@ -2,7 +2,7 @@
 #include "sc_log.h"
 #include "sc_utils.h"
 
-char current_time_str[128];
+char current_time_str[128] = "UNKNOWN TIME";
 pthread_mutex_t thread_log_mutex;
 pthread_mutex_t timer_mutex;
 extern volatile bool sc_force_quit;
@@ -24,6 +24,7 @@ void* _log_loop(void *args){
         pthread_mutex_lock(&timer_mutex);
         time(&time_ptr);
         tmp_ptr = localtime(&time_ptr);
+        memset(current_time_str, 0, sizeof(current_time_str));
         sprintf(current_time_str, "%d-%d-%d %d:%d:%d",
             tmp_ptr->tm_year + 1900,
             tmp_ptr->tm_mon + 1,
