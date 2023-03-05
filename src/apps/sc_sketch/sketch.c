@@ -17,16 +17,6 @@
 int _init_app(struct sc_config *sc_config){
     int i;
     
-    /* allocate per-core metadata */
-    struct _per_core_meta *per_core_meta 
-        = (struct _per_core_meta*)rte_malloc(NULL, sizeof(struct _per_core_meta)*sc_config->nb_used_cores, 0);
-    if(unlikely(!per_core_meta)){
-        SC_ERROR_DETAILS("failed to rte_malloc memory for per_core_meta");
-        return SC_ERROR_MEMORY;
-    }
-    memset(per_core_meta, 0, sizeof(struct _per_core_meta)*sc_config->nb_used_cores);
-    sc_config->per_core_meta = per_core_meta;
-
     /* allocate memory space for sketch */
     /* cm_sketch */
     #if defined(SKETCH_TYPE_CM)
@@ -159,7 +149,7 @@ process_enter_exit:
  * \param   sc_config   the global configuration
  * \return  zero for successfully processing
  */
-int _process_pkt(struct rte_mbuf *pkt, struct sc_config *sc_config){
+int _process_pkt(struct rte_mbuf *pkt, struct sc_config *sc_config, uint16_t *fwd_port_id, bool *need_forward){
     #if defined(MODE_LATENCY)
         struct timeval pkt_process_start, pkt_process_end;
         gettimeofday(&pkt_process_start, NULL);
@@ -255,7 +245,6 @@ int _process_pkt(struct rte_mbuf *pkt, struct sc_config *sc_config){
     // fflush(stdout);
 
     /* update sketch */
-    SC_THREAD_LOG("before update");
     if(SC_SUCCESS != INTERNAL_CONF(sc_config)->sketch_core.update(tuple_key, sc_config)){
         goto process_pkt_warning;
     }

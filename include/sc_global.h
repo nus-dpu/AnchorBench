@@ -48,7 +48,8 @@ struct sc_config {
     /* dpdk port */
     char* port_mac[SC_MAX_NB_PORTS];
     uint16_t port_ids[SC_MAX_NB_PORTS];
-    uint16_t nb_used_ports;
+    uint16_t nb_conf_ports; // number of ports specified inside configuration file
+    uint16_t nb_used_ports; // number of initialized ports eventually
     uint16_t nb_rx_rings_per_port;
     uint16_t nb_tx_rings_per_port;
     bool enable_promiscuous;
@@ -74,7 +75,7 @@ struct app_config {
     /* callback function: operations while entering the worker loop */
     int (*process_enter)(struct sc_config *sc_config);
     /* callback function: processing single received packet (server mode) */
-    int (*process_pkt)(struct rte_mbuf *pkt, struct sc_config *sc_config);
+    int (*process_pkt)(struct rte_mbuf *pkt, struct sc_config *sc_config, uint16_t *fwd_port_id, bool *need_forward);
     /* callback function: client logic (client mode) */
     int (*process_client)(struct sc_config *sc_config, bool *ready_to_exit);
     /* callback function: operations while exiting the worker loop */

@@ -12,7 +12,8 @@ extern volatile bool sc_force_quit;
  */
 int _worker_loop(void* param){
     int result = SC_SUCCESS;
-    uint16_t i, j, queue_id, nb_rx;
+    uint16_t i, j, queue_id, forward_port_id, nb_rx, nb_tx;
+    bool need_forward = false;
     struct sc_config *sc_config = (struct sc_config*)param;
 
     #if defined(ROLE_SERVER)
@@ -25,7 +26,9 @@ int _worker_loop(void* param){
 
     for(i=0; i<sc_config->nb_used_cores; i++){
         if(sc_config->core_ids[i] == rte_lcore_id()){
-            queue_id = i; break;
+            queue_id = i; 
+            SC_THREAD_LOG("polling on queue %u", queue_id);
+            break;
         }
         if(i == sc_config->nb_used_cores-1){
             SC_THREAD_ERROR_DETAILS("unknown queue id for worker thread on lcore %u", rte_lcore_id());
@@ -59,13 +62,26 @@ int _worker_loop(void* param){
 
                 for(j=0; j<nb_rx; j++){
                     /* Hook Point: Packet Processing */
-                    if(sc_config->app_config->process_pkt(pkt[j], sc_config) != SC_SUCCESS){
+                    if(sc_config->app_config->process_pkt(pkt[j], sc_config, &forward_port_id, &need_forward) != SC_SUCCESS){
                         SC_THREAD_WARNING("failed to process the received frame");
                     }
+
+                    if(need_forward){
+                        nb_tx = rte_eth_tx_burst(forward_port_id, queue_id, pkt[j], 1);
+                        if(nb_rx == 0){
+                            SC_THREAD_WARNING("failed to forward packet to queue %u on port %u",
+                                queue_id, forward_port_id);
+                        }
+                    }
+
+                    // reset need forward flag
+                    need_forward = false;
                 }
             free_pkt_mbuf:
                 for(j=0; j<SC_MAX_PKT_BURST; j++) {
-                    rte_pktmbuf_free(pkt[j]);
+                    if(pkt[j]){
+                        rte_pktmbuf_free(pkt[j]);
+                    }
                 }
             }
         #endif // ROLE_SERVER

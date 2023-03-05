@@ -389,7 +389,11 @@ static int _parse_dpdk_kv_pair(char* key, char *value, struct sc_config* sc_conf
             strcpy(port_mac, p);
             sc_config->port_mac[nb_ports] = port_mac;
             nb_ports += 1;
+            printf("conf port mac: %s\n", port_mac);
         }
+
+        sc_config->nb_conf_ports = nb_ports;
+        printf("nb of conf port mac: %d\n", nb_ports);
 
         goto exit;
 

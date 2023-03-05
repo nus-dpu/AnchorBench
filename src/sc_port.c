@@ -170,7 +170,7 @@ static bool _is_port_choosed(uint16_t port_index, struct sc_config *sc_config){
     else
         return false;
 
-    for(i=0; i<1; i++){
+    for(i=0; i<sc_config->nb_conf_ports; i++){
         if(sc_config->port_mac[i] == NULL) continue;
         if(!strcmp(ebuf, sc_config->port_mac[i])) return true;
     }

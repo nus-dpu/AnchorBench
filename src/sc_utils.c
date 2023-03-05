@@ -52,7 +52,7 @@ int sc_util_check_core_id(uint32_t core_id){
 int sc_util_parse_config(
         FILE* fp, struct sc_config* sc_config, 
         int (*parse_kv_pair)(char* key, char *value, struct sc_config* sc_config)){
-    char buf[64];
+    char buf[512];
     char s[64];
     char* delim = "=";
     char ch;

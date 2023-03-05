@@ -1,4 +1,5 @@
 **/build
+**/*build/
 .vscode
 **/dpdk-21.11
 **/__pycache__
