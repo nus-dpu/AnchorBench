@@ -25,13 +25,6 @@ volatile bool sc_force_quit;
 /* path to the dpdk configuration file */
 const char* dpdk_conf_path = "../conf/dpdk.conf";
 
-/* path to the application configuration file */
-#if defined(APP_SKETCH)
-  const char* app_conf_path = "../conf/apps/sketch.conf";
-#else
-  const char* app_conf_path = "";
-#endif // APP_*
-
 /* path to the doca configuration file */
 #if defined(SC_HAS_DOCA)
   const char* doca_conf_path = "../conf/doca.conf";
@@ -137,7 +130,7 @@ int main(int argc, char **argv){
   #endif
 
   /* initailize application */
-  if(init_app(sc_config, app_conf_path) != SC_SUCCESS){
+  if(init_app(sc_config, APP_CONF_PATH) != SC_SUCCESS){
     SC_ERROR("failed to config application\n");
     result = EXIT_FAILURE;
     goto sc_exit;

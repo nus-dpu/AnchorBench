@@ -9,8 +9,16 @@ project_name = 'soconnect'
 project_name_abbreviation = 'sc'
 
 # specified which application to use
-app = 'sketch'
+app = 'pktgen'
 add_global_arguments('-DAPP_' + app.to_upper(), language: 'c')
+
+# set configuration file for the application
+app_conf_path = '"../conf/apps/' + app + '.conf"'
+add_global_arguments('-DAPP_CONF_PATH=' + app_conf_path, language: 'c')
+
+# set header file of the application
+app_header_file_path = '"sc_' + app + '/' + app + '.h"'
+add_global_arguments('-DAPP_HEADER_FILE_PATH=' + app_header_file_path, language: 'c')
 
 # specified the sub directory to include more meson.build file
 subdir('src/apps/' + project_name_abbreviation + '_' + app)

@@ -69,6 +69,8 @@ struct sc_config {
         void *doca_config;
     #endif
 };
+#define PER_CORE_META(scc) ((struct _per_core_meta*)scc->per_core_meta)[rte_lcore_id()]
+#define INTERNAL_CONF(scc) ((struct _internal_config*)scc->app_config->internal_config)
 
 /* application specific configuration */
 struct app_config {

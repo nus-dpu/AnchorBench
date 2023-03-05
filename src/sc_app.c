@@ -3,10 +3,6 @@
 #include "sc_app.h"
 #include "sc_log.h"
 
-#if defined(APP_SKETCH)
-#include "sc_sketch/sketch.h"
-#endif // APP_SKETCH
-
 /*!
  * \brief   initialize application
  * \param   sc_config       the global configuration
@@ -17,8 +13,8 @@ int init_app(struct sc_config *sc_config, const char *app_conf_path){
     FILE* fp = NULL;
 
     /* allocate per-core metadata */
-    struct _per_core_meta *per_core_meta 
-        = (struct _per_core_meta*)rte_malloc(NULL, sizeof(struct _per_core_meta)*sc_config->nb_used_cores, 0);
+    struct _per_core_meta *per_core_meta = NULL;
+    per_core_meta = (struct _per_core_meta*)rte_malloc(NULL, sizeof(struct _per_core_meta)*sc_config->nb_used_cores, 0);
     if(unlikely(!per_core_meta)){
         SC_ERROR_DETAILS("failed to rte_malloc memory for per_core_meta");
         return SC_ERROR_MEMORY;
@@ -49,7 +45,7 @@ int init_app(struct sc_config *sc_config, const char *app_conf_path){
     /* open application configuration file */
     fp = fopen(app_conf_path, "r");
     if(!fp){
-        SC_ERROR("failed to open the application configuration file: %s\n", strerror(errno));
+        SC_ERROR("failed to open the application configuration file from %s: %s\n", app_conf_path, strerror(errno));
         return SC_ERROR_NOT_EXIST;
     }
 
