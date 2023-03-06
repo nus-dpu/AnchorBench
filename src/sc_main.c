@@ -188,6 +188,9 @@ static int _init_env(struct sc_config *sc_config, int argc, char **argv){
   char cpu_mask_buf[SC_MAX_NB_PORTS] = {0};
   char mem_channels_buf[8] = "";
   
+  /* reset the random seed */
+  srand((unsigned)time(NULL));
+
   /* config cpu mask */
   mpz_init(cpu_mask);
   for(i=0; i<sc_config->nb_used_cores; i++){

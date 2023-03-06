@@ -147,8 +147,10 @@ int _init_single_port(uint16_t port_index, struct sc_config *sc_config){
         printf("finish init port %u, MAC address: " RTE_ETHER_ADDR_PRT_FMT "\n\n",
             port_index,
             RTE_ETHER_ADDR_BYTES(&eth_addr));
-    #endif // RTE_VERSION >= RTE_VERSION_NUM(20, 11, 255, 255)
+    #else
         printf("finish init port %u\n\n", port_index);
+    #endif // RTE_VERSION >= RTE_VERSION_NUM(20, 11, 255, 255)
+        
     return SC_SUCCESS;
 }
 

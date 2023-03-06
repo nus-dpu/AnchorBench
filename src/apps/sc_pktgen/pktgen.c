@@ -56,7 +56,7 @@ int _process_pkt(struct rte_mbuf *pkt, struct sc_config *sc_config, uint16_t *fw
  * \return  zero for successfully executing
  */
 int _process_client(struct sc_config *sc_config, uint16_t queue_id, bool *ready_to_exit){
-    int i, result = SC_SUCCESS;
+    int i, nb_tx, result = SC_SUCCESS;
     struct rte_mbuf *send_pkt_bufs[32]; /* static max nb of pkt with a brust: 32 */
 
     struct rte_ether_hdr pkt_eth_hdr;
@@ -102,7 +102,8 @@ int _process_client(struct sc_config *sc_config, uint16_t queue_id, bool *ready_
         result = SC_ERROR_INTERNAL;
         goto process_client_ready_to_exit;
     }
-    if(SC_SUCCESS != sc_util_initialize_ipv4_header_proto(&pkt_ipv4_hdr, src_ipv4_addr, dst_ipv4_addr, pkt_len, IPPROTO_UDP, &pkt_len)){
+    if(SC_SUCCESS != sc_util_initialize_ipv4_header_proto(
+            &pkt_ipv4_hdr, src_ipv4_addr, dst_ipv4_addr, pkt_len, IPPROTO_UDP, &pkt_len)){
         SC_THREAD_ERROR("failed to assemble ipv4 header");
         result = SC_ERROR_INTERNAL;
         goto process_client_ready_to_exit;
@@ -110,7 +111,8 @@ int _process_client(struct sc_config *sc_config, uint16_t queue_id, bool *ready_
 
     /* assemble udp header */
     src_port = sc_util_random_unsigned_int16();
-    dst_port = sc_util_random_unsigned_int16();
+    // dst_port = sc_util_random_unsigned_int16();
+    dst_port = 109 + rte_lcore_id();
     if(SC_SUCCESS != sc_util_initialize_udp_header(&pkt_udp_hdr, src_port, dst_port, pkt_len, &pkt_len)){
         SC_THREAD_ERROR("failed to assemble udp header");
         result = SC_ERROR_INTERNAL;
@@ -127,11 +129,12 @@ int _process_client(struct sc_config *sc_config, uint16_t queue_id, bool *ready_
         goto process_client_ready_to_exit;
     }
 
-    // free for debug
-    for(i=0; i<32; i++){
-        rte_pktmbuf_free(send_pkt_bufs[i]);
+    nb_tx = 0;
+    for(i=0; i<sc_config->nb_used_ports; i++){
+        nb_tx += rte_eth_tx_burst(sc_config->port_ids[i], queue_id, send_pkt_bufs, 32);
     }
-
+    SC_THREAD_LOG("send %d packets", nb_tx);
+    
     goto process_client_exit;
 
 process_client_ready_to_exit:

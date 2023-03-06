@@ -8,6 +8,7 @@
 #include <rte_udp.h>
 #include <rte_tcp.h>
 #include <rte_sctp.h>
+#include <rte_ethdev.h>
 
 #define IP_DEFTTL  64   /* from RFC 1340. */
 
