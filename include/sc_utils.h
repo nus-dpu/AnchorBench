@@ -43,6 +43,8 @@ int sc_util_atoui_32(char *in, uint32_t *out);
 
 /* random operation */
 uint32_t sc_util_random_unsigned_int32();
-uint64_t random_unsigned_int64();
+uint64_t sc_util_random_unsigned_int64();
+uint16_t sc_util_random_unsigned_int16();
+uint8_t sc_util_random_unsigned_int8();
 
 #endif

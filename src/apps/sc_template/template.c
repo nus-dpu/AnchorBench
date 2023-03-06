@@ -40,6 +40,8 @@ int _process_enter(struct sc_config *sc_config){
  * \brief   callback for processing packet
  * \param   pkt         the received packet
  * \param   sc_config   the global configuration
+ * \param   fwd_port_id     specified the forward port index if need to forward packet
+ * \param   need_forward    indicate whether need to forward packet, default to be false
  * \return  zero for successfully processing
  */
 int _process_pkt(struct rte_mbuf *pkt, struct sc_config *sc_config, uint16_t *fwd_port_id, bool *need_forward){
@@ -50,10 +52,11 @@ int _process_pkt(struct rte_mbuf *pkt, struct sc_config *sc_config, uint16_t *fw
 /*!
  * \brief   callback for client logic
  * \param   sc_config       the global configuration
+ * \param   queue_id        the index of the queue for current core to tx/rx packet
  * \param   ready_to_exit   indicator for exiting worker loop
  * \return  zero for successfully executing
  */
-int _process_client(struct sc_config *sc_config, bool *ready_to_exit){
+int _process_client(struct sc_config *sc_config, uint16_t queue_id, bool *ready_to_exit){
     SC_WARNING_DETAILS("_process_client not implemented");
     return SC_ERROR_NOT_IMPLEMENTED;
 }

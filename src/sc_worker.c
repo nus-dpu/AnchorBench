@@ -89,8 +89,8 @@ int _worker_loop(void* param){
         /* role: client */
         #if defined(ROLE_CLIENT)
             /* Hook Point: Packet Preparing */
-            if(sc_config->app_config->process_client(sc_config, &ready_to_exit) != SC_SUCCESS){
-                SC_THREAD_WARNING("failed to prepare a frame to send");
+            if(sc_config->app_config->process_client(sc_config, queue_id, &ready_to_exit) != SC_SUCCESS){
+                SC_THREAD_WARNING("error occured within the client process");
             }
             if(ready_to_exit){ break; }
         #endif // ROLE_CLIENT

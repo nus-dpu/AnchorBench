@@ -1,5 +1,5 @@
-#ifndef _SC_MAP_H_
-#define _SC_MAP_H_
+#ifndef _SC_UTILS_MAP_H_
+#define _SC_UTILS_MAP_H_
 
 #include <errno.h>
 #include <stdint.h>

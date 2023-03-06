@@ -79,7 +79,7 @@ struct app_config {
     /* callback function: processing single received packet (server mode) */
     int (*process_pkt)(struct rte_mbuf *pkt, struct sc_config *sc_config, uint16_t *fwd_port_id, bool *need_forward);
     /* callback function: client logic (client mode) */
-    int (*process_client)(struct sc_config *sc_config, bool *ready_to_exit);
+    int (*process_client)(struct sc_config *sc_config, uint16_t queue_id, bool *ready_to_exit);
     /* callback function: operations while exiting the worker loop */
     int (*process_exit)(struct sc_config *sc_config);
 
