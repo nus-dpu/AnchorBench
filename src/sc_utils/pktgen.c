@@ -21,11 +21,22 @@ int sc_util_generate_random_ether_addr(char *addr){
 	return SC_SUCCESS;
 }
 
+/*!
+ * \brief   generate random ipv4 address
+ * \param   addr   	generated 32-bit ipv4 address
+ * \return  0 for successfully generation
+ */
 int sc_util_generate_random_ipv4_addr(uint32_t *addr){
-	#define IPV4_ADDR(a, b, c, d)(((a & 0xff) << 24) | ((b & 0xff) << 16) | \
-		((c & 0xff) << 8) | (d & 0xff))
+	uint8_t i;
+	uint8_t sub_addr[4];
 	
-	#undef IPV4_ADDR
+	for(i=0; i<4; i++){
+		sub_addr[i] = sc_util_random_unsigned_int8();
+	}
+
+	*addr = IPV4_ADDR(sub_addr[0], sub_addr[1], sub_addr[2], sub_addr[3]);
+
+	return SC_SUCCESS;
 }
 
 
@@ -101,7 +112,7 @@ int sc_util_generate_packet_burst_proto(struct rte_mempool *mp, struct rte_mbuf 
 		struct rte_ether_hdr *eth_hdr, uint8_t vlan_enabled, void *ip_hdr,
 		uint8_t ipv4, uint8_t proto, void *proto_hdr, int nb_pkt_per_burst, 
 		uint8_t pkt_len, uint8_t nb_pkt_segs){
-	int i, nb_pkt = 0;
+	int i, nb_pkt = 0, result = SC_SUCCESS;
 	size_t eth_hdr_size;
 
 	struct rte_mbuf *pkt_seg;
@@ -113,10 +124,9 @@ int sc_util_generate_packet_burst_proto(struct rte_mempool *mp, struct rte_mbuf 
 	for (nb_pkt = 0; nb_pkt < nb_pkt_per_burst; nb_pkt++) {
 		pkt = rte_pktmbuf_alloc(mp);
 		if (pkt == NULL) {
-nomore_mbuf:
-			if (nb_pkt == 0)
-				return -1;
-			break;
+			SC_ERROR_DETAILS("failed to allocate memory for rte_mbuf");
+			result = SC_ERROR_MEMORY;
+			goto generate_packet_burst_proto_exit;
 		}
 		pkt->data_len = pkt_seg_data_len;
 		pkt_seg = pkt;
@@ -127,7 +137,9 @@ nomore_mbuf:
 			if (pkt_seg->next == NULL) {
 				pkt->nb_segs = i;
 				rte_pktmbuf_free(pkt);
-				goto nomore_mbuf;
+				SC_ERROR_DETAILS("failed to allocate memory for rte_mbuf");
+				result = SC_ERROR_MEMORY;
+				goto generate_packet_burst_proto_exit;
 			}
 			pkt_seg = pkt_seg->next;
 			if (i != nb_pkt_segs - 1){
@@ -162,7 +174,9 @@ nomore_mbuf:
 					sizeof(struct rte_sctp_hdr), pkt, eth_hdr_size + sizeof(struct rte_ipv4_hdr));
 				break;
 			default:
-				break;
+				SC_ERROR_DETAILS("unknown l4 type: %d", proto);
+				result = SC_ERROR_INVALID_VALUE;
+				goto generate_packet_burst_proto_exit;
 			}
 		} else {
 			sc_util_copy_buf_to_pkt(ip_hdr, sizeof(struct rte_ipv6_hdr), pkt, eth_hdr_size);
@@ -180,7 +194,9 @@ nomore_mbuf:
 					sizeof(struct rte_sctp_hdr), pkt, eth_hdr_size + sizeof(struct rte_ipv6_hdr));
 				break;
 			default:
-				break;
+				SC_ERROR_DETAILS("unknown l4 type: %d", proto);
+				result = SC_ERROR_INVALID_VALUE;
+				goto generate_packet_burst_proto_exit;
 			}
 		}
 
@@ -203,7 +219,8 @@ nomore_mbuf:
 		pkts_burst[nb_pkt] = pkt;
 	}
 
-	return SC_SUCCESS;
+generate_packet_burst_proto_exit:
+	return result;
 }
 
 /*!
@@ -218,7 +235,8 @@ nomore_mbuf:
  */
 int sc_util_initialize_eth_header(struct rte_ether_hdr *eth_hdr,
 		struct rte_ether_addr *src_mac, struct rte_ether_addr *dst_mac, 
-		uint16_t ether_type, uint8_t vlan_enabled, uint16_t vlan_id){
+		uint16_t ether_type, uint8_t vlan_enabled, uint16_t vlan_id, 
+		uint16_t *pkt_len){
 	rte_ether_addr_copy(dst_mac, &eth_hdr->dst_addr);
 	rte_ether_addr_copy(src_mac, &eth_hdr->src_addr);
 
@@ -234,12 +252,17 @@ int sc_util_initialize_eth_header(struct rte_ether_hdr *eth_hdr,
 		eth_hdr->ether_type = rte_cpu_to_be_16(ether_type);
 	}
 
+	*pkt_len = (uint16_t)(sizeof(struct rte_ether_hdr));
+
 	return SC_SUCCESS;
 }
 
 int sc_util_initialize_arp_header(struct rte_arp_hdr *arp_hdr,
 		struct rte_ether_addr *src_mac, struct rte_ether_addr *dst_mac,
-		uint32_t src_ip, uint32_t dst_ip, uint32_t opcode){
+		uint32_t src_ip, uint32_t dst_ip, uint32_t opcode, 
+		uint16_t pkt_data_len, uint16_t *pkt_len){
+	*pkt_len = (uint16_t) (pkt_data_len + sizeof(struct rte_arp_hdr));
+
 	arp_hdr->arp_hardware = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
 	arp_hdr->arp_protocol = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
 	arp_hdr->arp_hlen = RTE_ETHER_ADDR_LEN;
@@ -291,6 +314,8 @@ int sc_util_initialize_sctp_header(struct rte_sctp_hdr *sctp_hdr, uint16_t src_p
 
 int sc_util_initialize_ipv6_header_proto(struct rte_ipv6_hdr *ip_hdr, uint8_t *src_addr,
 		uint8_t *dst_addr, uint16_t pkt_data_len, uint8_t proto, uint16_t *pkt_len){
+	*pkt_len = (uint16_t) (pkt_data_len + sizeof(struct rte_ipv6_hdr));
+
 	ip_hdr->vtc_flow = rte_cpu_to_be_32(0x60000000); /* Set version to 6. */
 	ip_hdr->payload_len = rte_cpu_to_be_16(pkt_data_len);
 	ip_hdr->proto = proto;
@@ -298,8 +323,6 @@ int sc_util_initialize_ipv6_header_proto(struct rte_ipv6_hdr *ip_hdr, uint8_t *s
 
 	rte_memcpy(ip_hdr->src_addr, src_addr, sizeof(ip_hdr->src_addr));
 	rte_memcpy(ip_hdr->dst_addr, dst_addr, sizeof(ip_hdr->dst_addr));
-
-	*pkt_len = (uint16_t) (pkt_data_len + sizeof(struct rte_ipv6_hdr));
 
 	return SC_SUCCESS;
 }
