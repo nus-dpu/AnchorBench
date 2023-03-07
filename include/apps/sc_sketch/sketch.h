@@ -2,6 +2,8 @@
 #define _SC_SKETCH_H_
 
 #include <sys/time.h>
+#include <rte_ether.h>
+#include <rte_malloc.h>
 
 #include "sc_global.h"
 #include "sc_utils/map.h"

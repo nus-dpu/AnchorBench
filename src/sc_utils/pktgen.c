@@ -278,8 +278,9 @@ int sc_util_initialize_arp_header(struct rte_arp_hdr *arp_hdr,
 
 int sc_util_initialize_udp_header(struct rte_udp_hdr *udp_hdr, uint16_t src_port,
 		uint16_t dst_port, uint16_t pkt_data_len, uint16_t *pkt_len){
-	*pkt_len = (uint16_t) (pkt_data_len + sizeof(struct rte_udp_hdr));
 
+	*pkt_len = (uint16_t) (pkt_data_len + sizeof(struct rte_udp_hdr));
+	
 	udp_hdr->src_port = rte_cpu_to_be_16(src_port);
 	udp_hdr->dst_port = rte_cpu_to_be_16(dst_port);
 	udp_hdr->dgram_len = rte_cpu_to_be_16(*pkt_len);
