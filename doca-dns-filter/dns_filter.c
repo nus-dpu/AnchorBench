@@ -76,11 +76,11 @@ main(int argc, char **argv)
 	}
 
 	/* Init DNS filter */
-	// result = dns_filter_init(&app_cfg);
-	// if (result != DOCA_SUCCESS) {
-	// 	exit_status = EXIT_FAILURE;
-	// 	goto dpdk_cleanup;
-	// }
+	result = dns_filter_init(&app_cfg);
+	if (result != DOCA_SUCCESS) {
+		exit_status = EXIT_FAILURE;
+		goto dpdk_cleanup;
+	}
 
 	/* Trigger threads (DNS workers) and start processing packets, one thread per queue */
 	result = dns_worker_lcores_run(&app_cfg);
