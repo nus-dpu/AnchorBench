@@ -624,7 +624,6 @@ process_packets(struct dns_worker_ctx *worker_ctx, int ingress_port)
 
 	/* Handle the received packets from a queue with id = worker_ctx->queue_id */
 	if (nb_packets) {
-        printf("Receiving packet...\n");
 		DOCA_DLOG_DBG("Received %d packets from port 0x%x using core %u", nb_packets, ingress_port, rte_lcore_id());
 		result = handle_packets_received(worker_ctx, nb_packets, packets);
 		if (result < 0)
