@@ -1103,52 +1103,52 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		worker_ctx->app_cfg = app_cfg;
 		worker_ctx->queue_id = lcore_index;
 
-// 		/* initialise doca_buf_inventory */
-// 		result = doca_buf_inventory_create(NULL, MAX_REGEX_RESPONSE_SIZE, DOCA_BUF_EXTENSION_NONE, &worker_ctx->buf_inventory);
-// 		if (result != DOCA_SUCCESS) {
-// 			DOCA_LOG_ERR("Unable to allocate buffer inventory: %s", doca_get_error_string(result));
-// 			rte_free(worker_ctx);
-// 			force_quit = true;
-// 			return result;
-// 		}
-// 		result = doca_buf_inventory_start(worker_ctx->buf_inventory);
-// 		if (result != DOCA_SUCCESS) {
-// 			DOCA_LOG_ERR("Unable to start buffer inventory: %s", doca_get_error_string(result));
-// 			doca_buf_inventory_destroy(worker_ctx->buf_inventory);
-// 			rte_free(worker_ctx);
-// 			force_quit = true;
-// 			return result;
-// 		}
+		/* initialise doca_buf_inventory */
+		result = doca_buf_inventory_create(NULL, MAX_REGEX_RESPONSE_SIZE, DOCA_BUF_EXTENSION_NONE, &worker_ctx->buf_inventory);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to allocate buffer inventory: %s", doca_get_error_string(result));
+			rte_free(worker_ctx);
+			force_quit = true;
+			return result;
+		}
+		result = doca_buf_inventory_start(worker_ctx->buf_inventory);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to start buffer inventory: %s", doca_get_error_string(result));
+			doca_buf_inventory_destroy(worker_ctx->buf_inventory);
+			rte_free(worker_ctx);
+			force_quit = true;
+			return result;
+		}
 
-// 		/* initialise doca_buf_inventory */
-// 		result = doca_workq_create(PACKET_BURST, &worker_ctx->workq);
-// 		if (result != DOCA_SUCCESS) {
-// 			DOCA_LOG_ERR("Unable to create work queue: %s", doca_get_error_string(result));
-// 			goto destroy_buf_inventory;
-// 		}
-// 		result = doca_ctx_workq_add(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
-// 		if (result != DOCA_SUCCESS) {
-// 			DOCA_LOG_ERR("Unable to attach workq to regex: %s", doca_get_error_string(result));
-// 			goto destroy_workq;
-// 		}
+		/* initialise doca_buf_inventory */
+		result = doca_workq_create(PACKET_BURST, &worker_ctx->workq);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to create work queue: %s", doca_get_error_string(result));
+			goto destroy_buf_inventory;
+		}
+		result = doca_ctx_workq_add(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to attach workq to regex: %s", doca_get_error_string(result));
+			goto destroy_workq;
+		}
 
-// 		/* Create array of pointers (char*) to hold the queries */
-// 		worker_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
-// 		if (worker_ctx->queries == NULL) {
-// 			DOCA_LOG_ERR("Dynamic allocation failed");
-// 			result = DOCA_ERROR_NO_MEMORY;
-// 			goto worker_cleanup;
-// 		}
-// #ifdef GPU_SUPPORT
-// 		/* Register external memory to GPU device, allow the access it */
-// 		int ret = rte_gpu_mem_register(app_cfg->dpdk_cfg->pipe.gpu_id, PACKET_BURST, worker_ctx->queries);
+		/* Create array of pointers (char*) to hold the queries */
+		worker_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
+		if (worker_ctx->queries == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+			result = DOCA_ERROR_NO_MEMORY;
+			goto worker_cleanup;
+		}
+#ifdef GPU_SUPPORT
+		/* Register external memory to GPU device, allow the access it */
+		int ret = rte_gpu_mem_register(app_cfg->dpdk_cfg->pipe.gpu_id, PACKET_BURST, worker_ctx->queries);
 
-// 		if (ret < 0) {
-// 			DOCA_LOG_ERR("GPU MEM registration failed with error [%d]", ret);
-// 			result = DOCA_ERROR_DRIVER;
-// 			goto queries_cleanup;
-// 		}
-// #endif
+		if (ret < 0) {
+			DOCA_LOG_ERR("GPU MEM registration failed with error [%d]", ret);
+			result = DOCA_ERROR_DRIVER;
+			goto queries_cleanup;
+		}
+#endif
 
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, current_lcore) != 0) {
