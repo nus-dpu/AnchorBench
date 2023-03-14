@@ -286,7 +286,8 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	len = rte_pktmbuf_data_len(&mbuf);
 
 	/* Parse DNS packet information and fill them into handle fields */
-	if (ns_initparse(data, len, &handle) < 0) {
+	/* Ignore the timestamp field*/
+	if (ns_initparse(data, len - sizeof(uint64_t), &handle) < 0) {
 		DOCA_LOG_ERR("Fail to parse domain DNS packet");
 		return -1;
 	}
