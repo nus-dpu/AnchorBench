@@ -7,7 +7,7 @@ project('dns_filter', 'C',
 	meson_version: '>= 0.51.0'
 )
 
-project_name = 'doca-forward'
+project_name = 'forward'
 
 deps = []
 deps += dependency('libdpdk')
