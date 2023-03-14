@@ -20,7 +20,7 @@
 DOCA_LOG_REGISTER(DOCA_FORWARD);
 
 static void
-dns_filter_worker(void *args) {
+forward_worker(void *args) {
 	int ingress_port, nb_ports = worker_ctx->app_cfg->dpdk_cfg->port_config.nb_ports;
 	int result;
 
@@ -108,7 +108,6 @@ main(int argc, char **argv) {
 	/* Wait all threads to be done */
 	rte_eal_mp_wait_lcore();
 
-dpdk_cleanup:
 	/* DPDK cleanup */
 	dpdk_queues_and_ports_fini(&dpdk_config);
 dpdk_destroy:
