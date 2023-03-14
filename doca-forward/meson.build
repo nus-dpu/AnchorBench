@@ -27,7 +27,6 @@ inc_dirs = [
 
 sources = files([
 	project_name + '.c',
-	project_name + '_core.c',
 	common_src_path + '/dpdk_utils.c',
 	common_src_path + '/offload_rules.c',
 	common_src_path + '/utils.c',
