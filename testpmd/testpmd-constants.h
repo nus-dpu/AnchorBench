@@ -1,6 +1,9 @@
 #ifndef _TESTPMD_CONSTANTS_H_
 #define _TESTPMD_CONSTANTS_H_
 
+#include <rte_mbuf.h>
+#include <rte_mempool.h>
+
 enum {
 	DEFAULT_PKT_BURST       = 64,	/* Increasing this number consumes memory very fast */
 	DEFAULT_RX_DESC         = 1024,
@@ -12,6 +15,8 @@ enum {
 
 	DEFAULT_PRIV_SIZE       = 0,
 	MBUF_SIZE		= RTE_MBUF_DEFAULT_BUF_SIZE + DEFAULT_PRIV_SIZE, /* See: http://dpdk.org/dev/patchwork/patch/4479/ */
+
+	NUM_Q                   = 32,
 };
 
 #endif  /* _TESTPMD_CONSTANTS_H_ */

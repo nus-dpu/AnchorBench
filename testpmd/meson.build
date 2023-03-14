@@ -20,6 +20,8 @@ cflags = default_cflags
 sources = files(
     project_name + '.c',
 	project_name + '-port-cfg.c',
+	project_name + '-l2p.c',
+	project_name + '-utils.c',
 )
 
 allow_experimental_apis = true

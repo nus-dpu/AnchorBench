@@ -16,6 +16,13 @@
 #include <rte_ethdev.h>
 #include <rte_mempool.h>
 
+#include "testpmd-port-cfg.h"
+#include "testpmd-l2p.h"
+
+int port_cnt = 0;
+port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
+l2p_t l2p;
+
 /* RX queue configuration */
 static struct rte_eth_rxconf rx_conf = {
     .rx_thresh = {
@@ -95,59 +102,56 @@ void testpmd_config_ports() {
     struct rte_eth_conf conf = {0};
     uint32_t lid, pid, q;
     rxtx_t rt;
-	port_info_t * info;
+    uint16_t nb_ports;
 	int32_t ret, cache_size;
-    struct rte_ether_addr addr;
 
     cache_size = RTE_MEMPOOL_CACHE_MAX_SIZE;
 
 	/* Find out the total number of ports in the system. */
 	/* We have already blacklisted the ones we needed to in main routine. */
-	pktgen.nb_ports = rte_eth_dev_count_total();
-	if (pktgen.nb_ports > RTE_MAX_ETHPORTS) {
-		pktgen.nb_ports = RTE_MAX_ETHPORTS;
+	nb_ports = rte_eth_dev_count_total();
+	if (nb_ports > RTE_MAX_ETHPORTS) {
+		nb_ports = RTE_MAX_ETHPORTS;
     }
 
-	if (pktgen.nb_ports == 0) {
+	if (nb_ports == 0) {
 		perror("*** Did not find any ports to use ***");
     }
 
 	printf("Configuring %d ports, MBUF Size %d, MBUF Cache Size %d\n",
-		    pktgen.nb_ports, MBUF_SIZE, MBUF_CACHE_SIZE);
+		    nb_ports, MBUF_SIZE, MBUF_CACHE_SIZE);
 
     /* For each lcore setup each port that is handled by that lcore. */
     for (lid = 0; lid < RTE_MAX_LCORE; lid++) {
-        if (get_map(pktgen.l2p, RTE_MAX_ETHPORTS, lid) == 0) {
+        if (get_map(&l2p, RTE_MAX_ETHPORTS, lid) == 0) {
             continue;
         }
 
         /* For each port attached or handled by the lcore */
         RTE_ETH_FOREACH_DEV(pid) {
             /* If non-zero then this port is handled by this lcore. */
-            if (get_map(pktgen.l2p, pid, lid) == 0) {
+            if (get_map(&l2p, pid, lid) == 0) {
                 continue;
             }
 
-            pg_set_port_private(pktgen.l2p, pid, &pktgen.info[pid]);
-            pktgen.info[pid].pid = pid;
+            pg_set_port_private(&l2p, pid, &info[pid]);
+            info[pid].pid = pid;
         }
     }
 
-    pg_dump_l2p(pktgen.l2p);
+    pg_dump_l2p(&l2p);
 
     RTE_ETH_FOREACH_DEV(pid) {
 		/* Skip if we do not have any lcores attached to a port. */
-        if ((rt.rxtx = get_map(pktgen.l2p, pid, RTE_MAX_LCORE)) == 0) {
+        if ((rt.rxtx = get_map(&l2p, pid, RTE_MAX_LCORE)) == 0) {
             continue;
 		}
 
-        pktgen.port_cnt++;
+        port_cnt++;
         printf("Initialize Port %u -- TxQ %u, RxQ %u\n", pid, rt.tx, rt.rx);
 
-        info = &pktgen.info[pid];
-
     	/* Get Ethernet device info */
-        ret = rte_eth_dev_info_get(pid, &info->dev_info);
+        ret = rte_eth_dev_info_get(pid, &info[pid].dev_info);
 	    if (ret < 0) {
             printf("Error during getting device (port %u) info: %s\n", pid, strerror(-ret));
         }
@@ -157,7 +161,7 @@ void testpmd_config_ports() {
 
         if (rt.rx > 1) {
             conf.rx_adv_conf.rss_conf.rss_key = NULL;
-            conf.rx_adv_conf.rss_conf.rss_hf &= info->dev_info.flow_type_rss_offloads;
+            conf.rx_adv_conf.rss_conf.rss_hf &= info[pid].dev_info.flow_type_rss_offloads;
         } else {
             conf.rx_adv_conf.rss_conf.rss_key = NULL;
             conf.rx_adv_conf.rss_conf.rss_hf  = 0;
@@ -183,9 +187,8 @@ void testpmd_config_ports() {
 				printf("Cannot init port %d for Default RX mbufs\n", pid);
             }
 
-            printf("\tLink PORT %d QUEUE %d to mempool %p\n", pid, q, info->q[q].rx_mp);
-			// ret = rte_eth_rx_queue_setup(pid, q, pktgen.nb_rxd, sid, &rx_conf, pktgen.info[pid].q[q].rx_mp);
-			ret = rte_eth_rx_queue_setup(pid, q, pktgen.nb_rxd, SOCKET_ID_ANY, &rx_conf, info->q[q].rx_mp);
+            printf("\tLink PORT %d QUEUE %d to mempool %p\n", pid, q, info[pid].q[q].rx_mp);
+			ret = rte_eth_rx_queue_setup(pid, q, DEFAULT_RX_DESC, SOCKET_ID_ANY, &rx_conf, info[pid].q[q].rx_mp);
 			if (ret < 0) {
 				printf("rte_eth_rx_queue_setup: err=%d, port=%d, %s\n", ret, pid, rte_strerror(-ret));
             }
@@ -199,8 +202,7 @@ void testpmd_config_ports() {
 				printf("Cannot init port %d for Default TX mbufs\n", pid);
             }
 
-			// ret = rte_eth_tx_queue_setup(pid, q, pktgen.nb_txd, sid, &tx_conf);
-			ret = rte_eth_tx_queue_setup(pid, q, pktgen.nb_txd, SOCKET_ID_ANY, &tx_conf);
+			ret = rte_eth_tx_queue_setup(pid, q, DEFAULT_TX_DESC, SOCKET_ID_ANY, &tx_conf);
 			if (ret < 0) {
 				printf("rte_eth_tx_queue_setup: err=%d, port=%d, %s\n", ret, pid, rte_strerror(-ret));
             }
