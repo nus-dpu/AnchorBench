@@ -181,9 +181,9 @@ void testpmd_config_ports() {
 
         for (q = 0; q < rt.rx; q++) {
 			/* Create and initialize the default Receive buffers. */
-			info->q[q].rx_mp = testpmd_mempool_create("Default RX", pid, q,
+			info[pid].q[q].rx_mp = testpmd_mempool_create("Default RX", pid, q,
 								   MAX_MBUFS_PER_PORT, SOCKET_ID_ANY, cache_size);
-			if (info->q[q].rx_mp == NULL) {
+			if (info[pid].q[q].rx_mp == NULL) {
 				printf("Cannot init port %d for Default RX mbufs\n", pid);
             }
 
@@ -196,9 +196,9 @@ void testpmd_config_ports() {
 
         for (q = 0; q < rt.tx; q++) {
 			/* Create and initialize the default Receive buffers. */
-			info->q[q].tx_mp = testpmd_mempool_create("Default TX", pid, q,
+			info[pid].q[q].tx_mp = testpmd_mempool_create("Default TX", pid, q,
 								   MAX_MBUFS_PER_PORT, SOCKET_ID_ANY, cache_size);
-			if (info->q[q].tx_mp == NULL) {
+			if (info[pid].q[q].tx_mp == NULL) {
 				printf("Cannot init port %d for Default TX mbufs\n", pid);
             }
 
