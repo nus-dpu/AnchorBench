@@ -101,6 +101,10 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
     uint32_t pid;
     uint8_t idx, txcnt, rxcnt;
 	struct timeval curr;
+	float sec_recv, sec_send;
+	float max_recv, max_send;
+
+	max_recv = max_send = 0.0;
 
 	memset(infos, '\0', sizeof(infos));
     memset(qids, '\0', sizeof(qids));
@@ -114,9 +118,16 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
     while (true) {
 		gettimeofday(&curr, NULL);
 		if (curr.tv_sec - last_log.tv_sec > 1) {
-			printf("CORE %d ==> RX rate: %8.2f (KPS), TX rate : %8.2f (KPS)\n", lid, 
-					(float)nr_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log)), 
-					(float)nr_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log)));
+			sec_recv = (float)nr_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
+			sec_send = (float)nr_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
+			printf("\rCORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS) / Max RX: %8.2f (KPS), Max TX: %8.2f (KPS)\n", 
+					lid, sec_recv, sec_send, max_recv, max_send);
+			if (sec_recv > max_recv) {
+				max_recv = sec_recv;
+			}
+			if (sec_send > max_send) {
+				max_send = sec_send;
+			}
 			nr_recv = nr_send = 0;
 			last_log = curr;
 		}
