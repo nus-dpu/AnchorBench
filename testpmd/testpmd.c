@@ -17,6 +17,7 @@
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
 __thread struct timeval last_log;
+__thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
 
@@ -101,9 +102,12 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
     uint32_t pid;
     uint8_t idx, txcnt, rxcnt;
 	struct timeval curr;
+	float tot_recv_rate, tot_send_rate;
+	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
 	float max_recv, max_send;
 
+	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
 
 	memset(infos, '\0', sizeof(infos));
@@ -113,6 +117,7 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
+	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
 
     while (true) {
@@ -128,13 +133,23 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
 			if (sec_send > max_send) {
 				max_send = sec_send;
 			}
+			tot_recv += nr_recv;
+			tot_send += nr_send;
 			nr_recv = nr_send = 0;
 			last_log = curr;
+		}
+		if (curr.tv_sec - start.tv_sec > 20) {
+			break;
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
             pkt_burst_forward(infos[idx]->pid, qids[idx]);
         }
 	}
+
+	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
+	tot_send_rate = (float)tot_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
+
+	printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", lid, tot_recv_rate , tot_send_rate);
 }
 
 static int testpmd_parse_args(int argc, char ** argv) {
