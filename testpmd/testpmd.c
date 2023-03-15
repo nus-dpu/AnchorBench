@@ -28,6 +28,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx;
 	uint16_t nb_tx;
+	uint32_t retry;
 
 	/*
 	 * Receive a burst of packets and forward them.
