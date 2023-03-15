@@ -34,7 +34,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	}
 	nr_recv += nb_rx;
 
-	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
+	nb_tx = rte_eth_tx_burst(pid, qid, pkts_burst, nb_rx);
 	nr_send += nb_tx;
 	if (unlikely(nb_tx < nb_rx)) {
 		do {
