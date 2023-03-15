@@ -34,7 +34,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	}
 	nr_recv += nb_rx;
 
-	nb_tx = rte_eth_tx_burst(pid, qid, pkts_burst, nb_rx);
+	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
 	nr_send += nb_tx;
 	if (unlikely(nb_tx < nb_rx)) {
 		do {
@@ -86,15 +86,8 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
             rte_panic("Config error: No port %d found on lcore %d\n", pid, lid);
 
         if (qids) {
-            if (rxcnt) {
-                qids[idx] = get_rxque(&l2p, lid, pid);
-                printf("lcore %d has RX queue %d on port %d\n", lid, qids[idx], pid);
-            }
-            
-            if (txcnt) {
-                qids[idx] = get_txque(&l2p, lid, pid);
-                printf("lcore %d has TX queue %d on port %d\n", lid, qids[idx], pid);
-            }
+			qids[idx] = get_rxque(&l2p, lid, pid);
+			printf("lcore %d has RX queue %d on port %d\n", lid, qids[idx], pid);
         }
     }
 
