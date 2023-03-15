@@ -12,6 +12,9 @@
 #include "testpmd-constants.h"
 #include "testpmd-port-cfg.h"
 
+#define BURST_TX_WAIT_US 1
+#define BURST_TX_RETRIES 64
+
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_MSEC   1000L
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
@@ -36,13 +39,19 @@ static void pkt_burst_forward(int pid, int qid) {
 	nr_recv += nb_rx;
 
 	nb_tx = rte_eth_tx_burst(pid, qid, pkts_burst, nb_rx);
+	if (unlikely(nb_tx < nb_rx)) {
+		retry = 0;
+		while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
+			rte_delay_us(burst_tx_delay_time);
+			nb_tx += rte_eth_tx_burst(pid, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
+		}
+	}
 	nr_send += nb_tx;
 	if (unlikely(nb_tx < nb_rx)) {
 		do {
 			rte_pktmbuf_free(pkts_burst[nb_tx]);
 		} while (++nb_tx < nb_rx);
 	}
-
 	return;
 }
 
