@@ -13,7 +13,7 @@
 #include "testpmd-port-cfg.h"
 
 #define BURST_TX_WAIT_US 1
-#define BURST_TX_RETRIES 64
+#define BURST_TX_RETRIES 10
 
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_MSEC   1000L
