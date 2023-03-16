@@ -34,7 +34,7 @@ conf = configuration_data()
 conf.set('SG_MEMPOOL', true, description : 'Shared RX mempool')
 
 # Set data
-configure_file(output : 'config.h',
+configure_file(output : '../config.h',
     configuration : conf)
 
 configuration_inc = include_directories('.')
