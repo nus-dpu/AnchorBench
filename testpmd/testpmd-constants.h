@@ -9,7 +9,7 @@ enum {
 	DEFAULT_RX_DESC         = 1024,
 	DEFAULT_TX_DESC         = 1024,
 
-	MAX_MBUFS_PER_PORT      = (DEFAULT_TX_DESC * 2),/* number of buffers to support per port */
+	MAX_MBUFS_PER_PORT      = (DEFAULT_TX_DESC * 4),/* number of buffers to support per port */
 	MAX_SPECIAL_MBUFS       = 64,
 	MBUF_CACHE_SIZE         = (MAX_MBUFS_PER_PORT / 8),
 
