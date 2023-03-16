@@ -12,8 +12,6 @@
 #include "testpmd-constants.h"
 #include "testpmd-port-cfg.h"
 
-#define SG_MEMPOOL
-
 #define BURST_TX_RETRIES 16
 
 #define MSEC_PER_SEC    1000L

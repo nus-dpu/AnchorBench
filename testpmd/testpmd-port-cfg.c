@@ -19,6 +19,8 @@
 #include "testpmd-port-cfg.h"
 #include "testpmd-l2p.h"
 
+#define SG_MEMPOOL
+
 int port_cnt = 0;
 port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
 l2p_t l2p;
