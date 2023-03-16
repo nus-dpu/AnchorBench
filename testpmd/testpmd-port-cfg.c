@@ -149,6 +149,7 @@ void testpmd_config_ports() {
 	if (mbuf_pool == NULL) {
         printf("Cannot allocate RX mbufs\n", pid);
 	}
+    printf("Shared RX mbuf: %p\n", mbuf_pool);
 #endif
 
     RTE_ETH_FOREACH_DEV(pid) {
