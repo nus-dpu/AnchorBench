@@ -146,7 +146,7 @@ void testpmd_config_ports() {
     pg_dump_l2p(&l2p);
 
 #ifdef SG_MEMPOOL
-    mp = rte_pktmbuf_pool_create("MBUF_POOL", MAX_MBUFS_PER_PORT * RTE_MAX_ETHPORTS, 
+    mp = rte_pktmbuf_pool_create("MBUF_POOL", MAX_MBUFS_PER_PORT * 2, 
                         cache_size, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
 	if (mp == NULL) {
         printf("Cannot allocate RX mbufs\n", pid);
