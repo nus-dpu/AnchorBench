@@ -146,12 +146,12 @@ void testpmd_config_ports() {
     pg_dump_l2p(&l2p);
 
 #ifdef SG_MEMPOOL
-    mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", MAX_MBUFS_PER_PORT * RTE_MAX_ETHPORTS, 
+    mp = rte_pktmbuf_pool_create("MBUF_POOL", MAX_MBUFS_PER_PORT * RTE_MAX_ETHPORTS, 
                         cache_size, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
-	if (mbuf_pool == NULL) {
+	if (mp == NULL) {
         printf("Cannot allocate RX mbufs\n", pid);
 	}
-    printf("Shared RX mbuf: %p\n", mbuf_pool);
+    printf("Shared RX mbuf: %p\n", mp);
 #endif
 
     RTE_ETH_FOREACH_DEV(pid) {
