@@ -17,7 +17,6 @@ typedef struct port_info_s {
 	struct q_info {
 		rte_atomic32_t flags;		/**< Special send flags for ARP and other */
 		struct rte_mempool * rx_mp;	/**< Pool pointer for port RX mbufs */
-		struct rte_mempool * tx_mp;	/**< Pool pointer for default TX mbufs */
 		uint64_t tx_cnt, rx_cnt;
 	} q[NUM_Q];
 

@@ -104,7 +104,9 @@ void testpmd_config_ports() {
     rxtx_t rt;
     uint16_t nb_ports;
 	int32_t ret, cache_size;
-
+#ifdef SG_MEMPOOL
+    struct rte_mempool * mp;
+#endif
     cache_size = RTE_MEMPOOL_CACHE_MAX_SIZE;
 
 	/* Find out the total number of ports in the system. */
@@ -140,6 +142,14 @@ void testpmd_config_ports() {
     }
 
     pg_dump_l2p(&l2p);
+
+#ifdef SG_MEMPOOL
+    mbuf_pool = rte_pktmbuf_pool_create("MBUF_POOL", MAX_MBUFS_PER_PORT * RTE_MAX_ETHPORTS, 
+                        cache_size, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
+	if (mbuf_pool == NULL) {
+        printf("Cannot allocate RX mbufs\n", pid);
+	}
+#endif
 
     RTE_ETH_FOREACH_DEV(pid) {
 		/* Skip if we do not have any lcores attached to a port. */
@@ -180,7 +190,14 @@ void testpmd_config_ports() {
 	    }
 
         for (q = 0; q < rt.rx; q++) {
-			/* Create and initialize the default Receive buffers. */
+#ifdef SG_MEMPOOL
+			printf("\tLink PORT %d QUEUE %d to mempool %p\n", pid, q, mp);
+			ret = rte_eth_rx_queue_setup(pid, q, DEFAULT_RX_DESC, SOCKET_ID_ANY, &rx_conf, mp);
+			if (ret < 0) {
+				printf("rte_eth_rx_queue_setup: err=%d, port=%d, %s\n", ret, pid, rte_strerror(-ret));
+            }
+#else
+            /* Create and initialize the default Receive buffers. */
 			info[pid].q[q].rx_mp = testpmd_mempool_create("Default RX", pid, q,
 								   MAX_MBUFS_PER_PORT, SOCKET_ID_ANY, cache_size);
 			if (info[pid].q[q].rx_mp == NULL) {
@@ -192,16 +209,10 @@ void testpmd_config_ports() {
 			if (ret < 0) {
 				printf("rte_eth_rx_queue_setup: err=%d, port=%d, %s\n", ret, pid, rte_strerror(-ret));
             }
+#endif
 		}
 
         for (q = 0; q < rt.tx; q++) {
-			/* Create and initialize the default Receive buffers. */
-			info[pid].q[q].tx_mp = testpmd_mempool_create("Default TX", pid, q,
-								   MAX_MBUFS_PER_PORT, SOCKET_ID_ANY, cache_size);
-			if (info[pid].q[q].tx_mp == NULL) {
-				printf("Cannot init port %d for Default TX mbufs\n", pid);
-            }
-
 			ret = rte_eth_tx_queue_setup(pid, q, DEFAULT_TX_DESC, SOCKET_ID_ANY, &tx_conf);
 			if (ret < 0) {
 				printf("rte_eth_tx_queue_setup: err=%d, port=%d, %s\n", ret, pid, rte_strerror(-ret));

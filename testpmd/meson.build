@@ -30,6 +30,9 @@ if allow_experimental_apis
         cflags += '-DALLOW_EXPERIMENTAL_API'
 endif
 
+conf = configuration_data()
+conf.set('SG_MEMPOOL', true, description : 'Shared RX mempool')
+
 executable(project_name,
         sources,
         dependencies: deps,
