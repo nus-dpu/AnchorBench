@@ -16,7 +16,7 @@ enum {
 	DEFAULT_PRIV_SIZE       = 0,
 	MBUF_SIZE		= RTE_MBUF_DEFAULT_BUF_SIZE + DEFAULT_PRIV_SIZE, /* See: http://dpdk.org/dev/patchwork/patch/4479/ */
 
-	NUM_Q                   = 32,
+	NUM_Q                   = 16,
 };
 
 #endif  /* _TESTPMD_CONSTANTS_H_ */
