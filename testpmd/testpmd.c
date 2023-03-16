@@ -7,11 +7,12 @@
 #include <getopt.h>
 #include <sys/time.h>
 
-#include "build/config.h"
 #include "testpmd.h"
 #include "testpmd-l2p.h"
 #include "testpmd-constants.h"
 #include "testpmd-port-cfg.h"
+
+#define SG_MEMPOOL
 
 #define BURST_TX_RETRIES 16
 

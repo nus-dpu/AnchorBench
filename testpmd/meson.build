@@ -30,18 +30,8 @@ if allow_experimental_apis
         cflags += '-DALLOW_EXPERIMENTAL_API'
 endif
 
-conf = configuration_data()
-conf.set('SG_MEMPOOL', true, description : 'Shared RX mempool')
-
-# Set data
-configure_file(output : 'config.h',
-    configuration : conf)
-
-configuration_inc = include_directories('.')
-
 executable(project_name,
         sources,
         dependencies: deps,
         c_args: cflags,
-        include_directories : configuration_inc,
         install: false)
