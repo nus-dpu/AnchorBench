@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 
+#include "config.h"
 #include "testpmd.h"
 #include "testpmd-l2p.h"
 #include "testpmd-constants.h"
