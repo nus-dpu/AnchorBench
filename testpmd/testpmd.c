@@ -177,7 +177,7 @@ static int testpmd_parse_args(int argc, char ** argv) {
 		{NULL, 0, 0, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "c:d:h", lgopts, &option_index)) != EOF)
+	while ((opt = getopt_long(argc, argv, "m:d:h", lgopts, &option_index)) != EOF)
 		switch (opt) {
 		case 'm':	/* Matrix for port mapping. */
 			if (pg_parse_matrix(&l2p, optarg) == -1) {
