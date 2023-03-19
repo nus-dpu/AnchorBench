@@ -18,6 +18,8 @@
 #define USEC_PER_MSEC   1000L
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
+int delay_cycles = 0;
+
 __thread struct timeval last_log;
 __thread struct timeval start;
 __thread uint64_t nr_recv;
@@ -28,6 +30,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	uint16_t nb_rx;
 	uint16_t nb_tx;
 	uint32_t retry;
+	uint64_t start_tsc, cur_tsc;
 
 	/*
 	 * Receive a burst of packets and forward them.
@@ -37,6 +40,11 @@ static void pkt_burst_forward(int pid, int qid) {
 		return;
 	}
 	nr_recv += nb_rx;
+
+	start_tsc = rte_rdtsc();
+	do {
+		cur_tsc = rte_rdtsc();
+	} while (cur_tsc - start_tsc < delay_cycles);
 
 	nb_tx = rte_eth_tx_burst(pid, qid, pkts_burst, nb_rx);
 	if (unlikely(nb_tx < nb_rx)) {
@@ -169,7 +177,7 @@ static int testpmd_parse_args(int argc, char ** argv) {
 		{NULL, 0, 0, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "c:f:m:r:p:d:h", lgopts, &option_index)) != EOF)
+	while ((opt = getopt_long(argc, argv, "c:d:h", lgopts, &option_index)) != EOF)
 		switch (opt) {
 		case 'm':	/* Matrix for port mapping. */
 			if (pg_parse_matrix(&l2p, optarg) == -1) {
@@ -177,6 +185,10 @@ static int testpmd_parse_args(int argc, char ** argv) {
 				// pktgen_usage(prgname);
 				return -1;
 			}
+			break;
+
+		case 'd':	/* Delay cycles */
+			delay_cycles = strtol(optarg, NULL, 10);
 			break;
 
 		case 'h':	/* print out the help message */
