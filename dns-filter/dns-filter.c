@@ -127,8 +127,8 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	p += UDP_HEADER_SIZE;
 	p += DNS_HEADER_SIZE;
 
-	while (p != '\0') {
-		printf("%c ", p);
+	while (*p != '\0') {
+		printf("%c ", *p);
 		p++;
 	}
 	printf("\n");
