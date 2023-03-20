@@ -133,6 +133,7 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	for(int i = 0 ; i < (int)strlen(p); i++)  {
 		printf("Check %x\n", p[i]);
 		if(isdigit(p[i])) {
+			printf("Is digit!\n");
 			len = p[i];
 			for (int j = 0; j < len; j++) {
 				*dst++ = p[++i];
