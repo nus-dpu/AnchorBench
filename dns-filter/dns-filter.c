@@ -115,7 +115,7 @@ static void parse_file_by_line(char * content, size_t content_len) {
 }
 
 static int extract_dns_query(struct rte_mbuf *pkt) {
-	int result, len;
+	int result, len, query_len;
 	uint32_t payload_offset = 0;
     char * p, * parse, * dst;
 	char name[32];
@@ -130,11 +130,11 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	p += UDP_HEADER_SIZE;
 	p += DNS_HEADER_SIZE;
 
-	for(int i = 0 ; i < (int)strlen(p); i++)  {
-		printf("Check %x\n", p[i]);
+	query_len = (int)strlen(p);
+
+	for(int i = 0 ; i < query_len; i++)  {
 		len = p[i++];
 		for (int j = 0; j < len; j++) {
-			printf("==> %x\n", p[i]);
 			*dst++ = p[i++];
 		}
 		*dst++ = '.';
