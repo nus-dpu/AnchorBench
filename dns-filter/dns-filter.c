@@ -31,8 +31,8 @@ __thread uint64_t nr_send;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
-int nb_regex_rules = 0;
-regex_t regex_rules[MAX_RULES];
+__thread int nb_regex_rules = 0;
+__thread regex_t regex_rules[MAX_RULES];
 
 #define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
 #define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
@@ -263,6 +263,7 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
 	float max_recv, max_send;
+	int ret;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
@@ -273,6 +274,12 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
+
+	ret = read_file("../regex_rules.txt", &rules_file_data, &rules_file_size);
+	if (ret == -1) {
+		printf("invalid RegEx rules\n");
+	}
+	parse_file_by_line(rules_file_data, rules_file_size);
 
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
@@ -330,11 +337,11 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 			break;
 
 		case 'r':	/* RegEx rultes */
-			ret = read_file(optarg, &rules_file_data, &rules_file_size);
-			if (ret == -1) {
-				printf("invalid RegEx rules\n");
-			}
-			parse_file_by_line(rules_file_data, rules_file_size);
+			// ret = read_file(optarg, &rules_file_data, &rules_file_size);
+			// if (ret == -1) {
+			// 	printf("invalid RegEx rules\n");
+			// }
+			// parse_file_by_line(rules_file_data, rules_file_size);
 			break;
 
 		case 'd':	/* Delay cycles */
