@@ -41,10 +41,12 @@ static void pkt_burst_forward(int pid, int qid) {
 	}
 	nr_recv += nb_rx;
 
-	start_tsc = rte_rdtsc();
-	do {
-		cur_tsc = rte_rdtsc();
-	} while (cur_tsc - start_tsc < delay_cycles);
+	for (int i = 0; i < nb_rx; i++) {
+		start_tsc = rte_rdtsc();
+		do {
+			cur_tsc = rte_rdtsc();
+		} while (cur_tsc - start_tsc < delay_cycles);
+	}
 
 	nb_tx = rte_eth_tx_burst(pid, qid, pkts_burst, nb_rx);
 	if (unlikely(nb_tx < nb_rx)) {
