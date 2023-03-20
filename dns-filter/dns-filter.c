@@ -295,7 +295,7 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 			nr_recv = nr_send = 0;
 			last_log = curr;
 		}
-		if (curr.tv_sec - start.tv_sec > 20) {
+		if (start_flag & curr.tv_sec - start.tv_sec > 20) {
 			break;
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
