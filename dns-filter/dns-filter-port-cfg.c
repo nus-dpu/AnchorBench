@@ -19,7 +19,7 @@
 #include "dns-filter-port-cfg.h"
 #include "dns-filter-l2p.h"
 
-#define SG_MEMPOOL
+// #define SG_MEMPOOL
 
 int port_cnt = 0;
 port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
