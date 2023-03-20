@@ -264,6 +264,8 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 	float sec_recv, sec_send;
 	float max_recv, max_send;
 	int ret;
+	char * rules_file_data;
+	size_t rules_file_size;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
@@ -318,8 +320,6 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 
 static int dns_filter_parse_args(int argc, char ** argv) {
 	int opt, option_index, ret;
-	char * rules_file_data;
-	size_t rules_file_size;
 	double rate;
 	static struct option lgopts[] = {
 		{"crc-strip", 0, 0, 0},
