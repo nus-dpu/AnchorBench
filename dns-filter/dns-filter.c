@@ -32,7 +32,7 @@ __thread uint64_t nr_send;
 int nb_regex_rules = 0;
 regex_t regex_rules[MAX_RULES];
 
-#define ETH_HEADER_SIZE 18			/* ETH header size = 18 bytes (144 bits) */
+#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
 #define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
 #define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
