@@ -144,6 +144,14 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 
 	printf("Query for: %s\n", name);
 
+	for (int i = 0; i < nb_regex_rules; i++) {
+		result = regexec(&regex_rules[i], name, 0, NULL, 0);
+		if (result == 0) {
+			printf("Found matching rule!\n");
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
