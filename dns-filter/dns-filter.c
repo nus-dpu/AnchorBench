@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
+#include <regex.h>
 
 #include "dns-filter.h"
 #include "dns-filter-l2p.h"
@@ -31,38 +32,10 @@ __thread uint64_t nr_send;
 int nb_regex_rules = 0;
 regex_t regex_rules[MAX_RULES];
 
-struct dnshdr {
-    uint16_t id; // identification number
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	uint8_t	rd:1,
-            tc:1,
-            aa:1,
-  		    opcode:4,
-            qr:1;
-#else
-	uint8_t	qr:1,
-  		    opcode:4,
-            aa:1,
-            tc:1,
-            rd:1;
-#endif
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	uint8_t	rcode:4,
-            z:3,
-            ra:1;
-#else
-	uint8_t	ra:1,
-  		    z:3,
-            rcode:4;
-#endif
- 
-    uint16_t question; // number of question entries
-    uint16_t answer; // number of answer entries
-    uint16_t authority; // number of authority entries
-    uint16_t additional; // number of resource entries
-};
+#define ETH_HEADER_SIZE 18			/* ETH header size = 18 bytes (144 bits) */
+#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
+#define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
+#define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
 
 static int read_file(char const * path, char ** out_bytes, size_t * out_bytes_len) {
 	FILE * file;
@@ -143,44 +116,26 @@ static void parse_file_by_line(char * content, size_t content_len) {
 
 static int extract_dns_query(struct rte_mbuf *pkt) {
 	int result;
-	ns_msg handle; /* nameserver struct for DNS packet */
-	struct rte_mbuf mbuf = *pkt;
-	struct rte_sft_error error;
-	struct rte_sft_mbuf_info mbuf_info;
 	uint32_t payload_offset = 0;
-	const unsigned char *data;
+    char * p;
 
-	/* Parse mbuf, and extract the query */
-	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
-	if (result) {
-		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
-		return result;
-	}
+	p = rte_pktmbuf_mtod(pkt, char *);
 
-	/* Calculate the offset of UDP header start */
-	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
+	/* Skip UDP and DNS header to get DNS (query) start */
+    p += ETH_HEADER_SIZE;
+    p += IP_HEADER_SIZE;
+	p += UDP_HEADER_SIZE;
+	p += DNS_HEADER_SIZE;
 
-	/* Skip UDP header to get DNS (query) start */
-	payload_offset += UDP_HEADER_SIZE;
-
-	/* Get a pointer to start of packet payload */
-	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
-	if (data == NULL) {
-		printf("Error in pkt mbuf adj\n");
-		return -1;
-	}
-	
-	data += sizeof(struct dnshdr);
-
-	printf("Query: %s\n", data);
+	printf("Query: %s\n", p);
 
 	return 0;
 }
 
 static int handle_packets_received(struct rte_mbuf **packets, uint16_t packets_received) {
-	int i, ret;
+	int ret;
 
-	for (i = 0; i < nb_packets; i++) {
+	for (int i = 0; i < packets_received; i++) {
 		ret = extract_dns_query(packets[i]);
 		if (ret < 0)
 			return ret;
