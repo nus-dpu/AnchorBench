@@ -137,7 +137,9 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 		for (int j = 0; j < len; j++) {
 			*dst++ = p[i++];
 		}
-		*dst++ = '.';
+		if (i != query_len) {
+			*dst++ = '.';
+		}
 	}
 
 	printf("Query for: %s\n", name);
