@@ -130,7 +130,7 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	p += UDP_HEADER_SIZE;
 	p += DNS_HEADER_SIZE;
 
-	for(i = 0 ; i < (int)strlen(p); i++)  {
+	for(int i = 0 ; i < (int)strlen(p); i++)  {
 		if(isdigit(p[i])) {
 			len = p[i];
 			for (int j = 0; j < len; j++) {
