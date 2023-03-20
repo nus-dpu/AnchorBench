@@ -1,5 +1,5 @@
-#include "dns_filter-l2p.h"
-#include "dns_filter-utils.h"
+#include "dns-filter-l2p.h"
+#include "dns-filter-utils.h"
 
 #define countof(t)      (sizeof(t) / sizeof(t[0]))
 

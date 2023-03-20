@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "dns_filter-constants.h"
+#include "dns-filter-constants.h"
 
 struct mbuf_table {
 	uint16_t len;

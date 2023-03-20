@@ -7,10 +7,10 @@
 #include <getopt.h>
 #include <sys/time.h>
 
-#include "dns_filter.h"
-#include "dns_filter-l2p.h"
-#include "dns_filter-constants.h"
-#include "dns_filter-port-cfg.h"
+#include "dns-filter.h"
+#include "dns-filter-l2p.h"
+#include "dns-filter-constants.h"
+#include "dns-filter-port-cfg.h"
 
 #define BURST_TX_RETRIES 16
 
@@ -25,10 +25,44 @@ __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
 
-#define MAX_RULES	16
+#define MAX_RULES		16
+#define MAX_RULE_LEN	64
 
 int nb_regex_rules = 0;
-char * regex_rules[MAX_RULES];
+regex_t regex_rules[MAX_RULES];
+
+struct dnshdr {
+    uint16_t id; // identification number
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint8_t	rd:1,
+            tc:1,
+            aa:1,
+  		    opcode:4,
+            qr:1;
+#else
+	uint8_t	qr:1,
+  		    opcode:4,
+            aa:1,
+            tc:1,
+            rd:1;
+#endif
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint8_t	rcode:4,
+            z:3,
+            ra:1;
+#else
+	uint8_t	ra:1,
+  		    z:3,
+            rcode:4;
+#endif
+ 
+    uint16_t question; // number of question entries
+    uint16_t answer; // number of answer entries
+    uint16_t authority; // number of authority entries
+    uint16_t additional; // number of resource entries
+};
 
 static int read_file(char const * path, char ** out_bytes, size_t * out_bytes_len) {
 	FILE * file;
@@ -83,24 +117,75 @@ static int read_file(char const * path, char ** out_bytes, size_t * out_bytes_le
 	return 0;
 }
 
-static int parse_file_by_line(char * content, size_t content_len) {
+static void parse_file_by_line(char * content, size_t content_len) {
 	char * pos, * check;
-	while (pos < content + content_len) {
-		check = strchr(start, '\n');
-		if (!check) {
-			return;
-		}
-		regex_rules[nb_regex_rules++] = pos;
-		pos = check;
-	}
+	char rule[MAX_RULE_LEN];
+	int ret;
 
-	for (int i = 0; i < nb_regex_rules; i++) {
-		printf("Rule %d: %s\n", i, regex_rules[i]);
+	pos = content;
+	while (pos < content + content_len) {
+		check = strchr(pos, '\n');
+		snprintf(rule, check - pos, "%s", pos);
+		// regex_rules[nb_regex_rules++] = rule;
+		/* Compile RegEx engine */
+		ret = regcomp(&regex_rules[nb_regex_rules], rule, 0);
+		if (ret != 0) {
+			printf("Failed to compile regression engine\n");
+		}
+		if (!check) {
+			break;
+		} else {
+			pos = check + 1;
+			nb_regex_rules++;
+		}
 	}
 }
 
-static int handle_packets_received(struct rte_mbuf **packets, uint16_t packets_received) {
+static int extract_dns_query(struct rte_mbuf *pkt) {
+	int result;
+	ns_msg handle; /* nameserver struct for DNS packet */
+	struct rte_mbuf mbuf = *pkt;
+	struct rte_sft_error error;
+	struct rte_sft_mbuf_info mbuf_info;
+	uint32_t payload_offset = 0;
+	const unsigned char *data;
+
+	/* Parse mbuf, and extract the query */
+	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
+	if (result) {
+		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
+		return result;
+	}
+
+	/* Calculate the offset of UDP header start */
+	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
+
+	/* Skip UDP header to get DNS (query) start */
+	payload_offset += UDP_HEADER_SIZE;
+
+	/* Get a pointer to start of packet payload */
+	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
+	if (data == NULL) {
+		printf("Error in pkt mbuf adj\n");
+		return -1;
+	}
 	
+	data += sizeof(struct dnshdr);
+
+	printf("Query: %s\n", data);
+
+	return 0;
+}
+
+static int handle_packets_received(struct rte_mbuf **packets, uint16_t packets_received) {
+	int i, ret;
+
+	for (i = 0; i < nb_packets; i++) {
+		ret = extract_dns_query(packets[i]);
+		if (ret < 0)
+			return ret;
+	}
+	return 0;
 }
 
 static void pkt_burst_forward(int pid, int qid) {
@@ -108,7 +193,6 @@ static void pkt_burst_forward(int pid, int qid) {
 	uint16_t nb_rx;
 	uint16_t nb_tx;
 	uint32_t retry;
-	uint64_t start_tsc, cur_tsc;
 
 	/*
 	 * Receive a burst of packets and forward them.
@@ -190,7 +274,6 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
-    uint32_t pid;
     uint8_t idx, txcnt, rxcnt;
 	struct timeval curr;
 	float tot_recv_rate, tot_send_rate;
@@ -244,8 +327,7 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 }
 
 static int dns_filter_parse_args(int argc, char ** argv) {
-	int opt, num_cores, num_flows, ret;
-	int option_index;
+	int opt, option_index, ret;
 	char * rules_file_data;
 	size_t rules_file_size;
 	double rate;
@@ -258,7 +340,7 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 		switch (opt) {
 		case 'm':	/* Matrix for port mapping. */
 			if (pg_parse_matrix(&l2p, optarg) == -1) {
-				printf("invalid matrix string (%s)\n", coptarg);
+				printf("invalid matrix string (%s)\n", optarg);
 				// pktgen_usage(prgname);
 				return -1;
 			}
@@ -266,7 +348,7 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 
 		case 'r':	/* RegEx rultes */
 			ret = read_file(optarg, &rules_file_data, &rules_file_size);
-			if (result == -1) {
+			if (ret == -1) {
 				printf("invalid RegEx rules\n");
 			}
 			parse_file_by_line(rules_file_data, rules_file_size);
