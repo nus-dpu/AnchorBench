@@ -21,7 +21,9 @@
 
 int delay_cycles = 0;
 
+
 __thread struct timeval last_log;
+__thread int start_flag = 0;
 __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
@@ -176,6 +178,12 @@ static void pkt_burst_forward(int pid, int qid) {
 	if (unlikely(nb_rx == 0)) {
 		return;
 	}
+
+	if (!start_flag) {
+		start_flag = 1;
+		gettimeofday(&start, NULL);
+	}
+
 	nr_recv += nb_rx;
 
 	handle_packets_received(pkts_burst, nb_rx);
