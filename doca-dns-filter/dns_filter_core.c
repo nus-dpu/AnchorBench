@@ -562,6 +562,15 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 	*packets_received = index;
 }
 
+__thread int start_flag = 0;
+__thread struct timeval start;
+__thread uint64_t received = 0;
+__thread uint64_t transmitted = 0;
+
+#define MSEC_PER_SEC    1000L
+#define USEC_PER_MSEC   1000L
+#define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
+
 /*
  * The main function for handling the new received packets
  *
@@ -609,15 +618,6 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	return 0;
 }
 
-__thread int start_flag = 0;
-__thread struct timeval start;
-__thread uint64_t received = 0;
-__thread uint64_t transmitted = 0;
-
-#define MSEC_PER_SEC    1000L
-#define USEC_PER_MSEC   1000L
-#define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
-
 /*
  * Dequeue packets from DPDK queue, queue id equals to worker_ctx->queue_id, and send them for APP processing
  *
@@ -660,6 +660,7 @@ dns_filter_worker(void *args)
 	int ingress_port, nb_ports = worker_ctx->app_cfg->dpdk_cfg->port_config.nb_ports;
 	int result;
 	float tot_recv_rate, tot_send_rate;
+	struct timeval curr;
 
 	DOCA_LOG_DBG("Core %u is receiving packets.", rte_lcore_id());
 	while (!force_quit) {
