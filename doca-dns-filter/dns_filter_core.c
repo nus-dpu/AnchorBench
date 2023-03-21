@@ -659,6 +659,7 @@ dns_filter_worker(void *args)
 	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)args;
 	int ingress_port, nb_ports = worker_ctx->app_cfg->dpdk_cfg->port_config.nb_ports;
 	int result;
+	float tot_recv_rate, tot_send_rate;
 
 	DOCA_LOG_DBG("Core %u is receiving packets.", rte_lcore_id());
 	while (!force_quit) {
