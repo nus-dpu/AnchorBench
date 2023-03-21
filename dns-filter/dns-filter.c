@@ -192,7 +192,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	if (unlikely(nb_tx < nb_rx)) {
 		retry = 0;
 		while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
-			nb_tx += rte_eth_tx_burst(pid, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
+			nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
 		}
 	}
 	nr_send += nb_tx;
