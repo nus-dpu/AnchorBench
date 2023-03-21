@@ -602,11 +602,21 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	if (packets_count > 0) {
 		/* Packet sent to port 0 or 1 */
 		ingress_port = packets_to_send[0]->port ^ 1;
-		rte_eth_tx_burst(ingress_port, worker_ctx->queue_id, packets_to_send, packets_count);
+		ret = rte_eth_tx_burst(ingress_port, worker_ctx->queue_id, packets_to_send, packets_count);
+		transmitted += ret;
 	}
 
 	return 0;
 }
+
+__thread int start_flag = 0;
+__thread struct timeval start;
+__thread uint64_t received = 0;
+__thread uint64_t transmitted = 0;
+
+#define MSEC_PER_SEC    1000L
+#define USEC_PER_MSEC   1000L
+#define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
 /*
  * Dequeue packets from DPDK queue, queue id equals to worker_ctx->queue_id, and send them for APP processing
@@ -624,11 +634,16 @@ process_packets(struct dns_worker_ctx *worker_ctx, int ingress_port)
 
 	/* Handle the received packets from a queue with id = worker_ctx->queue_id */
 	if (nb_packets) {
+		if (!start_flag) {
+			start_flag = 1;
+			gettimeofday(&start, NULL);
+		}
 		printf("Core %d received %d packets from port %d queue %d", rte_lcore_id(), nb_packets, ingress_port, worker_ctx->queue_id);
 		DOCA_DLOG_DBG("Received %d packets from port 0x%x using core %u", nb_packets, ingress_port, rte_lcore_id());
 		result = handle_packets_received(worker_ctx, nb_packets, packets);
 		if (result < 0)
 			return result;
+		received += nb_packets;
 	}
 	return 0;
 }
@@ -652,6 +667,14 @@ dns_filter_worker(void *args)
 			if (result < 0) {
 				force_quit = true;
 				break;
+			}
+		}
+		gettimeofday(&curr, NULL);
+		if (start_flag) {
+			if (curr.tv_sec - start.tv_sec >= 20) {
+				tot_recv_rate = (float)received / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
+				tot_send_rate = (float)transmitted / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
+				printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", rte_lcore_id(), tot_recv_rate , tot_send_rate);
 			}
 		}
 	}
