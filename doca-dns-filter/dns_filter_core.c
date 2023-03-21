@@ -40,7 +40,7 @@
 
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
-#define PACKET_BURST 128			/* The number of packets in the rx queue */
+#define PACKET_BURST 32			/* The number of packets in the rx queue */
 #define DNS_PORT 53				/* DNS packet dst port */
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
 #define MAX_PORT_STR_LEN 128			/* Maximal length of port name */

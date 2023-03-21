@@ -26,7 +26,7 @@
 
 #include "offload_rules.h"
 
-#define RX_RING_SIZE 1024       /* RX ring size */
+#define RX_RING_SIZE 512       /* RX ring size */
 #define TX_RING_SIZE 1024       /* TX ring size */
 #define NUM_MBUFS (8 * 1024)    /* Number of mbufs to be allocated in the mempool */
 #define MBUF_CACHE_SIZE 250     /* mempool cache size */
