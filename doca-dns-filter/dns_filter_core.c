@@ -563,6 +563,7 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 }
 
 __thread int start_flag = 0;
+__thread int done_flag = 0;
 __thread struct timeval start;
 __thread uint64_t received = 0;
 __thread uint64_t transmitted = 0;
@@ -671,11 +672,12 @@ dns_filter_worker(void *args)
 			}
 		}
 		gettimeofday(&curr, NULL);
-		if (start_flag) {
+		if (start_flag && !done_flag) {
 			if (curr.tv_sec - start.tv_sec >= 20) {
 				tot_recv_rate = (float)received / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 				tot_send_rate = (float)transmitted / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 				printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", rte_lcore_id(), tot_recv_rate , tot_send_rate);
+				done_flag = 1;
 			}
 		}
 	}
