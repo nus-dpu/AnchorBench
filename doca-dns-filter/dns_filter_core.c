@@ -14,6 +14,7 @@
 #include <bsd/string.h>
 #include <getopt.h>
 #include <netinet/in.h>
+#include <netinet/udp.h>
 #include <resolv.h>
 #include <signal.h>
 #include <time.h>
