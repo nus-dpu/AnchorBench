@@ -471,6 +471,9 @@ doca_buf_cleanup:
 	return ret;
 }
 
+#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
+#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
+
 /*
  * This function filters the received packets according to RegEx results to send them back to their destination
  *
@@ -485,15 +488,22 @@ static int
 filter_listing_packets(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets,
 	char **valid_queries, struct rte_mbuf **packets_to_send)
 {
-	char *query;
+	char *query, *p;
 	bool to_restrict;
 	int packets_count = 0;
 	uint32_t current_packet;
 	struct rte_mbuf *packet;
 	int result;
+	struct udphdr * udp;
 
 	for (current_packet = 0; current_packet < packets_received; current_packet++) {
 		packet = packets[current_packet];
+		p = rte_pktmbuf_mtod(packet, char *);
+		/* Skip UDP and DNS header to get DNS (query) start */
+		p += ETH_HEADER_SIZE;
+		p += IP_HEADER_SIZE;
+		udp = (struct udphdr *)p;
+		printf("UDP src: %u, UDP dst: %u\n", ntohs(u->source), ntohs(u->dest));
 		query = (char *)worker_ctx->queries[current_packet];
 		switch (worker_ctx->app_cfg->listing_type) {
 		case DNS_ALLOW_LISTING:
@@ -1256,13 +1266,14 @@ dns_filter_init(struct dns_filter_config *app_cfg)
 			result = DOCA_ERROR_INITIALIZATION;
 			goto doca_flow_cleanup;
 		}
-
+#if 0
 		/* DNS drop pipe */
 		app_cfg->drop_pipes[portid] = build_drop_pipe(ports[portid], dns_pipe);
 		if (app_cfg->drop_pipes[portid] == NULL) {
 			result = DOCA_ERROR_INITIALIZATION;
 			goto doca_flow_cleanup;
 		}
+#endif
 	}
 	/* DOCA RegEx initialization */
 	result = regex_init(app_cfg);
