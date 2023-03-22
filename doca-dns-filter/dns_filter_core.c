@@ -886,6 +886,10 @@ hairpin_non_dns_packets(struct doca_flow_port *port, uint16_t port_id)
 	non_dns_fw.type = DOCA_FLOW_FWD_PORT;
 	non_dns_fw.port_id = port_id ^ 1;
 
+	non_dns_match.out_dst_ip.type = DOCA_FLOW_IP4_ADDR;
+	non_dns_match.out_l4_type = IPPROTO_UDP;
+	non_dns_match.out_dst_port = rte_cpu_to_be_16(1234);
+
 	non_dns_pipe = doca_flow_pipe_create(&non_dns_pipe_cfg, &non_dns_fw, NULL, &err);
 	if (non_dns_pipe == NULL) {
 		DOCA_LOG_ERR("failed to create non-DNS pipe: %s", err.message);
