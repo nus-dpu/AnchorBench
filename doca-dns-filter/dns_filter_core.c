@@ -495,16 +495,9 @@ filter_listing_packets(struct dns_worker_ctx *worker_ctx, uint16_t packets_recei
 	uint32_t current_packet;
 	struct rte_mbuf *packet;
 	int result;
-	struct udphdr * u;
 
 	for (current_packet = 0; current_packet < packets_received; current_packet++) {
 		packet = packets[current_packet];
-		p = rte_pktmbuf_mtod(packet, char *);
-		/* Skip UDP and DNS header to get DNS (query) start */
-		p += ETH_HEADER_SIZE;
-		p += IP_HEADER_SIZE;
-		u = (struct udphdr *)p;
-		printf("UDP src: %u, UDP dst: %u\n", ntohs(u->source), ntohs(u->dest));
 		query = (char *)worker_ctx->queries[current_packet];
 		switch (worker_ctx->app_cfg->listing_type) {
 		case DNS_ALLOW_LISTING:
@@ -599,6 +592,19 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	uint32_t current_packet;
 	struct rte_mbuf *packets_to_send[PACKET_BURST] = {0};
 	char *valid_queries[PACKET_BURST] = {0};
+
+	struct rte_mbuf *packet;
+	struct udphdr * u;
+
+	for (int i = 0; i < packets_received; i++) {
+		packet = packets[i];
+		p = rte_pktmbuf_mtod(packet, char *);
+		/* Skip UDP and DNS header to get DNS (query) start */
+		p += ETH_HEADER_SIZE;
+		p += IP_HEADER_SIZE;
+		u = (struct udphdr *)p;
+		printf("UDP src: %u, UDP dst: %u\n", ntohs(u->source), ntohs(u->dest));
+	}
 
 	/* Check packets marking */
 	check_packets_marking(packets, &packets_received);
