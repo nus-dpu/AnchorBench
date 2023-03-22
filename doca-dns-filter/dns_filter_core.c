@@ -489,7 +489,7 @@ static int
 filter_listing_packets(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets,
 	char **valid_queries, struct rte_mbuf **packets_to_send)
 {
-	char *query, *p;
+	char *query;
 	bool to_restrict;
 	int packets_count = 0;
 	uint32_t current_packet;
@@ -592,6 +592,7 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	uint32_t current_packet;
 	struct rte_mbuf *packets_to_send[PACKET_BURST] = {0};
 	char *valid_queries[PACKET_BURST] = {0};
+	char *p;
 
 	struct rte_mbuf *packet;
 	struct udphdr * u;
