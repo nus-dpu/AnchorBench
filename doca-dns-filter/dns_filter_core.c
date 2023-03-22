@@ -877,6 +877,7 @@ hairpin_non_dns_packets(struct doca_flow_port *port, uint16_t port_id)
 	non_dns_pipe_cfg.attr.name = "HAIRPIN_NON_DNS_PIPE";
 	non_dns_pipe_cfg.attr.type = DOCA_FLOW_PIPE_BASIC;
 	non_dns_pipe_cfg.match = &non_dns_match;
+	non_dns_pipe_cfg.attr.is_root = true;
 
 	/* Configure the port id "owner" of pipe */
 	non_dns_pipe_cfg.port = port;
@@ -1267,7 +1268,7 @@ dns_filter_init(struct dns_filter_config *app_cfg)
 			result = DOCA_ERROR_INITIALIZATION;
 			goto doca_flow_cleanup;
 		}
-
+#if 0
 		/* DNS flow pipe */
 		dns_pipe = build_dns_pipe(app_cfg, ports[portid], hairpin_pipe);
 		if (dns_pipe == NULL) {
@@ -1281,6 +1282,7 @@ dns_filter_init(struct dns_filter_config *app_cfg)
 			result = DOCA_ERROR_INITIALIZATION;
 			goto doca_flow_cleanup;
 		}
+#endif
 	}
 	/* DOCA RegEx initialization */
 	result = regex_init(app_cfg);
