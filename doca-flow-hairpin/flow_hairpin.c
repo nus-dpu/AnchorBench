@@ -112,12 +112,6 @@ main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	doca_argp_set_dpdk_program(dpdk_init);
-	result = register_ar_params();
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_get_error_string(result));
-		doca_argp_destroy();
-		return EXIT_FAILURE;
-	}
 	result = doca_argp_start(argc, argv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to parse application input: %s", doca_get_error_string(result));
