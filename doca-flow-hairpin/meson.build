@@ -32,7 +32,7 @@ sources = files([
 	common_src_path + '/offload_rules.c',
 	common_src_path + '/utils.c',
 	common_src_path + '/flow_parser.c',
-	common_path + '/common.c',
+	common_path + '/flow_common.c',
 ])
 
 # With enabling GPU support, languages variable will contain CUDA language
