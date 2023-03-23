@@ -122,6 +122,8 @@ main(int argc, char **argv)
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to update application ports and queues: %s", doca_get_error_string(result));
 		exit_status = EXIT_FAILURE;
-		goto dpdk_destroy;
+		return EXIT_FAILURE;
 	}
+
+	return 0;
 }
