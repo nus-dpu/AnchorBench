@@ -41,7 +41,12 @@ main(int argc, char **argv)
 		.port_config.nb_ports = 2,
 		.port_config.nb_queues = 1,
 		.port_config.nb_hairpin_q = 2,
-		.sft_config = {0},
+		.sft_config = {
+			.enable = 1, /* Enable SFT */
+			.enable_ct = 0,
+			.enable_state_hairpin = 1,
+			.enable_state_drop = 0,
+		},
 	};
 
 	result = doca_argp_init("flow_hairpin", NULL);
