@@ -264,6 +264,8 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	struct rte_sft_mbuf_info mbuf_info;
 	uint32_t payload_offset = 0;
 	const unsigned char *data;
+	char *p;
+	struct udphdr * u;
 
 	/* Parse mbuf, and extract the query */
 	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
@@ -277,6 +279,18 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 
 	/* Skip UDP header to get DNS (query) start */
 	payload_offset += UDP_HEADER_SIZE;
+
+	p = rte_pktmbuf_mtod(pkt, char *);
+	/* Skip UDP and DNS header to get DNS (query) start */
+	p += ETH_HEADER_SIZE;
+	p += IP_HEADER_SIZE;
+	u = (struct udphdr *)p;
+
+	if (ntohs(u->dest) != DNS_PORT) {
+		return 0;
+	}
+
+	printf("UDP src: %u, UDP dst: %u\n", ntohs(u->source), ntohs(u->dest));
 
 	/* Get a pointer to start of packet payload */
 	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
@@ -592,11 +606,11 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	uint32_t current_packet;
 	struct rte_mbuf *packets_to_send[PACKET_BURST] = {0};
 	char *valid_queries[PACKET_BURST] = {0};
+#if 0
 	char *p;
 
 	struct rte_mbuf *packet;
 	struct udphdr * u;
-
 	for (int i = 0; i < packets_received; i++) {
 		packet = packets[i];
 		p = rte_pktmbuf_mtod(packet, char *);
@@ -611,7 +625,7 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	check_packets_marking(packets, &packets_received);
 	if (packets_received == 0)
 		return packets_received;
-
+#endif
 	/* Start RegEx jobs */
 	ret = regex_processing(worker_ctx, packets_received, packets);
 	if (ret < 0)
