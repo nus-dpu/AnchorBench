@@ -125,5 +125,18 @@ main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	return 0;
+	/* run sample */
+	ret = flow_hairpin(dpdk_config.port_config.nb_queues);
+	if (ret < 0) {
+		DOCA_LOG_ERR("flow_hairpin sample encountered errors");
+		exit_status = EXIT_FAILURE;
+	}
+
+	/* cleanup resources */
+	dpdk_queues_and_ports_fini(&dpdk_config);
+	dpdk_fini();
+
+	/* ARGP cleanup */
+	doca_argp_destroy();
+	return exit_status;
 }
