@@ -1225,6 +1225,7 @@ destroy_buf_inventory:
 doca_error_t
 dns_filter_init(struct dns_filter_config *app_cfg)
 {
+#if 0
 	uint16_t portid, nb_ports;
 	struct doca_flow_error err = {0};
 	struct doca_flow_cfg dns_flow_cfg = {0};
@@ -1268,7 +1269,7 @@ dns_filter_init(struct dns_filter_config *app_cfg)
 			result = DOCA_ERROR_INITIALIZATION;
 			goto doca_flow_cleanup;
 		}
-#if 0
+
 		/* DNS flow pipe */
 		dns_pipe = build_dns_pipe(app_cfg, ports[portid], hairpin_pipe);
 		if (dns_pipe == NULL) {
@@ -1282,7 +1283,7 @@ dns_filter_init(struct dns_filter_config *app_cfg)
 			result = DOCA_ERROR_INITIALIZATION;
 			goto doca_flow_cleanup;
 		}
-#endif
+
 	}
 	/* DOCA RegEx initialization */
 	result = regex_init(app_cfg);
@@ -1298,6 +1299,17 @@ doca_flow_cleanup:
 	if (app_cfg->drop_pipes != NULL)
 		free(app_cfg->drop_pipes);
 
+	return result;
+#endif
+	doca_error_t result;
+	/* DOCA RegEx initialization */
+	result = regex_init(app_cfg);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_INFO("Failed to init DOCA RegEx");
+		return result;
+	}
+
+	DOCA_LOG_DBG("Application configuration and rules offload done");
 	return result;
 }
 
