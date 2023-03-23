@@ -104,7 +104,6 @@ main(int argc, char **argv)
 		},
 		.reserve_main_thread = true,
 	};
-	struct ar_config ar_config = {.dpdk_config = &dpdk_config};
 
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("application_recognition", NULL);
