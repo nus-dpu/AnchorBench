@@ -90,8 +90,6 @@ main(int argc, char **argv)
 	int ret;
 	doca_error_t result;
 	int exit_status = EXIT_SUCCESS;
-	pthread_t cmdline_thread;
-	struct dpi_worker_attr dpi_worker = {0};
 	struct application_dpdk_config dpdk_config = {
 		.port_config.nb_ports = 2,
 		.port_config.nb_queues = 2,
