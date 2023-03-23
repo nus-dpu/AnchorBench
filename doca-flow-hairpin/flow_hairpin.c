@@ -34,20 +34,14 @@ int flow_hairpin(int nb_queues);
 int
 main(int argc, char **argv)
 {
-#if 0
 	doca_error_t result;
 	int ret;
 	int exit_status = EXIT_SUCCESS;
 	struct application_dpdk_config dpdk_config = {
 		.port_config.nb_ports = 2,
 		.port_config.nb_queues = 1,
-		.port_config.nb_hairpin_q = 2,
-		.sft_config = {
-			.enable = 1, /* Enable SFT */
-			.enable_ct = 0,
-			.enable_state_hairpin = 1,
-			.enable_state_drop = 0,
-		},
+		.port_config.nb_hairpin_q = 64,
+		.sft_config = {0},
 	};
 
 	result = doca_argp_init("flow_hairpin", NULL);
@@ -69,59 +63,6 @@ main(int argc, char **argv)
 		DOCA_LOG_ERR("Failed to update ports and queues");
 		dpdk_fini(&dpdk_config);
 		doca_argp_destroy();
-		return EXIT_FAILURE;
-	}
-
-	/* run sample */
-	ret = flow_hairpin(dpdk_config.port_config.nb_queues);
-	if (ret < 0) {
-		DOCA_LOG_ERR("flow_hairpin sample encountered errors");
-		exit_status = EXIT_FAILURE;
-	}
-
-	/* cleanup resources */
-	dpdk_queues_and_ports_fini(&dpdk_config);
-	dpdk_fini();
-
-	/* ARGP cleanup */
-	doca_argp_destroy();
-	return exit_status;
-#endif
-	int ret;
-	doca_error_t result;
-	int exit_status = EXIT_SUCCESS;
-	struct application_dpdk_config dpdk_config = {
-		.port_config.nb_ports = 2,
-		.port_config.nb_queues = 2,
-		.port_config.nb_hairpin_q = 4,
-		.sft_config = {
-			.enable = 1, /* Enable SFT */
-			.enable_ct = 1,
-			.enable_state_hairpin = 1,
-			.enable_state_drop = 1,
-		},
-		.reserve_main_thread = true,
-	};
-
-	/* Parse cmdline/json arguments */
-	result = doca_argp_init("application_recognition", NULL);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_get_error_string(result));
-		return EXIT_FAILURE;
-	}
-	doca_argp_set_dpdk_program(dpdk_init);
-	result = doca_argp_start(argc, argv);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to parse application input: %s", doca_get_error_string(result));
-		doca_argp_destroy();
-		return EXIT_FAILURE;
-	}
-
-	/* update queues and ports */
-	result = dpdk_queues_and_ports_init(&dpdk_config);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to update application ports and queues: %s", doca_get_error_string(result));
-		exit_status = EXIT_FAILURE;
 		return EXIT_FAILURE;
 	}
 
