@@ -43,7 +43,6 @@ int main(int argc, char **argv) {
         */
         memset(&attr, 0, sizeof(struct rte_flow_attr));
         attr.ingress = 1;
-        attr.priority = fl->prior;
 
         /*
         * create the action sequence.
