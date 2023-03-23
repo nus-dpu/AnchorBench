@@ -34,7 +34,7 @@ main(int argc, char **argv)
 	struct dns_filter_config app_cfg = {0};
 	struct application_dpdk_config dpdk_config = {
 		.port_config.nb_ports = 2,
-		.port_config.nb_queues = 2,
+		.port_config.nb_queues = 7,
 		.port_config.nb_hairpin_q = 4,
 		.reserve_main_thread = true,
 	};
