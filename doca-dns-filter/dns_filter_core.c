@@ -293,8 +293,6 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 		return 0;
 	}
 
-	printf("UDP src: %u, UDP dst: %u\n", ntohs(u->source), ntohs(u->dest));
-
 	/* Get a pointer to start of packet payload */
 	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
 	if (data == NULL) {
