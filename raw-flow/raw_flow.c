@@ -4,6 +4,9 @@
 #include <rte_ethdev.h>
 #include <rte_mempool.h>
 
+#define MAX_PATTERN_NUM		4
+#define MAX_ACTION_NUM		2
+
 int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
