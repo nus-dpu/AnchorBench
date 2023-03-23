@@ -55,13 +55,13 @@ create_hairpin_pipe(struct doca_flow_port *port, int port_id, struct doca_flow_p
 	pipe_cfg.port = port;
 
 	/* 5 tuple match */
-	match.out_l4_type = DOCA_PROTO_TCP;
-	match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
-	match.out_src_ip.ipv4_addr = 0xffffffff;
-	match.out_dst_ip.type = DOCA_FLOW_IP4_ADDR;
-	match.out_dst_ip.ipv4_addr = 0xffffffff;
-	match.out_src_port = 0xffff;
-	match.out_dst_port = 0xffff;
+	// match.out_l4_type = DOCA_PROTO_TCP;
+	// match.out_src_ip.type = DOCA_FLOW_IP4_ADDR;
+	// match.out_src_ip.ipv4_addr = 0xffffffff;
+	// match.out_dst_ip.type = DOCA_FLOW_IP4_ADDR;
+	// match.out_dst_ip.ipv4_addr = 0xffffffff;
+	// match.out_src_port = 0xffff;
+	// match.out_dst_port = 0xffff;
 
 	/* forwarding traffic to other port */
 	fwd.type = DOCA_FLOW_FWD_PORT;
@@ -90,15 +90,8 @@ add_hairpin_pipe_entry(struct doca_flow_pipe *pipe, struct doca_flow_port *port,
 	int result;
 	int num_of_entries = 1;
 
-	/* example 5-tuple to forward */
-	doca_be32_t dst_ip_addr = BE_IPV4_ADDR(10, 0, 0, 1);
-	doca_be32_t src_ip_addr = BE_IPV4_ADDR(10, 0, 0, 3);
-
 	memset(&match, 0, sizeof(match));
 	memset(&actions, 0, sizeof(actions));
-
-	match.out_dst_ip.ipv4_addr = dst_ip_addr;
-	match.out_src_ip.ipv4_addr = src_ip_addr;
 
 	entry = doca_flow_pipe_add_entry(0, pipe, &match, &actions, NULL, NULL, 0, NULL, error);
 	result = doca_flow_entries_process(port, 0, DEFAULT_TIMEOUT_US, num_of_entries);
