@@ -107,7 +107,7 @@ main(int argc, char **argv)
 	struct ar_config ar_config = {.dpdk_config = &dpdk_config};
 
 	/* Parse cmdline/json arguments */
-	result = doca_argp_init("application_recognition", &ar_config);
+	result = doca_argp_init("application_recognition", NULL);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_get_error_string(result));
 		return EXIT_FAILURE;
