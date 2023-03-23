@@ -51,6 +51,9 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 #define SLEEP_IN_NANOS (10 * 1000)		/* Sample the job every 10 microseconds  */
 #define DEFAULT_TIMEOUT_US (10000)		/* Timeout for processing pipe entries */
 
+#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
+#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
+
 static bool force_quit;					/* Shared variable to communicate between DPDK threads */
 struct doca_flow_port *ports[DNS_PORTS_NUM];		/* Holds DOCA flow ports instances */
 
@@ -485,9 +488,6 @@ doca_buf_cleanup:
 	doca_mmap_destroy(mmap);
 	return ret;
 }
-
-#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
-#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
 
 /*
  * This function filters the received packets according to RegEx results to send them back to their destination
