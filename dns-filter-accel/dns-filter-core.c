@@ -107,7 +107,6 @@ extract_dns_query(struct rte_mbuf *pkt, char *query)
 	/* Get DNS query start from handle field */
 	// *query = (char *)handle._sections[ns_s_qd];
 	memcpy(query, (char *)handle._sections[ns_s_qd], strlen((char *)handle._sections[ns_s_qd]));
-	printf("query: %s\n", query);
 
 	return 0;
 }
@@ -149,6 +148,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	doca_error_t result;
 	int ret = 0;
 
+	for (int i = 0; i < PACKET_BURST; i++) {
+		printf("queries[%d]: %p\n", i, worker_ctx->queries[i]);
+		memset(worker_ctx->queries[i], 0, MAX_DNS_QUERY_LEN);
+	}
+
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
 	if (ret < 0)
@@ -160,6 +164,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		for (; tx_count != packets_received;) {
 			struct doca_buf *buf;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
+			printf("begin: %p\n", data_begin);
 			size_t data_len = strlen(worker_ctx->queries[tx_count]);
 			void *mbuf_data;
 
