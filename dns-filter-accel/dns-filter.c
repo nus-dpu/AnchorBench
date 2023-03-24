@@ -395,14 +395,14 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			goto worker_cleanup;
 		}
 
-		for (int i = 0; i < PACKET_BURST; i++) {
-			/* register packet in mmap */
-			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->test_queries + i * 256, 256, sysconf(_SC_PAGESIZE), NULL, NULL);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-				goto queries_cleanup;
-			}
+		/* register packet in mmap */
+		result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->test_queries, PACKET_BURST * 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+			goto queries_cleanup;
+		}
 
+		for (int i = 0; i < PACKET_BURST; i++) {
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->test_queries + i * 256, 256, &worker_ctx->buf[i]);
 			if (result != DOCA_SUCCESS) {
