@@ -105,7 +105,8 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	}
 
 	/* Get DNS query start from handle field */
-	*query = (char *)handle._sections[ns_s_qd];
+	// *query = (char *)handle._sections[ns_s_qd];
+	memcpy(query, (char *)handle._sections[ns_s_qd], strlen((char *)handle._sections[ns_s_qd]));
 
 	return 0;
 }
@@ -161,17 +162,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			size_t data_len = strlen(worker_ctx->queries[tx_count]);
 			void *mbuf_data;
 
-			/* register packet in mmap */
-			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-				ret = -1;
-				goto doca_buf_cleanup;
-			}
-
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len,
-								&buf);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
 						doca_get_error_string(result));
