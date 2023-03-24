@@ -387,6 +387,33 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			return -1;
 		}
 
+		/* Create array of pointers (char*) to hold the queries */
+		worker_ctx->test_queries = rte_zmalloc(NULL, PACKET_BURST * 256, 0);
+		if (worker_ctx->test_queries == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+			result = DOCA_ERROR_NO_MEMORY;
+			goto worker_cleanup;
+		}
+
+		for (int i = 0; i < PACKET_BURST; i++) {
+			/* register packet in mmap */
+			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->test_queries + i * 256, 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+				ret = -1;
+				goto doca_buf_cleanup;
+			}
+
+			/* build doca_buf */
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->test_queries + i * 256, 256, &worker_ctx->buf[i]);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
+						doca_get_error_string(result));
+				ret = -1;
+				goto doca_buf_cleanup;
+			}
+		}
+
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");

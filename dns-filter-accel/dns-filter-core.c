@@ -196,6 +196,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				return -1;
 			}
 #endif
+#if 0
 			/* register packet in mmap */
 			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
@@ -215,6 +216,10 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
+#endif
+			buf = worker_ctx->buf[i];
+			// doca_buf_get_data(buf, &mbuf_data);
+			// doca_buf_set_data(buf, mbuf_data, data_len);
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
