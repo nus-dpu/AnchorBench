@@ -11,6 +11,7 @@
 #include <doca_log.h>
 
 #include "common.h"
+#include "utils.h"
 #include "dns-filter.h"
 #include "dns-filter-core.h"
 #include "dns-filter-l2p.h"
