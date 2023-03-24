@@ -45,6 +45,7 @@ sources = files(
 
 executable(project_name,
         sources,
+	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
         install: false)
