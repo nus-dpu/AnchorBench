@@ -9,9 +9,12 @@
 #include <regex.h>
 
 #include "dns-filter.h"
+#include "dns-filter-core.h"
 #include "dns-filter-l2p.h"
 #include "dns-filter-constants.h"
 #include "dns-filter-port-cfg.h"
+
+DOCA_LOG_REGISTER(DNS_FILTER);
 
 #define BURST_TX_RETRIES 16
 
@@ -20,7 +23,6 @@
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
 int delay_cycles = 0;
-
 
 __thread struct timeval last_log;
 __thread int start_flag = 0;
@@ -222,18 +224,7 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	return 0;
 }
 
-static int handle_packets_received(struct rte_mbuf **packets, uint16_t packets_received) {
-	int ret;
-
-	for (int i = 0; i < packets_received; i++) {
-		ret = extract_dns_query(packets[i]);
-		if (ret < 0)
-			return ret;
-	}
-	return 0;
-}
-
-static void pkt_burst_forward(int pid, int qid) {
+static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx;
 	uint16_t nb_tx;
@@ -254,7 +245,7 @@ static void pkt_burst_forward(int pid, int qid) {
 
 	nr_recv += nb_rx;
 
-	handle_packets_received(pkts_burst, nb_rx);
+	handle_packets_received(worker_ctx, pkts_burst, nb_rx);
 
 	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
 	if (unlikely(nb_tx < nb_rx)) {
@@ -321,7 +312,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
     printf("%s\n", buf);
 }
 
-int dns_filter_launch_one_lcore(void *arg __rte_unused) {
+int dns_filter_worker(void *arg) {
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
@@ -334,6 +325,7 @@ int dns_filter_launch_one_lcore(void *arg __rte_unused) {
 	int ret;
 	char * rules_file_data;
 	size_t rules_file_size;
+	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)args;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
@@ -428,9 +420,98 @@ static int dns_filter_parse_args(int argc, char ** argv) {
     return 0;
 }
 
+doca_error_t
+dns_worker_lcores_run(struct dns_filter_config *app_cfg)
+{
+	uint16_t lcore_index = 0;
+	int current_lcore = 0, nb_queues = app_cfg->dpdk_cfg->port_config.nb_queues;
+	struct dns_worker_ctx *worker_ctx = NULL;
+	doca_error_t result;
+
+	DOCA_LOG_INFO("%d cores are used as workers", nb_queues);
+
+	/* Init DNS workers to start processing packets */
+	while ((current_lcore < RTE_MAX_LCORE) && (lcore_index < nb_queues)) {
+		current_lcore = rte_get_next_lcore(current_lcore, true, false);
+
+		/* Create worker context */
+		worker_ctx = (struct dns_worker_ctx *)rte_zmalloc(NULL, sizeof(struct dns_worker_ctx), 0);
+		if (worker_ctx == NULL) {
+			DOCA_LOG_ERR("RTE malloc failed");
+			force_quit = true;
+			return DOCA_ERROR_NO_MEMORY;
+		}
+		worker_ctx->app_cfg = app_cfg;
+		worker_ctx->queue_id = lcore_index;
+
+		/* initialise doca_buf_inventory */
+		result = doca_buf_inventory_create(NULL, MAX_REGEX_RESPONSE_SIZE, DOCA_BUF_EXTENSION_NONE, &worker_ctx->buf_inventory);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to allocate buffer inventory: %s", doca_get_error_string(result));
+			rte_free(worker_ctx);
+			force_quit = true;
+			return result;
+		}
+		result = doca_buf_inventory_start(worker_ctx->buf_inventory);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to start buffer inventory: %s", doca_get_error_string(result));
+			doca_buf_inventory_destroy(worker_ctx->buf_inventory);
+			rte_free(worker_ctx);
+			force_quit = true;
+			return result;
+		}
+
+		/* initialise doca_buf_inventory */
+		result = doca_workq_create(PACKET_BURST, &worker_ctx->workq);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to create work queue: %s", doca_get_error_string(result));
+			goto destroy_buf_inventory;
+		}
+		result = doca_ctx_workq_add(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to attach workq to regex: %s", doca_get_error_string(result));
+			goto destroy_workq;
+		}
+
+		/* Create array of pointers (char*) to hold the queries */
+		worker_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
+		if (worker_ctx->queries == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+			result = DOCA_ERROR_NO_MEMORY;
+			goto worker_cleanup;
+		}
+
+		/* Launch the worker to start process packets */
+		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, current_lcore) != 0) {
+			DOCA_LOG_ERR("Remote launch failed");
+			result = DOCA_ERROR_DRIVER;
+			goto queries_cleanup;
+		}
+
+		worker_ctx++;
+		lcore_index++;
+	}
+	return DOCA_SUCCESS;
+
+queries_cleanup:
+	rte_free(worker_ctx->queries);
+worker_cleanup:
+	doca_ctx_workq_rm(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
+destroy_workq:
+	doca_workq_destroy(worker_ctx->workq);
+destroy_buf_inventory:
+	doca_buf_inventory_stop(worker_ctx->buf_inventory);
+	doca_buf_inventory_destroy(worker_ctx->buf_inventory);
+	rte_free(worker_ctx);
+	force_quit = true;
+	return result;
+}
+
 int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
+	doca_error_t result;
+	struct dns_filter_config app_cfg = {0};
 
 	/* initialize EAL */
 	ret = rte_eal_init(argc, argv);
@@ -443,13 +524,19 @@ int main(int argc, char **argv) {
 
 	ret = dns_filter_parse_args(argc, argv);
 
+	/* Init ARGP interface and start parsing cmdline/json arguments */
+	result = doca_argp_init("dns_filter", &app_cfg);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_get_error_string(result));
+		return EXIT_FAILURE;
+	}
+
 	printf(">>> Packet Burst %d, RX Desc %d, TX Desc %d, mbufs/port %d, mbuf cache %d\n",
 			DEFAULT_PKT_BURST, DEFAULT_RX_DESC, DEFAULT_TX_DESC, MAX_MBUFS_PER_PORT, MBUF_CACHE_SIZE);
 
 	/* Configure and initialize the ports */
 	dns_filter_config_ports();
 
-	doca_error_t result;
 	/* DOCA RegEx initialization */
 	result = regex_init(app_cfg);
 	if (result != DOCA_SUCCESS) {
@@ -457,11 +544,7 @@ int main(int argc, char **argv) {
 		return result;
 	}
 
-	/* launch per-lcore init on every lcore except initial and initial + 1 lcores */
-	ret = rte_eal_mp_remote_launch(dns_filter_launch_one_lcore, NULL, SKIP_MAIN);
-	if (ret != 0) {
-		printf("Failed to start lcore %d, return %d\n", i, ret);
-	}
+	result = dns_worker_lcores_run(&app_cfg);
 
 	rte_delay_ms(250);	/* Wait for the lcores to start up. */
 
