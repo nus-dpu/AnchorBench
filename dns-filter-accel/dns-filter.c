@@ -428,6 +428,126 @@ destroy_buf_inventory:
 	return result;
 }
 
+
+/*
+ * ARGP Callback - Handle RegEx rules parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+rules_callback(void *param, void *config)
+{
+	struct dns_filter_config *dns_cfg = (struct dns_filter_config *)config;
+	const char *rules_path = (char *)param;
+
+	if (strnlen(rules_path, MAX_FILE_NAME) == MAX_FILE_NAME) {
+		DOCA_LOG_ERR("Denylist rules file name too long max %d", MAX_FILE_NAME - 1);
+		return DOCA_ERROR_INVALID_VALUE;
+	}
+	strlcpy(dns_cfg->rules_file_path, rules_path, MAX_FILE_NAME);
+	return DOCA_SUCCESS;
+}
+
+
+/*
+ * ARGP Callback - Handle RegEx PCI address parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+pci_address_callback(void *param, void *config)
+{
+	struct dns_filter_config *dns_cfg = (struct dns_filter_config *)config;
+	const char *pci_address = (char *)param;
+
+	if (parse_pci_addr(pci_address, &dns_cfg->pci_address) != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Invalid PCI address: \"%s\"", pci_address);
+		return DOCA_ERROR_INVALID_VALUE;
+	}
+	return DOCA_SUCCESS;
+}
+
+/*
+ * Register the command line parameters for the application
+ *
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+doca_error_t
+register_dns_filter_params(void)
+{
+	doca_error_t result;
+	struct doca_argp_param *type_param, *rules_param, *pci_address_param;
+
+	/* Create and register listing type param */
+	result = doca_argp_param_create(&type_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(type_param, "t");
+	doca_argp_param_set_long_name(type_param, "type");
+	doca_argp_param_set_description(type_param, "Set DNS listing type {allow, deny}");
+	doca_argp_param_set_callback(type_param, type_callback);
+	doca_argp_param_set_type(type_param, DOCA_ARGP_TYPE_STRING);
+	doca_argp_param_set_mandatory(type_param);
+	result = doca_argp_register_param(type_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and register rules param */
+	result = doca_argp_param_create(&rules_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(rules_param, "r");
+	doca_argp_param_set_long_name(rules_param, "rules");
+	doca_argp_param_set_arguments(rules_param, "<path>");
+	doca_argp_param_set_description(rules_param, "Path to rules file (rof2.binary)");
+	doca_argp_param_set_callback(rules_param, rules_callback);
+	doca_argp_param_set_type(rules_param, DOCA_ARGP_TYPE_STRING);
+	doca_argp_param_set_mandatory(rules_param);
+	result = doca_argp_register_param(rules_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and register RegEx pci address param */
+	result = doca_argp_param_create(&pci_address_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(pci_address_param, "p");
+	doca_argp_param_set_long_name(pci_address_param, "pci-addr");
+	doca_argp_param_set_arguments(pci_address_param, "<address>");
+	doca_argp_param_set_description(pci_address_param, "Set PCI address of the RXP engine to use");
+	doca_argp_param_set_callback(pci_address_param, pci_address_callback);
+	doca_argp_param_set_type(pci_address_param, DOCA_ARGP_TYPE_STRING);
+	doca_argp_param_set_mandatory(pci_address_param);
+	result = doca_argp_register_param(pci_address_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Register version callback for DOCA SDK & RUNTIME */
+	result = doca_argp_register_version_callback(sdk_version_callback);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register version callback: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	return result;
+}
+
 int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
@@ -463,6 +583,13 @@ int main(int argc, char **argv) {
 
 	/* Configure and initialize the ports */
 	dns_filter_config_ports();
+
+	result = register_dns_filter_params();
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register application params: %s", doca_get_error_string(result));
+		doca_argp_destroy();
+		return EXIT_FAILURE;
+	}
 
 	result = doca_argp_start(argc, argv);
 	if (result != DOCA_SUCCESS) {
