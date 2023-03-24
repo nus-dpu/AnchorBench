@@ -36,6 +36,7 @@ static void
 check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 {
 	char * p;
+	struct udphdr * u;
 	struct rte_mbuf *packet;
 	uint32_t current_packet, index = 0;
 
@@ -79,8 +80,6 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	struct rte_sft_mbuf_info mbuf_info;
 	uint32_t payload_offset = 0;
 	const unsigned char *data;
-	char *p;
-	struct udphdr * u;
 
 	/* Parse mbuf, and extract the query */
 	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
