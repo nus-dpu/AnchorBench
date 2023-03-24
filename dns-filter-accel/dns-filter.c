@@ -164,44 +164,6 @@ regex_cleanup:
 	return result;
 }
 
-static int extract_dns_query(struct rte_mbuf *pkt) {
-	int result, len, query_len;
-	uint32_t payload_offset = 0;
-    char * p, * parse, * dst;
-	char name[32];
-
-	dst = name;
-
-	p = rte_pktmbuf_mtod(pkt, char *);
-
-	/* Skip UDP and DNS header to get DNS (query) start */
-    p += ETH_HEADER_SIZE;
-    p += IP_HEADER_SIZE;
-	p += UDP_HEADER_SIZE;
-	p += DNS_HEADER_SIZE;
-
-	query_len = (int)strlen(p);
-
-	for(int i = 0 ; i < query_len;)  {
-		len = p[i++];
-		for (int j = 0; j < len; j++) {
-			*dst++ = p[i++];
-		}
-		if (i != query_len) {
-			*dst++ = '.';
-		}
-	}
-
-	for (int i = 0; i < nb_regex_rules; i++) {
-		result = regexec(&regex_rules[i], name, 0, NULL, 0);
-		if (result == 0) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
 static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx;
