@@ -295,7 +295,7 @@ int
 handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received)
 {
 	int ret;
-	uint8_t egress_port;
+	// uint8_t egress_port;
 
 	/* Check packets marking */
 	check_packets_marking(packets, &packets_received);

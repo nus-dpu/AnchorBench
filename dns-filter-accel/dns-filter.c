@@ -111,6 +111,7 @@ regex_cleanup:
 static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx, nb_tx, to_send = 0;
+	uint32_t retry;
 
 	/*
 	 * Receive a burst of packets and forward them.
