@@ -9,6 +9,8 @@ project('ipsec', 'C',
 
 project_name = 'dns-filter'
 
+add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])
+
 deps = []
 deps += dependency('libdpdk')
 deps += dependency('json-c')
@@ -27,12 +29,6 @@ sources = files(
 	project_name + '-l2p.c',
 	project_name + '-utils.c',
 )
-
-allow_experimental_apis = true
-
-if allow_experimental_apis
-        cflags += '-DALLOW_EXPERIMENTAL_API'
-endif
 
 executable(project_name,
         sources,
