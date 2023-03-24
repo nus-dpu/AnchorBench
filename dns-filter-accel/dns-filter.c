@@ -368,14 +368,14 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
-			doca_mmap_destroy(mmap);
+			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
 
 		result = doca_mmap_start(worker_ctx->mmap);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
-			doca_mmap_destroy(mmap);
+			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
 
@@ -383,7 +383,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
 			doca_mmap_stop(mmap);
-			doca_mmap_destroy(mmap);
+			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
 
