@@ -156,6 +156,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
+			printf("Process %d packet\n", tx_count);
 			struct doca_buf *buf;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
@@ -194,7 +195,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				doca_mmap_destroy(worker_ctx->mmap);
 				return -1;
 			}
-
+#endif
 			/* register packet in mmap */
 			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
@@ -202,7 +203,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-#endif
+
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
 			if (result != DOCA_SUCCESS) {
