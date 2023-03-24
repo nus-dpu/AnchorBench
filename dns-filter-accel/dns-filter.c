@@ -130,20 +130,6 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 	nr_recv += nb_rx;
 
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
-
-	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
-	if (unlikely(nb_tx < nb_rx)) {
-		retry = 0;
-		while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
-			nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
-		}
-	}
-	nr_send += nb_tx;
-	if (unlikely(nb_tx < nb_rx)) {
-		do {
-			rte_pktmbuf_free(pkts_burst[nb_tx]);
-		} while (++nb_tx < nb_rx);
-	}
 	return;
 }
 
