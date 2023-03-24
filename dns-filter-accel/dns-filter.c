@@ -395,17 +395,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
 				goto queries_cleanup;
 			}
-
-			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->queries[i], MAX_DNS_QUERY_LEN, &worker_ctx->buf[i]);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-				goto queries_cleanup;
-			}
-			void *mbuf_data;
-			doca_buf_get_data(worker_ctx->buf[i], &mbuf_data);
-
-			printf("worker_ctx buf[%d]: %p, mbuf data: %p\n", i, worker_ctx->buf[i], mbuf_data);
 		}
 
 		/* Launch the worker to start process packets */
