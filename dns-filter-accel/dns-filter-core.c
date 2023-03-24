@@ -158,10 +158,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		for (; tx_count != packets_received;) {
 			printf("Process %d packet\n", tx_count);
 			struct doca_buf *buf;
-			void *data_begin = (void *)worker_ctx->queries[tx_count];
-			size_t data_len = strlen(data_begin);
 			void *mbuf_data;
 #if 0
+			void *data_begin = (void *)worker_ctx->queries[tx_count];
+			size_t data_len = strlen(data_begin);
+
 			/* Setup memory map
 			*
 			* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
