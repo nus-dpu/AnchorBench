@@ -39,6 +39,7 @@ struct dns_worker_ctx {
 	int queue_id;								/* Queue ID */
 	char **queries;								/* Holds DNS queries */
 	struct dns_filter_config *app_cfg;					/* App config struct */
+	struct doca_mmap *mmap;
 	struct doca_regex_search_result responses[MAX_REGEX_RESPONSE_SIZE];	/* DOCA RegEx jobs responses */
 	struct doca_buf *buffers[MAX_REGEX_RESPONSE_SIZE];			/* Buffers in use for job batch */
 	struct doca_buf_inventory *buf_inventory;				/* DOCA buffer inventory */

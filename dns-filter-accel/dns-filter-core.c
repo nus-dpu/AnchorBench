@@ -146,47 +146,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	size_t tx_count, rx_count, ii;
 	doca_error_t result;
 	int ret = 0;
-	struct doca_mmap *mmap;
-	uint32_t const num_mem_regions = packets_received;
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
 	if (ret < 0)
 		return ret;
-
-	/* Setup memory map
-	 *
-	 * Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
-	 * very efficient. Right now we do not have this so we have to create a map each burst of packets and then tear
-	 * it down at the end of the burst
-	 */
-	result = doca_mmap_create(NULL, &mmap);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to create mmap");
-		return -1;
-	}
-
-	result = doca_mmap_set_max_num_chunks(mmap, num_mem_regions);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
-		doca_mmap_destroy(mmap);
-		return -1;
-	}
-
-	result = doca_mmap_start(mmap);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
-		doca_mmap_destroy(mmap);
-		return -1;
-	}
-
-	result = doca_mmap_dev_add(mmap, worker_ctx->app_cfg->dev);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
-		doca_mmap_stop(mmap);
-		doca_mmap_destroy(mmap);
-		return -1;
-	}
 
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
@@ -198,7 +162,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *mbuf_data;
 
 			/* register packet in mmap */
-			result = doca_mmap_populate(mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
+			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
 				ret = -1;
@@ -206,7 +170,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			}
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, mmap, data_begin, data_len,
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len,
 								&buf);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
@@ -272,9 +236,9 @@ doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
 		doca_buf_refcount_rm(worker_ctx->buffers[ii], NULL);
 
-	doca_mmap_dev_rm(mmap, worker_ctx->app_cfg->dev);
-	doca_mmap_stop(mmap);
-	doca_mmap_destroy(mmap);
+	// doca_mmap_dev_rm(mmap, worker_ctx->app_cfg->dev);
+	// doca_mmap_stop(mmap);
+	// doca_mmap_destroy(mmap);
 	return ret;
 }
 

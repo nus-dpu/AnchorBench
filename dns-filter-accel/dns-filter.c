@@ -353,6 +353,40 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			goto worker_cleanup;
 		}
 
+		/* Setup memory map
+		*
+		* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
+		* very efficient. Right now we do not have this so we have to create a map each burst of packets and then tear
+		* it down at the end of the burst
+		*/
+		result = doca_mmap_create(NULL, &worker_ctx->mmap);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to create mmap");
+			return -1;
+		}
+
+		result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
+			doca_mmap_destroy(mmap);
+			return -1;
+		}
+
+		result = doca_mmap_start(worker_ctx->mmap);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
+			doca_mmap_destroy(mmap);
+			return -1;
+		}
+
+		result = doca_mmap_dev_add(worker_ctx->mmap, worker_ctx->app_cfg->dev);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
+			doca_mmap_stop(mmap);
+			doca_mmap_destroy(mmap);
+			return -1;
+		}
+
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");
