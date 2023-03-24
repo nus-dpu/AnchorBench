@@ -198,7 +198,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				worker_ctx->buffers[tx_count] = buf;
 				++tx_count;
 			} else {
-				DOCA_LOG_ERR("Failed to enqueue RegEx job");
+				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
