@@ -402,7 +402,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			goto queries_cleanup;
 		}
 
-		printf("MMAP: %p(%d)\n", worker_ctx->query_buf, PACKET_BURST * 256);
+		printf("MMAP: %p - %p(%d)\n", worker_ctx->query_buf, worker_ctx->query_buf + PACKET_BURST * 256, PACKET_BURST * 256);
 
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* build doca_buf */
