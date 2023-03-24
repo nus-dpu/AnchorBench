@@ -1,6 +1,8 @@
 #ifndef _DNS_FILTER_CORE_H_
 #define _DNS_FILTER_CORE_H_
 
+#include <rte_mbuf.h>
+
 #include <doca_buf.h>
 #include <doca_buf_inventory.h>
 #include <doca_ctx.h>

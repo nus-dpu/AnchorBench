@@ -20,6 +20,91 @@ __thread uint64_t transmitted = 0;
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
 /*
+ * Helper function to extract DNS query per packet
+ *
+ * @pkt [in]: packet to extract
+ * @query [out]: a place where to store the pointer of DNS query
+ * @return: 0 on success and negative value otherwise
+ */
+static int
+extract_dns_query(struct rte_mbuf *pkt, char **query)
+{
+	int len, result;
+	ns_msg handle; /* nameserver struct for DNS packet */
+	struct rte_mbuf mbuf = *pkt;
+	struct rte_sft_error error;
+	struct rte_sft_mbuf_info mbuf_info;
+	uint32_t payload_offset = 0;
+	const unsigned char *data;
+	char *p;
+	struct udphdr * u;
+
+	/* Parse mbuf, and extract the query */
+	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
+	if (result) {
+		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
+		return result;
+	}
+
+	/* Calculate the offset of UDP header start */
+	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
+
+	/* Skip UDP header to get DNS (query) start */
+	payload_offset += UDP_HEADER_SIZE;
+
+	p = rte_pktmbuf_mtod(pkt, char *);
+	/* Skip UDP and DNS header to get DNS (query) start */
+	p += ETH_HEADER_SIZE;
+	p += IP_HEADER_SIZE;
+	u = (struct udphdr *)p;
+
+	if (ntohs(u->dest) != DNS_PORT) {
+		return 0;
+	}
+
+	/* Get a pointer to start of packet payload */
+	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
+	if (data == NULL) {
+		DOCA_LOG_ERR("Error in pkt mbuf adj");
+		return -1;
+	}
+	len = rte_pktmbuf_data_len(&mbuf);
+
+	/* Parse DNS packet information and fill them into handle fields */
+	/* Ignore the timestamp field*/
+	if (ns_initparse(data, len - sizeof(uint64_t), &handle) < 0) {
+		DOCA_LOG_ERR("Fail to parse domain DNS packet");
+		return -1;
+	}
+
+	/* Get DNS query start from handle field */
+	*query = (char *)handle._sections[ns_s_qd];
+
+	return 0;
+}
+
+/*
+ * The main function for CPU workload, iterate on array of packets to extract the DNS queries
+ *
+ * @packets [in]: array of packets, metadata for bursting packets
+ * @nb_packets [in]: packets array size
+ * @queries [out]: array of strings holding the pointers to the DNS queries
+ * @return: 0 on success and negative value otherwise
+ */
+static int
+cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
+{
+	int i, result;
+
+	for (i = 0; i < nb_packets; i++) {
+		result = extract_dns_query(packets[i], &queries[i]);
+		if (result < 0)
+			return result;
+	}
+	return 0;
+}
+
+/*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
  * The inspection includes extracting DNS query and set it to RegEx engine to check a match
  *
