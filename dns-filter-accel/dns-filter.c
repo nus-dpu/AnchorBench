@@ -36,11 +36,6 @@ __thread uint64_t nr_send;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
-#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
-#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
-#define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
-#define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
-
 static int read_file(char const * path, char ** out_bytes, size_t * out_bytes_len) {
 	FILE * file;
 	char * bytes;
@@ -186,7 +181,7 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	nr_recv += nb_rx;
 
-	handle_packets_received(worker_ctx, pkts_burst, nb_rx);
+	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
 	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
 	if (unlikely(nb_tx < nb_rx)) {

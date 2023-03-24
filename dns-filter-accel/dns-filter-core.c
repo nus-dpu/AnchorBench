@@ -7,7 +7,16 @@
 #include <getopt.h>
 #include <sys/time.h>
 
+#include <rte_errno.h>
+#include <rte_ethdev.h>
+#include <rte_malloc.h>
+#include <rte_sft.h>
+
+#include <doca_argp.h>
+#include <doca_flow.h>
 #include <doca_log.h>
+#include <doca_mmap.h>
+#include <doca_regex_mempool.h>
 
 #include "dns-filter-core.h"
 
@@ -18,6 +27,11 @@ __thread uint64_t received = 0;
 __thread uint64_t transmitted = 0;
 
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
+
+#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
+#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
+#define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
+#define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
 
 /*
  * Helper function to extract DNS query per packet
@@ -260,12 +274,11 @@ doca_buf_cleanup:
  * @return: 0 on success and negative value otherwise
  */
 int
-handle_packets_received(struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received)
+handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received)
 {
-	int packets_count, ret;
-	uint8_t ingress_port;
+	int ret;
+	uint8_t egress_port;
 	uint32_t current_packet;
-	struct rte_mbuf *packets_to_send[PACKET_BURST] = {0};
 	char *valid_queries[PACKET_BURST] = {0};
 
 	/* Start RegEx jobs */
@@ -274,16 +287,10 @@ handle_packets_received(struct dns_worker_ctx *worker_ctx, struct rte_mbuf **pac
 		return ret;
     }
 
-	/* filter DNS packets depending to DOCA RegEx responses */
-	packets_count = filter_listing_packets(worker_ctx, packets_received, packets, valid_queries, packets_to_send);
-	if (packets_count < 0) {
-		return -1;
-    }
-
-	if (packets_count > 0) {
+	if (packets_received > 0) {
 		/* Packet sent to port 0 or 1 */
-		ingress_port = packets_to_send[0]->port ^ 1;
-		ret = rte_eth_tx_burst(ingress_port, worker_ctx->queue_id, packets_to_send, packets_count);
+		egress_port = pid ^ 1;
+		ret = rte_eth_tx_burst(egress_port, worker_ctx->queue_id, packets, packets_received);
 		transmitted += ret;
 	}
 
