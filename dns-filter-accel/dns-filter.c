@@ -402,6 +402,8 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto queries_cleanup;
 			}
+
+			printf("worker_ctx buf[%d]: %p\n", i, worker_ctx->buf[i]);
 		}
 
 		/* Launch the worker to start process packets */

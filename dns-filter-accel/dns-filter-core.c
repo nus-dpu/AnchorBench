@@ -199,6 +199,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				++tx_count;
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
+				printf("buf: %p\n", buf);
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
