@@ -271,9 +271,9 @@ doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
 		doca_buf_refcount_rm(worker_ctx->buffers[ii], NULL);
 
-	doca_mmap_dev_rm(mmap, worker_ctx->app_cfg->dev);
-	doca_mmap_stop(mmap);
-	doca_mmap_destroy(mmap);
+	doca_mmap_dev_rm(worker_ctx->mmap, worker_ctx->app_cfg->dev);
+	doca_mmap_stop(worker_ctx->mmap);
+	doca_mmap_destroy(worker_ctx->mmap);
 	return ret;
 }
 
