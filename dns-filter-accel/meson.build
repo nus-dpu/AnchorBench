@@ -17,6 +17,7 @@ deps += dependency('json-c')
 deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
+deps += declare_dependency(link_args : '-lresolv')
 
 machine_args = []
 
