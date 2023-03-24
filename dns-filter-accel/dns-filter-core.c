@@ -22,9 +22,6 @@
 
 #include "dns-filter-core.h"
 
-__thread uint64_t received = 0;
-__thread uint64_t transmitted = 0;
-
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
 #define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
@@ -47,8 +44,6 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 		p += ETH_HEADER_SIZE;
 		p += IP_HEADER_SIZE;
 		u = (struct udphdr *)p;
-
-		printf("UDP packet from %u to %u\n", ntohs(u->source), ntohs(u->dest));
 
 		if (ntohs(u->dest) == DNS_PORT) {
 			/* Packet matched by one of pipe entries(rules) */
@@ -309,13 +304,6 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 	if (ret < 0) {
 		return ret;
     }
-
-	// if (packets_received > 0) {
-	// 	/* Packet sent to port 0 or 1 */
-	// 	egress_port = pid ^ 1;
-	// 	ret = rte_eth_tx_burst(egress_port, worker_ctx->queue_id, packets, packets_received);
-	// 	transmitted += ret;
-	// }
 
 	return packets_received;
 }

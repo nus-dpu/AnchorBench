@@ -48,8 +48,6 @@ struct dns_worker_ctx {
 extern __thread int start_flag;
 extern __thread int done_flag;
 extern __thread struct timeval start;
-extern __thread uint64_t received;
-extern __thread uint64_t transmitted;
 
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 
