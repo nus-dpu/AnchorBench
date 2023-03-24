@@ -309,6 +309,7 @@ int dns_filter_worker(void *arg) {
 
 static int dns_filter_parse_args(int argc, char ** argv) {
 	int opt, option_index;
+	int offset;
 	static struct option lgopts[] = {
 		{"crc-strip", 0, 0, 0},
 		{NULL, 0, 0, 0}
@@ -337,7 +338,15 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 		default:
 			return -1;
 		}
-    return 0;
+
+	for (int i = 0; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			offset = i;
+			break;
+		}
+	}
+
+    return i;
 }
 
 doca_error_t
@@ -435,6 +444,12 @@ int main(int argc, char **argv) {
 	argv += ret;
 
 	ret = dns_filter_parse_args(argc, argv);
+	if (ret < 0) {
+		return -1;
+    }
+
+	argc -= ret;
+	argv += ret;
 
 	/* Init ARGP interface and start parsing cmdline/json arguments */
 	result = doca_argp_init("dns_filter", &app_cfg);
