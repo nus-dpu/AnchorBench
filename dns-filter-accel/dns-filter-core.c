@@ -162,7 +162,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *mbuf_data;
 
 			/* register packet in mmap */
-			result = doca_mmap_populate(mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
+			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
 				ret = -1;
