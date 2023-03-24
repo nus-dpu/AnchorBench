@@ -66,7 +66,7 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
  * @return: 0 on success and negative value otherwise
  */
 static int
-extract_dns_query(struct rte_mbuf *pkt, char **query)
+extract_dns_query(struct rte_mbuf *pkt, char *query)
 {
 	int len, result;
 	ns_msg handle; /* nameserver struct for DNS packet */
@@ -106,6 +106,7 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 
 	/* Get DNS query start from handle field */
 	// *query = (char *)handle._sections[ns_s_qd];
+	printf("Query: %s, query: %p\n", (char *)handle._sections[ns_s_qd], query);
 	memcpy(query, (char *)handle._sections[ns_s_qd], strlen((char *)handle._sections[ns_s_qd]));
 
 	return 0;
@@ -125,7 +126,7 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
 	int i, result;
 
 	for (i = 0; i < nb_packets; i++) {
-		result = extract_dns_query(packets[i], &queries[i]);
+		result = extract_dns_query(packets[i], queries[i]);
 		if (result < 0)
 			return result;
 	}
