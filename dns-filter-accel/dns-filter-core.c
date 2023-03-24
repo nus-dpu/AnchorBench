@@ -7,7 +7,17 @@
 #include <getopt.h>
 #include <sys/time.h>
 
+#include <doca_log.h>
+
 #include "dns-filter-core.h"
+
+__thread int start_flag = 0;
+__thread int done_flag = 0;
+__thread struct timeval start;
+__thread uint64_t received = 0;
+__thread uint64_t transmitted = 0;
+
+DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
 /*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
