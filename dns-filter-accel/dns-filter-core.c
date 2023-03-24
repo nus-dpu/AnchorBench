@@ -156,7 +156,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
-			printf("Process %d packet\n", tx_count);
+			printf("Process %ld packet\n", tx_count);
 			struct doca_buf *buf;
 			void *mbuf_data;
 #if 0
@@ -218,9 +218,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
 #endif
-			buf = worker_ctx->buf[i];
-			// doca_buf_get_data(buf, &mbuf_data);
-			// doca_buf_set_data(buf, mbuf_data, data_len);
+			buf = worker_ctx->buf[tx_count];
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
