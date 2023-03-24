@@ -352,7 +352,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			result = DOCA_ERROR_NO_MEMORY;
 			goto worker_cleanup;
 		}
-
+#if 0
 		/* Setup memory map
 		*
 		* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
@@ -386,7 +386,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
-
+#endif
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");
