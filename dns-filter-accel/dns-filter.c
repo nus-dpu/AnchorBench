@@ -348,16 +348,13 @@ doca_error_t
 dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 {
 	uint16_t lcore_index = 0;
-	int current_lcore = 0, nb_queues = app_cfg->dpdk_cfg->port_config.nb_queues;
 	struct dns_worker_ctx *worker_ctx = NULL;
 	doca_error_t result;
 
 	DOCA_LOG_INFO("%d cores are used as workers", nb_queues);
 
 	/* Init DNS workers to start processing packets */
-	while ((current_lcore < RTE_MAX_LCORE) && (lcore_index < nb_queues)) {
-		current_lcore = rte_get_next_lcore(current_lcore, true, false);
-
+	RTE_LCORE_FOREACH_WORKER(lcore_id) {
 		/* Create worker context */
 		worker_ctx = (struct dns_worker_ctx *)rte_zmalloc(NULL, sizeof(struct dns_worker_ctx), 0);
 		if (worker_ctx == NULL) {
@@ -403,7 +400,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		}
 
 		/* Launch the worker to start process packets */
-		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, current_lcore) != 0) {
+		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");
 			result = DOCA_ERROR_DRIVER;
 			goto queries_cleanup;
