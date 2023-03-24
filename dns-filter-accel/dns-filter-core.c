@@ -7,8 +7,8 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <resolv.h>
+#include <netinet/udp.h>
 
-#include <rte_udp.h>
 #include <rte_errno.h>
 #include <rte_ethdev.h>
 #include <rte_malloc.h>
@@ -280,8 +280,6 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 {
 	int ret;
 	uint8_t egress_port;
-	uint32_t current_packet;
-	char *valid_queries[PACKET_BURST] = {0};
 
 	/* Start RegEx jobs */
 	ret = regex_processing(worker_ctx, packets_received, packets);
