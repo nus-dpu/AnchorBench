@@ -480,25 +480,7 @@ doca_error_t
 register_dns_filter_params(void)
 {
 	doca_error_t result;
-	struct doca_argp_param *type_param, *rules_param, *pci_address_param;
-
-	/* Create and register listing type param */
-	result = doca_argp_param_create(&type_param);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
-		return result;
-	}
-	doca_argp_param_set_short_name(type_param, "t");
-	doca_argp_param_set_long_name(type_param, "type");
-	doca_argp_param_set_description(type_param, "Set DNS listing type {allow, deny}");
-	doca_argp_param_set_callback(type_param, type_callback);
-	doca_argp_param_set_type(type_param, DOCA_ARGP_TYPE_STRING);
-	doca_argp_param_set_mandatory(type_param);
-	result = doca_argp_register_param(type_param);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
-		return result;
-	}
+	struct doca_argp_param *rules_param, *pci_address_param;
 
 	/* Create and register rules param */
 	result = doca_argp_param_create(&rules_param);
