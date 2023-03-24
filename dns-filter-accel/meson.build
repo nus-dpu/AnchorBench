@@ -37,6 +37,7 @@ sources = files(
 	project_name + '-port-cfg.c',
 	project_name + '-l2p.c',
 	project_name + '-utils.c',
+	project_name + '-core.c',
 	common_src_path + '/offload_rules.c',
 	common_src_path + '/utils.c',
 	common_src_path + '/flow_parser.c',
