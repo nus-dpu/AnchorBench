@@ -159,7 +159,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			printf("Process %ld packet\n", tx_count);
 			struct doca_buf *buf;
 			void *mbuf_data;
-#if 0
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
 
@@ -196,8 +195,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				doca_mmap_destroy(worker_ctx->mmap);
 				return -1;
 			}
-#endif
-#if 0
+
 			/* register packet in mmap */
 			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
@@ -217,8 +215,12 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
-#endif
+#if 0
 			buf = worker_ctx->buf[tx_count];
+
+			doca_buf_get_data(buf, &mbuf_data);
+			doca_buf_set_data(buf, mbuf_data, data_len);
+#endif
 
 			struct doca_regex_job_search const job_request = {
 					.base = {

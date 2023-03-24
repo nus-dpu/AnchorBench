@@ -386,7 +386,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
-
+#if 0
 		/* Create array of pointers (char*) to hold the queries */
 		worker_ctx->test_queries = rte_zmalloc(NULL, PACKET_BURST * 256, 0);
 		if (worker_ctx->test_queries == NULL) {
@@ -402,6 +402,8 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			goto queries_cleanup;
 		}
 
+		printf("MMAP: %p(%d)\n", worker_ctx->test_queries, PACKET_BURST * 256);
+
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->test_queries + i * 256, 256, &worker_ctx->buf[i]);
@@ -409,8 +411,9 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto queries_cleanup;
 			}
+			printf("\tworker_ctx->buf[%d]: %p\n", i, worker_ctx->buf[i]);
 		}
-
+#endif
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");
