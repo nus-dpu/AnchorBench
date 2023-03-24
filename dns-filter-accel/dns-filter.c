@@ -387,16 +387,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			return -1;
 		}
 
-		for (int i = 0; i < PACKET_BURST; i++) {
-			worker_ctx->queries[i] = rte_zmalloc(NULL, MAX_DNS_QUERY_LEN, 0);
-			/* register packet in mmap */
-			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->queries[i], MAX_DNS_QUERY_LEN, sysconf(_SC_PAGESIZE), NULL, NULL);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-				goto queries_cleanup;
-			}
-		}
-
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");

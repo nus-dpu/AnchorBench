@@ -105,9 +105,7 @@ extract_dns_query(struct rte_mbuf *pkt, char *query)
 	}
 
 	/* Get DNS query start from handle field */
-	// *query = (char *)handle._sections[ns_s_qd];
-	printf("Query: %s, query: %p\n", (char *)handle._sections[ns_s_qd], query);
-	memcpy(query, (char *)handle._sections[ns_s_qd], strlen((char *)handle._sections[ns_s_qd]));
+	*query = (char *)handle._sections[ns_s_qd];
 
 	return 0;
 }
@@ -149,20 +147,10 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	doca_error_t result;
 	int ret = 0;
 
-	for (int i = 0; i < PACKET_BURST; i++) {
-		printf("before: queries[%d]: %p\n", i, worker_ctx->queries[i]);
-		memset(worker_ctx->queries[i], 0, MAX_DNS_QUERY_LEN);
-	}
-
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
 	if (ret < 0)
 		return ret;
-
-	for (int i = 0; i < PACKET_BURST; i++) {
-		printf("after DNS workload: queries[%d]: %p\n", i, worker_ctx->queries[i]);
-		memset(worker_ctx->queries[i], 0, MAX_DNS_QUERY_LEN);
-	}
 
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
@@ -172,6 +160,14 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
 			void *mbuf_data;
+
+			/* register packet in mmap */
+			result = doca_mmap_populate(mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+				ret = -1;
+				goto doca_buf_cleanup;
+			}
 
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
