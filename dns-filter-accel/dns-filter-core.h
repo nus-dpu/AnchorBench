@@ -15,7 +15,6 @@
 /* DNS configuration structure */
 struct dns_filter_config {
 	struct doca_flow_pipe **drop_pipes;		/* Holds ports drop pipes */
-	enum dns_type_listing listing_type;		/* Holds dns listing type */
 	struct application_dpdk_config *dpdk_cfg;	/* App DPDK configuration struct */
 	struct doca_pci_bdf pci_address;		/* RegEx PCI address to use */
 	char rules_file_path[MAX_FILE_NAME];		/* Path to RegEx rules file */

@@ -265,9 +265,6 @@ int dns_filter_worker(void *arg) {
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
 	float max_recv, max_send;
-	int ret;
-	char * rules_file_data;
-	size_t rules_file_size;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
@@ -316,7 +313,6 @@ int dns_filter_worker(void *arg) {
 
 static int dns_filter_parse_args(int argc, char ** argv) {
 	int opt, option_index;
-	double rate;
 	static struct option lgopts[] = {
 		{"crc-strip", 0, 0, 0},
 		{NULL, 0, 0, 0}
@@ -428,7 +424,6 @@ destroy_buf_inventory:
 	doca_buf_inventory_stop(worker_ctx->buf_inventory);
 	doca_buf_inventory_destroy(worker_ctx->buf_inventory);
 	rte_free(worker_ctx);
-	force_quit = true;
 	return result;
 }
 
@@ -463,7 +458,7 @@ int main(int argc, char **argv) {
 	dns_filter_config_ports();
 
 	/* DOCA RegEx initialization */
-	result = regex_init(app_cfg);
+	result = regex_init(&app_cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_INFO("Failed to init DOCA RegEx");
 		return result;
