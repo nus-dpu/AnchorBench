@@ -10,6 +10,7 @@
 #include <doca_argp.h>
 #include <doca_log.h>
 
+#include "common.h"
 #include "dns-filter.h"
 #include "dns-filter-core.h"
 #include "dns-filter-l2p.h"
@@ -18,7 +19,8 @@
 
 DOCA_LOG_REGISTER(DNS_FILTER);
 
-#define BURST_TX_RETRIES 16
+#define PACKET_BURST		64
+#define BURST_TX_RETRIES 	16
 
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_MSEC   1000L
@@ -253,6 +255,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 }
 
 int dns_filter_worker(void *arg) {
+	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)arg;
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
@@ -265,7 +268,6 @@ int dns_filter_worker(void *arg) {
 	int ret;
 	char * rules_file_data;
 	size_t rules_file_size;
-	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)args;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
@@ -276,12 +278,6 @@ int dns_filter_worker(void *arg) {
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
-
-	ret = read_file("../regex_rules.txt", &rules_file_data, &rules_file_size);
-	if (ret == -1) {
-		printf("invalid RegEx rules\n");
-	}
-	parse_file_by_line(rules_file_data, rules_file_size);
 
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
@@ -304,11 +300,11 @@ int dns_filter_worker(void *arg) {
 			nr_recv = nr_send = 0;
 			last_log = curr;
 		}
-		if (start_flag & curr.tv_sec - start.tv_sec > 20) {
+		if (start_flag & (curr.tv_sec - start.tv_sec > 20)) {
 			break;
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
-            pkt_burst_forward(infos[idx]->pid, qids[idx]);
+            pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
         }
 	}
 
@@ -319,7 +315,7 @@ int dns_filter_worker(void *arg) {
 }
 
 static int dns_filter_parse_args(int argc, char ** argv) {
-	int opt, option_index, ret;
+	int opt, option_index;
 	double rate;
 	static struct option lgopts[] = {
 		{"crc-strip", 0, 0, 0},
@@ -334,14 +330,6 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 				// pktgen_usage(prgname);
 				return -1;
 			}
-			break;
-
-		case 'r':	/* RegEx rultes */
-			// ret = read_file(optarg, &rules_file_data, &rules_file_size);
-			// if (ret == -1) {
-			// 	printf("invalid RegEx rules\n");
-			// }
-			// parse_file_by_line(rules_file_data, rules_file_size);
 			break;
 
 		case 'd':	/* Delay cycles */
@@ -378,7 +366,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		worker_ctx = (struct dns_worker_ctx *)rte_zmalloc(NULL, sizeof(struct dns_worker_ctx), 0);
 		if (worker_ctx == NULL) {
 			DOCA_LOG_ERR("RTE malloc failed");
-			force_quit = true;
 			return DOCA_ERROR_NO_MEMORY;
 		}
 		worker_ctx->app_cfg = app_cfg;
@@ -389,7 +376,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to allocate buffer inventory: %s", doca_get_error_string(result));
 			rte_free(worker_ctx);
-			force_quit = true;
 			return result;
 		}
 		result = doca_buf_inventory_start(worker_ctx->buf_inventory);
@@ -397,7 +383,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			DOCA_LOG_ERR("Unable to start buffer inventory: %s", doca_get_error_string(result));
 			doca_buf_inventory_destroy(worker_ctx->buf_inventory);
 			rte_free(worker_ctx);
-			force_quit = true;
 			return result;
 		}
 

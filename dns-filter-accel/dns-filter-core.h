@@ -12,6 +12,17 @@
 #define MAX_REGEX_RESPONSE_SIZE 256	/* Maximal size of RegEx jobs response */
 #define DNS_FILTER_MAX_FLOWS 1024	/* Maximal number of FLOWS in application pipes */
 
+/* DNS configuration structure */
+struct dns_filter_config {
+	struct doca_flow_pipe **drop_pipes;		/* Holds ports drop pipes */
+	enum dns_type_listing listing_type;		/* Holds dns listing type */
+	struct application_dpdk_config *dpdk_cfg;	/* App DPDK configuration struct */
+	struct doca_pci_bdf pci_address;		/* RegEx PCI address to use */
+	char rules_file_path[MAX_FILE_NAME];		/* Path to RegEx rules file */
+	struct doca_dev *dev;				/* DOCA device */
+	struct doca_regex *doca_reg;			/* DOCA RegEx interface */
+};
+
 /* Context structure per DPDK thread */
 struct dns_worker_ctx {
 	int queue_id;								/* Queue ID */
