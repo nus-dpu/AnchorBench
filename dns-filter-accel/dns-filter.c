@@ -350,8 +350,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 	uint16_t lcore_index = 0;
 	struct dns_worker_ctx *worker_ctx = NULL;
 	doca_error_t result;
-
-	DOCA_LOG_INFO("%d cores are used as workers", nb_queues);
+	int lcore_id;
 
 	/* Init DNS workers to start processing packets */
 	RTE_LCORE_FOREACH_WORKER(lcore_id) {
