@@ -66,7 +66,7 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
  * @return: 0 on success and negative value otherwise
  */
 static int
-extract_dns_query(struct rte_mbuf *pkt, char *query)
+extract_dns_query(struct rte_mbuf *pkt, char **query)
 {
 	int len, result;
 	ns_msg handle; /* nameserver struct for DNS packet */
