@@ -262,6 +262,8 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 		return packets_received;
 	}
 
+	printf("Receive %d packets\n");
+
 	/* Start RegEx jobs */
 	ret = regex_processing(worker_ctx, packets_received, packets);
 	if (ret < 0) {
