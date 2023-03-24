@@ -464,6 +464,13 @@ int main(int argc, char **argv) {
 	/* Configure and initialize the ports */
 	dns_filter_config_ports();
 
+	result = doca_argp_start(argc, argv);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to parse application input: %s", doca_get_error_string(result));
+		doca_argp_destroy();
+		return EXIT_FAILURE;
+	}
+
 	/* DOCA RegEx initialization */
 	result = regex_init(&app_cfg);
 	if (result != DOCA_SUCCESS) {
