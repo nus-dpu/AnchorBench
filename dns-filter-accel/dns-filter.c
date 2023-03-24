@@ -37,8 +37,6 @@ __thread uint64_t nr_send;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
-#define MAX_DNS_QUERY_LEN	256
-
 /*
  * RegEx context initialization
  *
@@ -395,8 +393,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->queries[i], MAX_DNS_QUERY_LEN, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-				ret = -1;
-				goto doca_buf_cleanup;
+				goto queries_cleanup;
 			}
 		}
 
