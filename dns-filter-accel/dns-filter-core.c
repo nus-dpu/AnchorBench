@@ -168,20 +168,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
-			struct doca_buf *buf;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
-			printf("begin: %p\n", data_begin);
 			size_t data_len = strlen(worker_ctx->queries[tx_count]);
 			void *mbuf_data;
+			struct doca_buf *buf = worker_ctx->buf[tx_count];
 
-			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
-						doca_get_error_string(result));
-				ret = -1;
-				goto doca_buf_cleanup;
-			}
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
 
