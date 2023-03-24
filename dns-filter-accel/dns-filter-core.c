@@ -299,6 +299,7 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 
 	/* Check packets marking */
 	check_packets_marking(packets, &packets_received);
+	printf("Marking %d packets\n", packets_received);
 	if (packets_received == 0) {
 		return packets_received;
 	}
