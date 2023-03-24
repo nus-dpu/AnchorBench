@@ -37,59 +37,6 @@ __thread uint64_t nr_send;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
-static int read_file(char const * path, char ** out_bytes, size_t * out_bytes_len) {
-	FILE * file;
-	char * bytes;
-
-	file = fopen(path, "rb");
-	if (file == NULL) {
-		return -1;
-	}
-
-	if (fseek(file, 0, SEEK_END) != 0) {
-		fclose(file);
-		return -1;
-	}
-
-	long const nb_file_bytes = ftell(file);
-
-	if (nb_file_bytes == -1) {
-		fclose(file);
-		return -1;
-	}
-
-	if (nb_file_bytes == 0) {
-		fclose(file);
-		return -1;
-	}
-
-	bytes = malloc(nb_file_bytes);
-	if (bytes == NULL) {
-		fclose(file);
-		return -1;
-	}
-
-	if (fseek(file, 0, SEEK_SET) != 0) {
-		free(bytes);
-		fclose(file);
-		return -1;
-	}
-
-	size_t const read_byte_count = fread(bytes, 1, nb_file_bytes, file);
-
-	fclose(file);
-
-	if (read_byte_count != nb_file_bytes) {
-		free(bytes);
-		return -1;
-	}
-
-	*out_bytes = bytes;
-	*out_bytes_len = read_byte_count;
-
-	return 0;
-}
-
 /*
  * RegEx context initialization
  *
