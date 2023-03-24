@@ -1,3 +1,11 @@
+#include <stdint.h>
+#include <termios.h>
+#include <stdio.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <sys/time.h>
 
 #include "dns-filter-core.h"
 

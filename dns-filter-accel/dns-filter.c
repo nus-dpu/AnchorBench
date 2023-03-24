@@ -309,6 +309,8 @@ int dns_filter_worker(void *arg) {
 	tot_send_rate = (float)tot_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 
 	printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", lid, tot_recv_rate , tot_send_rate);
+
+	return 0;
 }
 
 static int dns_filter_parse_args(int argc, char ** argv) {
