@@ -124,7 +124,7 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
 	int i, result;
 
 	for (i = 0; i < nb_packets; i++) {
-		result = extract_dns_query(packets[i], queries[i]);
+		result = extract_dns_query(packets[i], &queries[i]);
 		if (result < 0)
 			return result;
 	}
