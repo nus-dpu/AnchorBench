@@ -168,6 +168,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
+			struct doca_buf *buf;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
 			void *mbuf_data;
