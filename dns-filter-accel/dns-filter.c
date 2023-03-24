@@ -6,7 +6,9 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
-#include <regex.h>
+
+#include <doca_argp.h>
+#include <doca_log.h>
 
 #include "dns-filter.h"
 #include "dns-filter-core.h"

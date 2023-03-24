@@ -1,3 +1,6 @@
+
+#include "dns-filter-core.h"
+
 /*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
  * The inspection includes extracting DNS query and set it to RegEx engine to check a match
