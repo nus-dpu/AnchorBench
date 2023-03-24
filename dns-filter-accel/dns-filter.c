@@ -346,7 +346,7 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 		}
 	}
 
-    return i;
+    return offset;
 }
 
 doca_error_t
