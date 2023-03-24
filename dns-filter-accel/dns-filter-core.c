@@ -161,7 +161,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *mbuf_data;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
-
+			buf = worker_ctx->buf[tx_count];
+			memcpy((void *)(worker_ctx->query_buf + tx_count * 256), data_begin, data_len);
+#if 0
 			/* Setup memory map
 			*
 			* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
@@ -215,12 +217,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
-#if 0
-			buf = worker_ctx->buf[tx_count];
-
+#endif
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
-#endif
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
