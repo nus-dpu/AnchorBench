@@ -382,7 +382,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		result = doca_mmap_dev_add(worker_ctx->mmap, worker_ctx->app_cfg->dev);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
-			doca_mmap_stop(mmap);
+			doca_mmap_stop(worker_ctx->mmap);
 			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
