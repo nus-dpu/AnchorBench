@@ -32,6 +32,36 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
 #define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
 
+static void
+check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
+{
+	char * p;
+	struct rte_mbuf *packet;
+	uint32_t current_packet, index = 0;
+
+	for (current_packet = 0; current_packet < *packets_received; current_packet++) {
+		packet = packets[current_packet];
+		p = rte_pktmbuf_mtod(packet, char *);
+		/* Skip UDP and DNS header to get DNS (query) start */
+		p += ETH_HEADER_SIZE;
+		p += IP_HEADER_SIZE;
+		u = (struct udphdr *)p;
+
+		printf("UDP packet from %u to %u\n", ntohs(u->source), ntohs(u->dest));
+
+		if (ntohs(u->dest) == DNS_PORT) {
+			/* Packet matched by one of pipe entries(rules) */
+			packets[index] = packets[current_packet];
+			index++;
+			continue;
+		}
+		/* Packet didn't match by one of pipe entries(rules), packet received before rules offload */
+		DOCA_DLOG_WARN("Packet received before rules offload");
+	}
+	/* Packets array will contain marked packets in places < index */
+	*packets_received = index;
+}
+
 /*
  * Helper function to extract DNS query per packet
  *
@@ -64,18 +94,6 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 
 	/* Skip UDP header to get DNS (query) start */
 	payload_offset += UDP_HEADER_SIZE;
-
-	p = rte_pktmbuf_mtod(pkt, char *);
-	/* Skip UDP and DNS header to get DNS (query) start */
-	p += ETH_HEADER_SIZE;
-	p += IP_HEADER_SIZE;
-	u = (struct udphdr *)p;
-
-	printf("UDP packet from %u to %u\n", ntohs(u->source), ntohs(u->dest));
-
-	if (ntohs(u->dest) != DNS_PORT) {
-		return 0;
-	}
 
 	/* Get a pointer to start of packet payload */
 	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
@@ -279,6 +297,12 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 {
 	int ret;
 	uint8_t egress_port;
+
+	/* Check packets marking */
+	check_packets_marking(packets, &packets_received);
+	if (packets_received == 0) {
+		return packets_received;
+	}
 
 	/* Start RegEx jobs */
 	ret = regex_processing(worker_ctx, packets_received, packets);
