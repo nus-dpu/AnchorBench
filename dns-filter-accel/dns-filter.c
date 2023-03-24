@@ -93,30 +93,6 @@ static int read_file(char const * path, char ** out_bytes, size_t * out_bytes_le
 	return 0;
 }
 
-static void parse_file_by_line(char * content, size_t content_len) {
-	char * pos, * check;
-	char rule[MAX_RULE_LEN];
-	int ret;
-
-	pos = content;
-	while (pos < content + content_len) {
-		check = strchr(pos, '\n');
-		snprintf(rule, check - pos, "%s", pos);
-		// regex_rules[nb_regex_rules++] = rule;
-		/* Compile RegEx engine */
-		ret = regcomp(&regex_rules[nb_regex_rules], rule, 0);
-		if (ret != 0) {
-			printf("Failed to compile regression engine\n");
-		}
-		if (!check) {
-			break;
-		} else {
-			pos = check + 1;
-			nb_regex_rules++;
-		}
-	}
-}
-
 /*
  * RegEx context initialization
  *
