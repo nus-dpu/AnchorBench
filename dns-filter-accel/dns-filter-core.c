@@ -161,6 +161,40 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			size_t data_len = strlen(data_begin);
 			void *mbuf_data;
 
+			/* Setup memory map
+			*
+			* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
+			* very efficient. Right now we do not have this so we have to create a map each burst of packets and then tear
+			* it down at the end of the burst
+			*/
+			result = doca_mmap_create(NULL, &worker_ctx->mmap);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to create mmap");
+				return -1;
+			}
+
+			result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
+				doca_mmap_destroy(worker_ctx->mmap);
+				return -1;
+			}
+
+			result = doca_mmap_start(worker_ctx->mmap);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
+				doca_mmap_destroy(worker_ctx->mmap);
+				return -1;
+			}
+
+			result = doca_mmap_dev_add(worker_ctx->mmap, worker_ctx->app_cfg->dev);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
+				doca_mmap_stop(worker_ctx->mmap);
+				doca_mmap_destroy(worker_ctx->mmap);
+				return -1;
+			}
+
 			/* register packet in mmap */
 			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
@@ -237,9 +271,9 @@ doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
 		doca_buf_refcount_rm(worker_ctx->buffers[ii], NULL);
 
-	// doca_mmap_dev_rm(mmap, worker_ctx->app_cfg->dev);
-	// doca_mmap_stop(mmap);
-	// doca_mmap_destroy(mmap);
+	doca_mmap_dev_rm(mmap, worker_ctx->app_cfg->dev);
+	doca_mmap_stop(mmap);
+	doca_mmap_destroy(mmap);
 	return ret;
 }
 
