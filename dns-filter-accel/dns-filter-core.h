@@ -1,6 +1,13 @@
 #ifndef _DNS_FILTER_CORE_H_
 #define _DNS_FILTER_CORE_H_
 
+#include <doca_buf.h>
+#include <doca_buf_inventory.h>
+#include <doca_ctx.h>
+#include <doca_dev.h>
+#include <doca_flow.h>
+#include <doca_regex.h>
+
 #define MAX_FILE_NAME 255		/* Maximal length of file path */
 #define MAX_REGEX_RESPONSE_SIZE 256	/* Maximal size of RegEx jobs response */
 #define DNS_FILTER_MAX_FLOWS 1024	/* Maximal number of FLOWS in application pipes */
