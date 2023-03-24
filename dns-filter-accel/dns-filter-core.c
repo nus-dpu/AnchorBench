@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <resolv.h>
 
+#include <rte_udp.h>
 #include <rte_errno.h>
 #include <rte_ethdev.h>
 #include <rte_malloc.h>
