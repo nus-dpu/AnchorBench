@@ -22,9 +22,6 @@
 
 #include "dns-filter-core.h"
 
-__thread int start_flag = 0;
-__thread int done_flag = 0;
-__thread struct timeval start;
 __thread uint64_t received = 0;
 __thread uint64_t transmitted = 0;
 
