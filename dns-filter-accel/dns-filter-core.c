@@ -173,8 +173,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *mbuf_data;
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, mmap, data_begin, data_len,
-								&buf);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
 						doca_get_error_string(result));
