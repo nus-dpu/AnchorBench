@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <sys/time.h>
+#include <resolv.h>
 
 #include <rte_errno.h>
 #include <rte_ethdev.h>
