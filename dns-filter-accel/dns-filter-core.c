@@ -71,6 +71,8 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	p += IP_HEADER_SIZE;
 	u = (struct udphdr *)p;
 
+	printf("UDP packet from %u to %u\n", ntohs(u->source), ntohs(u->dest));
+
 	if (ntohs(u->dest) != DNS_PORT) {
 		return 0;
 	}
