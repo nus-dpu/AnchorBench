@@ -110,7 +110,7 @@ regex_cleanup:
 
 static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
-	uint16_t nb_rx;
+	uint16_t nb_rx, nb_tx, to_send = 0;
 
 	/*
 	 * Receive a burst of packets and forward them.
@@ -127,7 +127,22 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	nr_recv += nb_rx;
 
-	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
+	to_send = handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
+
+	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, to_send);
+	if (unlikely(nb_tx < nb_rx)) {
+		retry = 0;
+		while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
+			nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
+		}
+	}
+	transmitted += nb_tx;
+	if (unlikely(nb_tx < nb_rx)) {
+		do {
+			rte_pktmbuf_free(pkts_burst[nb_tx]);
+		} while (++nb_tx < nb_rx);
+	}
+
 	return;
 }
 

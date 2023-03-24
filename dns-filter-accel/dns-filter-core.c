@@ -310,12 +310,12 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 		return ret;
     }
 
-	if (packets_received > 0) {
-		/* Packet sent to port 0 or 1 */
-		egress_port = pid ^ 1;
-		ret = rte_eth_tx_burst(egress_port, worker_ctx->queue_id, packets, packets_received);
-		transmitted += ret;
-	}
+	// if (packets_received > 0) {
+	// 	/* Packet sent to port 0 or 1 */
+	// 	egress_port = pid ^ 1;
+	// 	ret = rte_eth_tx_burst(egress_port, worker_ctx->queue_id, packets, packets_received);
+	// 	transmitted += ret;
+	// }
 
-	return 0;
+	return packets_received;
 }
