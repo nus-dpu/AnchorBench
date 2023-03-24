@@ -37,6 +37,7 @@ struct dns_filter_config {
 /* Context structure per DPDK thread */
 struct dns_worker_ctx {
 	int queue_id;								/* Queue ID */
+	char **queries;								/* Holds DNS queries */
 	struct dns_filter_config *app_cfg;					/* App config struct */
 	struct doca_mmap *mmap;
 	struct doca_regex_search_result responses[MAX_REGEX_RESPONSE_SIZE];	/* DOCA RegEx jobs responses */
