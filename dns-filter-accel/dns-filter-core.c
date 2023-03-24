@@ -149,7 +149,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	int ret = 0;
 
 	for (int i = 0; i < PACKET_BURST; i++) {
-		printf("queries[%d]: %p\n", i, worker_ctx->queries[i]);
+		printf("before: queries[%d]: %p\n", i, worker_ctx->queries[i]);
 		memset(worker_ctx->queries[i], 0, MAX_DNS_QUERY_LEN);
 	}
 
@@ -157,6 +157,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
 	if (ret < 0)
 		return ret;
+
+	for (int i = 0; i < PACKET_BURST; i++) {
+		printf("after DNS workload: queries[%d]: %p\n", i, worker_ctx->queries[i]);
+		memset(worker_ctx->queries[i], 0, MAX_DNS_QUERY_LEN);
+	}
 
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
