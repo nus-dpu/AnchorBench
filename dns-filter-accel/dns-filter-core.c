@@ -157,20 +157,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
-			struct doca_buf *buf;
+			struct doca_buf *buf = worker_ctx->buf[tx_count];
 			void *mbuf_data;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
-			memcpy(worker_ctx->query_buf + tx_count * 256, data_begin, data_len);
-
-			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf + tx_count * 256, data_len, &buf);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
-						doca_get_error_string(result));
-				ret = -1;
-				goto doca_buf_cleanup;
-			}
+			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
@@ -228,12 +219,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	}
 
 doca_buf_cleanup:
-	for (ii = 0; ii != tx_count; ++ii)
-		doca_buf_refcount_rm(worker_ctx->buffers[ii], NULL);
-
-	doca_mmap_dev_rm(worker_ctx->mmap, worker_ctx->app_cfg->dev);
-	doca_mmap_stop(worker_ctx->mmap);
-	doca_mmap_destroy(worker_ctx->mmap);
 	return ret;
 }
 
