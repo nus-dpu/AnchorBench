@@ -154,7 +154,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		return ret;
 
 	start = rte_rdtsc();
-	printf("===> START: %lu\n", start);
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
@@ -278,7 +277,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	}
 
 	end = rte_rdtsc();
-	printf("===> END: %lu, elapsed: %lu\n", end, end - start);
+	printf("elapsed: %lu\n", end - start);
 
 doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
