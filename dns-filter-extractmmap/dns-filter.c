@@ -386,8 +386,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			doca_mmap_destroy(worker_ctx->mmap);
 			return -1;
 		}
-	
-		worker_ctx->query_buf = rte_zmalloc(NULL, PACKET_BURST * 256, 0);
 
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* Create array of pointers (char*) to hold the queries */
