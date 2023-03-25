@@ -17,7 +17,7 @@
 #define MAX_DNS_QUERY_LEN 512			/* Maximal length of DNS query */
 #define PACKET_MARKER 7				/* Value for marking the matched packets */
 #define DNS_PORTS_NUM 2				/* Number of ports that are used by the application */
-#define SLEEP_IN_NANOS (10 * 1000)		/* Sample the job every 10 microseconds  */
+#define SLEEP_IN_NANOS (1 * 1000)		/* Sample the job every 10 microseconds  */
 #define DEFAULT_TIMEOUT_US (10000)		/* Timeout for processing pipe entries */
 
 #define MAX_FILE_NAME 255		/* Maximal length of file path */
