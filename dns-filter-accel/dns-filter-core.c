@@ -162,7 +162,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
 			buf = worker_ctx->buf[tx_count];
-			memcpy((void *)(worker_ctx->query_buf + tx_count * 256), data_begin, data_len);
+			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
 #if 0
 			/* Setup memory map
 			*
