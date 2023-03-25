@@ -156,7 +156,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
-			printf("Process %ld packet\n", tx_count);
+			printf("Process %ld packet(query: %p, query buf: %p, buf: %p)\n", 
+					tx_count, worker_ctx->queries[tx_count], worker_ctx->query_buf[tx_count], worker_ctx->buf[tx_count]);
 			struct doca_buf *buf;
 			void *mbuf_data;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
