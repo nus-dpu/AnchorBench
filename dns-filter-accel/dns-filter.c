@@ -406,7 +406,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			}
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], &worker_ctx->buf[i]);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
 			printf("buf inv: %p, mmap: %p, query buf: %p, size: %d, buf: %p\n", 
 					worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
 			if (result != DOCA_SUCCESS) {
