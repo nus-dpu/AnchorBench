@@ -146,10 +146,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	size_t tx_count, rx_count, ii;
 	doca_error_t result;
 	int ret = 0;
-	uint64_t start, round_start, round_end, end;
-	uint64_t ts1, ts2, ts3, ts4, ts5, ts6, submit;
-
-	ts1 = ts2 = ts3 = ts4 = ts5 = ts6 = submit = 0;
+	uint64_t start, end;
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
@@ -160,7 +157,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
 
-	ts1 = rte_rdtsc();
 	/* Setup memory map
 	*
 	* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
@@ -195,8 +191,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		return -1;
 	}
 
-	ts2 = rte_rdtsc();
-
 	worker_ctx->query_buf = rte_zmalloc(NULL, PACKET_BURST * 256, 0);
 
 	/* register packet in mmap */
@@ -207,23 +201,14 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		goto doca_buf_cleanup;
 	}
 
-	ts3 = rte_rdtsc();
-
-	printf("t1 -> t2: %lu, t2 -> t3: %lu\n", ts2 - ts1, ts3 - ts2);
-
 	while (tx_count < packets_received) {
-		round_start = rte_rdtsc();
 		for (; tx_count != packets_received;) {
-			// printf("Process %ld packet(query: %p, query buf: %p, buf: %p)\n", 
-			// 		tx_count, worker_ctx->queries[tx_count], worker_ctx->query_buf[tx_count], worker_ctx->buf[tx_count]);
-			ts3 = rte_rdtsc();
 			struct doca_buf *buf;
 			void *mbuf_data;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
 			memcpy(worker_ctx->query_buf + tx_count * 256, data_begin, data_len);
 
-			ts4 = rte_rdtsc();
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf + tx_count * 256, data_len, &buf);
 			if (result != DOCA_SUCCESS) {
@@ -232,7 +217,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-			ts5 = rte_rdtsc();
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
@@ -264,11 +248,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-			ts6 = rte_rdtsc();
-			printf("ts3 -> ts4: %lu, ts4 -> ts5: %lu, ts5 -> ts6: %lu\n", ts4 - ts3, ts5 - ts4, ts6 - ts5);
 		}
-
-		submit = rte_rdtsc();
 
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
@@ -291,8 +271,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				goto doca_buf_cleanup;
 			}
 		}
-		round_end = rte_rdtsc();
-		printf("round start -> submit: %lu, submit -> round end: %lu\n", submit - round_start, round_end - submit);
 	}
 
 	end = rte_rdtsc();
