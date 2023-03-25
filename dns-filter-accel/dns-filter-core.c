@@ -278,7 +278,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	}
 
 	end = rte_rdtsc();
-	printf("===> END: %lu, elapsed: %lu\n", end, end - start;);
+	printf("===> END: %lu, elapsed: %lu\n", end, end - start);
 
 doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
