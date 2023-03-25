@@ -143,7 +143,7 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
 static int
 regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
 {
-	size_t tx_count, rx_count, ii;
+	size_t tx_count, rx_count;
 	doca_error_t result;
 	int ret = 0;
 
