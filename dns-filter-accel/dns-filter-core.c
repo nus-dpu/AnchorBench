@@ -146,12 +146,14 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	size_t tx_count, rx_count, ii;
 	doca_error_t result;
 	int ret = 0;
+	uint64_t start, end, free;
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
 	if (ret < 0)
 		return ret;
 
+	start = rte_rdtsc();
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
 
@@ -270,6 +272,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			}
 		}
 	}
+	end = rte_rdtsc();
 
 doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
@@ -278,6 +281,8 @@ doca_buf_cleanup:
 	doca_mmap_dev_rm(worker_ctx->mmap, worker_ctx->app_cfg->dev);
 	doca_mmap_stop(worker_ctx->mmap);
 	doca_mmap_destroy(worker_ctx->mmap);
+	free = rte_rdtsc();
+	printf("Start -> end: %lu, end -> free: %lu\n", end - start, free - end);
 	return ret;
 }
 
