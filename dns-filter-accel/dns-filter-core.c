@@ -159,6 +159,54 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	start = rte_rdtsc();
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
+
+	ts1 = rte_rdtsc();
+	/* Setup memory map
+	*
+	* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
+	* very efficient. Right now we do not have this so we have to create a map each burst of packets and then tear
+	* it down at the end of the burst
+	*/
+	result = doca_mmap_create(NULL, &worker_ctx->mmap);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create mmap");
+		return -1;
+	}
+
+	result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
+		doca_mmap_destroy(worker_ctx->mmap);
+		return -1;
+	}
+
+	result = doca_mmap_start(worker_ctx->mmap);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
+		doca_mmap_destroy(worker_ctx->mmap);
+		return -1;
+	}
+
+	result = doca_mmap_dev_add(worker_ctx->mmap, worker_ctx->app_cfg->dev);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
+		doca_mmap_stop(worker_ctx->mmap);
+		doca_mmap_destroy(worker_ctx->mmap);
+		return -1;
+	}
+
+	ts2 = rte_rdtsc();
+
+	worker_ctx->query_buf = rte_zmalloc(NULL, PACKET_BURST * 256, 0);
+
+	/* register packet in mmap */
+	result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf, PACKET_BURST * 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+		ret = -1;
+		goto doca_buf_cleanup;
+	}
+
 	while (tx_count < packets_received) {
 		round_start = rte_rdtsc();
 		for (; tx_count != packets_received;) {
@@ -168,60 +216,11 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *mbuf_data;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
-#if 0
-			buf = worker_ctx->buf[tx_count];
-			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
-			doca_buf_get_data(buf, &mbuf_data);
-			doca_buf_set_data(buf, mbuf_data, data_len);
-#endif
-
-			ts1 = rte_rdtsc();
-			/* Setup memory map
-			*
-			* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
-			* very efficient. Right now we do not have this so we have to create a map each burst of packets and then tear
-			* it down at the end of the burst
-			*/
-			result = doca_mmap_create(NULL, &worker_ctx->mmap);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to create mmap");
-				return -1;
-			}
-
-			result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
-				doca_mmap_destroy(worker_ctx->mmap);
-				return -1;
-			}
-
-			result = doca_mmap_start(worker_ctx->mmap);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
-				doca_mmap_destroy(worker_ctx->mmap);
-				return -1;
-			}
-
-			result = doca_mmap_dev_add(worker_ctx->mmap, worker_ctx->app_cfg->dev);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
-				doca_mmap_stop(worker_ctx->mmap);
-				doca_mmap_destroy(worker_ctx->mmap);
-				return -1;
-			}
-
-			ts2 = rte_rdtsc();
-			/* register packet in mmap */
-			result = doca_mmap_populate(worker_ctx->mmap, data_begin, data_len, sysconf(_SC_PAGESIZE), NULL, NULL);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-				ret = -1;
-				goto doca_buf_cleanup;
-			}
+			memcpy(worker_ctx->query_buf + tx_count * 256, data_begin, data_len);
 
 			ts3 = rte_rdtsc();
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf + tx_count * 256, data_len, &buf);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s",
 						doca_get_error_string(result));
