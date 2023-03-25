@@ -204,8 +204,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				/* Handle the completed jobs */
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
-
 				/* Wait for the job to complete */
+				printf("Wait for job to complete...\n");
 				ts.tv_sec = 0;
 				ts.tv_nsec = SLEEP_IN_NANOS;
 				nanosleep(&ts, &ts);
