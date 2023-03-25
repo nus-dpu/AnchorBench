@@ -121,11 +121,6 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 		return;
 	}
 
-	if (!start_flag) {
-		start_flag = 1;
-		gettimeofday(&start, NULL);
-	}
-
 	nr_recv += nb_rx;
 
 	to_send = handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);

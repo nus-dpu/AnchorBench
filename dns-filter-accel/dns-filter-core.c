@@ -241,6 +241,11 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 		return packets_received;
 	}
 
+	if (!start_flag) {
+		start_flag = 1;
+		gettimeofday(&start, NULL);
+	}
+
 	/* Start RegEx jobs */
 	ret = regex_processing(worker_ctx, packets_received, packets);
 	if (ret < 0) {
