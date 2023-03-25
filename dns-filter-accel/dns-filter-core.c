@@ -207,7 +207,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				/* Wait for the job to complete */
 				// printf("Wait for job to complete\n");
 				ts.tv_sec = 0;
-				ts.tv_nsec = 100;
+				ts.tv_nsec = 50;
 				nanosleep(&ts, &ts);
 			} else {
 				DOCA_LOG_ERR("Failed to dequeue RegEx job response");
