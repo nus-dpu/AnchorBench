@@ -147,9 +147,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	doca_error_t result;
 	int ret = 0;
 	uint64_t start, round_start, round_end, end;
-	uint64_t ts1, ts2, ts3, ts4, submit;
+	uint64_t ts1, ts2, ts3, ts4, ts5, submit;
 
-	ts1 = ts2 = ts3 = ts4 = submit = 0;
+	ts1 = ts2 = ts3 = ts4 = ts5 = submit = 0;
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
@@ -219,6 +219,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				goto doca_buf_cleanup;
 			}
 
+			ts3 = rte_rdtsc();
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, data_begin, data_len, &buf);
 			if (result != DOCA_SUCCESS) {
@@ -227,7 +228,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-			ts3 = rte_rdtsc();
+			ts4 = rte_rdtsc();
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
@@ -259,8 +260,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-			ts4 = rte_rdtsc();
-			printf("t1 -> t2: %lu, t2 -> t3: %lu, ts4 -> ts3: %lu\n", ts2 - ts1, ts3 - ts2, ts4 - ts3);
+			ts5 = rte_rdtsc();
+			printf("t1 -> t2: %lu, t2 -> t3: %lu, ts4 -> ts3: %lu, ts5 -> ts4: %lu\n", 
+					ts2 - ts1, ts3 - ts2, ts4 - ts3, ts5 - ts4);
 		}
 
 		submit = rte_rdtsc();
