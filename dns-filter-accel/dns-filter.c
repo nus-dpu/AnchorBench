@@ -395,7 +395,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 				result = DOCA_ERROR_NO_MEMORY;
 				goto worker_cleanup;
 			}
-			printf("query_buf[%d]: %p\n", i, worker_ctx->query_buf[i]);
 
 			/* register packet in mmap */
 			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
@@ -406,12 +405,10 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
-			printf("buf inv: %p, mmap: %p, query buf: %p, buf: %p\n", worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], &worker_ctx->buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto queries_cleanup;
 			}
-			printf("\tworker_ctx->buf[%d]: %p\n", i, worker_ctx->buf[i]);
 		}
 
 		/* Launch the worker to start process packets */
