@@ -146,13 +146,15 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	size_t tx_count, rx_count, ii;
 	doca_error_t result;
 	int ret = 0;
+	uint64_t start, end;
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
 	if (ret < 0)
 		return ret;
 
-	printf("===> START: %lu\n", rte_rdtsc());
+	start = rte_rdtsc();
+	printf("===> START: %lu\n", start);
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
 	while (tx_count < packets_received) {
@@ -274,7 +276,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			}
 		}
 	}
-	printf("===> END: %lu\n", rte_rdtsc());
+
+	end = rte_rdtsc();
+	printf("===> END: %lu, elapsed: %lu\n", end, end - start;);
 
 doca_buf_cleanup:
 	for (ii = 0; ii != tx_count; ++ii)
