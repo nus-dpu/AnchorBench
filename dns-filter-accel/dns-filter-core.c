@@ -189,8 +189,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		return -1;
 	}
 
-	worker_ctx->query_buf = rte_zmalloc(NULL, PACKET_BURST * 256, 0);
-
 	/* register packet in mmap */
 	result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf, PACKET_BURST * 256, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
