@@ -147,9 +147,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	doca_error_t result;
 	int ret = 0;
 	uint64_t start, round_start, round_end, end;
-	uint64_t ts1, ts2, ts3, ts4, ts5, submit;
+	uint64_t ts1, ts2, ts3, ts4, ts5, ts6, submit;
 
-	ts1 = ts2 = ts3 = ts4 = ts5 = submit = 0;
+	ts1 = ts2 = ts3 = ts4 = ts5 = ts6 = submit = 0;
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
