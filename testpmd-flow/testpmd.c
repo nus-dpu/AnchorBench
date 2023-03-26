@@ -120,6 +120,9 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
     printf("%s\n", buf);
 }
 
+#define MAX_PATTERN_NUM		4
+#define MAX_ACTION_NUM		2
+
 int testpmd_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	struct rte_flow_error error;
 	struct rte_flow_attr attr;
