@@ -16,10 +16,10 @@
 #include <rte_ethdev.h>
 #include <rte_mempool.h>
 
-#include "testpmd-port-cfg.h"
-#include "testpmd-l2p.h"
+#include "dns-filter-port-cfg.h"
+#include "dns-filter-l2p.h"
 
-#define SG_MEMPOOL
+// #define SG_MEMPOOL
 
 int port_cnt = 0;
 port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
@@ -65,10 +65,10 @@ struct rte_eth_conf port_conf = {
     },
 };
 
-#include "testpmd-constants.h"
-#include "testpmd-port-cfg.h"
+#include "dns-filter-constants.h"
+#include "dns-filter-port-cfg.h"
 
-static struct rte_mempool * testpmd_mempool_create(const char *type, uint8_t pid, uint8_t queue_id,
+static struct rte_mempool * dns_filter_mempool_create(const char *type, uint8_t pid, uint8_t queue_id,
 			uint32_t nb_mbufs, int socket_id, int cache_size){
 	struct rte_mempool * mp;
 	char name[RTE_MEMZONE_NAMESIZE];
@@ -100,7 +100,7 @@ static struct rte_mempool * testpmd_mempool_create(const char *type, uint8_t pid
 	return mp;
 }
 
-void testpmd_config_ports() {
+void dns_filter_config_ports() {
     struct rte_eth_conf conf = {0};
     uint32_t lid, pid, q;
     rxtx_t rt;
@@ -201,7 +201,7 @@ void testpmd_config_ports() {
             }
 #else
             /* Create and initialize the default Receive buffers. */
-			info[pid].q[q].rx_mp = testpmd_mempool_create("Default RX", pid, q,
+			info[pid].q[q].rx_mp = dns_filter_mempool_create("Default RX", pid, q,
 								   MAX_MBUFS_PER_PORT, SOCKET_ID_ANY, cache_size);
 			if (info[pid].q[q].rx_mp == NULL) {
 				printf("Cannot init port %d for Default RX mbufs\n", pid);

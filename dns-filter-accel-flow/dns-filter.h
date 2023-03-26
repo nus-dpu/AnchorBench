@@ -1,5 +1,5 @@
-#ifndef _TESTPMD_H_
-#define _TESTPMD_H_
+#ifndef _DNS_FILTER_H_
+#define _DNS_FILTER_H_
 
 #include <rte_version.h>
 #include <rte_config.h>
@@ -32,4 +32,4 @@
 #include <rte_udp.h>
 #include <rte_tcp.h>
 
-#endif  /* _TESTPMD_H_*/
+#endif  /* _DNS_FILTER_H_*/

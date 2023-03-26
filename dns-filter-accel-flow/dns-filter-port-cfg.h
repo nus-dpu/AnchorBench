@@ -1,10 +1,10 @@
-#ifndef _TESTPMD_PORT_CFG_H_
-#define _TESTPMD_PORT_CFG_H_
+#ifndef _DNS_FILTER_PORT_CFG_H_
+#define _DNS_FILTER_PORT_CFG_H_
 
 #include <stdio.h>
 #include <string.h>
 
-#include "testpmd-constants.h"
+#include "dns-filter-constants.h"
 
 struct mbuf_table {
 	uint16_t len;
@@ -26,6 +26,6 @@ typedef struct port_info_s {
 
 extern port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
 
-void testpmd_config_ports(void);
+void dns_filter_config_ports(void);
 
-#endif  /* _TESTPMD_PORT_CFG_H_ */
+#endif  /* _DNS_FILTER_PORT_CFG_H_ */

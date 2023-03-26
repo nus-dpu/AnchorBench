@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "testpmd-utils.h"
+#include "dns-filter-utils.h"
 
 #define MAX_PARSE_SIZE      256
 
