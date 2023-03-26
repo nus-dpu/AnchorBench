@@ -120,7 +120,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
     printf("%s\n", buf);
 }
 
-int testpmd_setup_flows(uint32_t pid, uint8_t qid, uint16_t dst_port) {
+int testpmd_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	struct rte_flow_error error;
 	struct rte_flow_attr attr;
 	struct rte_flow_item pattern[MAX_PATTERN_NUM];
@@ -212,7 +212,7 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
 	for (idx = 0; idx < rxcnt; idx++) {
-		testpmd_setup_flows(infos[idx]->pid, qids[idx], dst_port);
+		testpmd_setup_flow(infos[idx]->pid, qids[idx], dst_port);
 	}
 
 	gettimeofday(&start, NULL);
@@ -305,8 +305,6 @@ int main(int argc, char **argv) {
 
 	/* Configure and initialize the ports */
 	testpmd_config_ports();
-
-	testpmd_setup_flow();
 
 	/* launch per-lcore init on every lcore except initial and initial + 1 lcores */
 	ret = rte_eal_mp_remote_launch(testpmd_launch_one_lcore, NULL, SKIP_MAIN);
