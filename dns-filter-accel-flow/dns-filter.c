@@ -291,6 +291,7 @@ int dns_filter_worker(void *arg) {
 		for (int i = 17; i < 31; i++) {
 			if (i % 7 + 1 == lid) {
 				src_port = (i << 8);
+				printf("Direct flow with src port %x to core %d\n", src_port, qids[idx]);
 				dns_filter_setup_flow(infos[idx]->pid, qids[idx], src_port);
 			}
 		}
