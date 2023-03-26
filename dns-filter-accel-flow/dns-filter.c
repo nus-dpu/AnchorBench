@@ -196,7 +196,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 #define MAX_PATTERN_NUM		4
 #define MAX_ACTION_NUM		2
 
-int dns_filter_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
+int dns_filter_setup_flow(uint32_t pid, uint8_t qid, uint16_t src_port) {
 	struct rte_flow_error error;
 	struct rte_flow_attr attr;
 	struct rte_flow_item pattern[MAX_PATTERN_NUM];
@@ -246,8 +246,8 @@ int dns_filter_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	*/
 	memset(&udp_spec, 0, sizeof(struct rte_flow_item_udp));
 	memset(&udp_mask, 0, sizeof(struct rte_flow_item_udp));
-	udp_spec.hdr.dst_port = htons(dst_port);
-	udp_mask.hdr.dst_port = htons(0xff00);
+	udp_spec.hdr.src_port = htons(src_port);
+	udp_mask.hdr.src_port = htons(0xff00);
 	pattern[2].type = RTE_FLOW_ITEM_TYPE_UDP;
 	pattern[2].spec = &udp_spec;
 	pattern[2].mask = &udp_mask;
@@ -275,7 +275,7 @@ int dns_filter_worker(void *arg) {
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
 	float max_recv, max_send;
-	uint16_t dst_port = lid << 8;
+	uint16_t src_port;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
@@ -288,7 +288,12 @@ int dns_filter_worker(void *arg) {
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
 	for (idx = 0; idx < rxcnt; idx++) {
-		dns_filter_setup_flow(infos[idx]->pid, qids[idx], dst_port);
+		for (int i = 17; i < 31; i++) {
+			if (i % 7 + 1 == lid) {
+				src_port = (i << 8);
+				dns_filter_setup_flow(infos[idx]->pid, qids[idx], src_port);
+			}
+		}
 	}
 
 	gettimeofday(&start, NULL);
