@@ -275,6 +275,7 @@ int dns_filter_worker(void *arg) {
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
 	float max_recv, max_send;
+	uint16_t dst_port = lid << 8;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
