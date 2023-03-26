@@ -126,7 +126,7 @@ int testpmd_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	struct rte_flow_item pattern[MAX_PATTERN_NUM];
 	struct rte_flow_action action[MAX_ACTION_NUM];
 	struct rte_flow * flow = NULL;
-	struct rte_flow_action_queue_id port = { .queue = qid };
+	struct rte_flow_action_queue_id queue = { .queue = qid };
 	struct rte_flow_item_ipv4 ip_spec;
 	struct rte_flow_item_ipv4 ip_mask;
 	struct rte_flow_item_udp udp_spec;
@@ -147,8 +147,8 @@ int testpmd_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	* create the action sequence.
 	* one action only,  move packet to queue
 	*/
-	action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE_ID;
-	action[0].conf = &port;
+	action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+	action[0].conf = &queue;
 	action[1].type = RTE_FLOW_ACTION_TYPE_END;
 
 	/*
