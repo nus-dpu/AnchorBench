@@ -179,11 +179,11 @@ int testpmd_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	/* the final level must be always type end */
 	pattern[3].type = RTE_FLOW_ITEM_TYPE_END;
 
-	res = rte_flow_validate(port_id, &attr, pattern, action, &error);
+	res = rte_flow_validate(pid, &attr, pattern, action, &error);
 	if (!res) {
-		flow = rte_flow_create(port_id, &attr, pattern, action, &error);
+		flow = rte_flow_create(pid, &attr, pattern, action, &error);
 		if (!flow) {
-			rte_flow_flush(port_id, &error);
+			rte_flow_flush(pid, &error);
 		}
 	}
 }
