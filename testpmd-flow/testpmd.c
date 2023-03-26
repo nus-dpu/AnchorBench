@@ -126,7 +126,7 @@ int testpmd_setup_flow(uint32_t pid, uint8_t qid, uint16_t dst_port) {
 	struct rte_flow_item pattern[MAX_PATTERN_NUM];
 	struct rte_flow_action action[MAX_ACTION_NUM];
 	struct rte_flow * flow = NULL;
-	struct rte_flow_action_queue_id queue = { .queue = qid };
+	struct rte_flow_action_queue queue = { .queue = qid };
 	struct rte_flow_item_ipv4 ip_spec;
 	struct rte_flow_item_ipv4 ip_mask;
 	struct rte_flow_item_udp udp_spec;
