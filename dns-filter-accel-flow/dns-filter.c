@@ -288,7 +288,7 @@ int dns_filter_worker(void *arg) {
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
 	for (idx = 0; idx < rxcnt; idx++) {
-		for (int i = 17; i < 28; i++) {
+		for (int i = 17; i < 29; i++) {
 			if (i % 6 + 1 == lid) {
 				src_port = (i << 8);
 				printf("Direct flow with src port %x to core %d\n", src_port, qids[idx]);
