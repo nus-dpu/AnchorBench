@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include <regex.h>
+#include <netinet/udp.h>
 
 #include "dns-filter.h"
 #include "dns-filter-l2p.h"
