@@ -120,6 +120,7 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	int result, len, query_len;
 	uint32_t payload_offset = 0;
     char * p, * parse, * dst;
+	struct udphdr * u;
 	char name[32];
 
 	dst = name;
@@ -131,6 +132,17 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
     p += IP_HEADER_SIZE;
 	p += UDP_HEADER_SIZE;
 	p += DNS_HEADER_SIZE;
+	u = (struct udphdr *)p;
+
+	if (ntohs(u->dest) != DNS_PORT) {
+		/* Packet matched by one of pipe entries(rules) */
+		return 0;
+	}
+
+	if (!start_flag) {
+		start_flag = 1;
+		gettimeofday(&start, NULL);
+	}
 
 	query_len = (int)strlen(p);
 
@@ -177,11 +189,6 @@ static void pkt_burst_forward(int pid, int qid) {
 	nb_rx = rte_eth_rx_burst(pid, qid, pkts_burst, DEFAULT_PKT_BURST);
 	if (unlikely(nb_rx == 0)) {
 		return;
-	}
-
-	if (!start_flag) {
-		start_flag = 1;
-		gettimeofday(&start, NULL);
 	}
 
 	nr_recv += nb_rx;
