@@ -132,8 +132,7 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 	/* Skip UDP and DNS header to get DNS (query) start */
     p += ETH_HEADER_SIZE;
     p += IP_HEADER_SIZE;
-	p += UDP_HEADER_SIZE;
-	p += DNS_HEADER_SIZE;
+
 	u = (struct udphdr *)p;
 
 	if (ntohs(u->dest) != DNS_PORT) {
@@ -145,6 +144,9 @@ static int extract_dns_query(struct rte_mbuf *pkt) {
 		start_flag = 1;
 		gettimeofday(&start, NULL);
 	}
+
+	p += UDP_HEADER_SIZE;
+	p += DNS_HEADER_SIZE;
 
 	query_len = (int)strlen(p);
 
