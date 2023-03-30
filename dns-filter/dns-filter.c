@@ -21,6 +21,7 @@
 
 int delay_cycles = 0;
 
+#define DNS_PORT 53				/* DNS packet dst port */
 
 __thread struct timeval last_log;
 __thread int start_flag = 0;
