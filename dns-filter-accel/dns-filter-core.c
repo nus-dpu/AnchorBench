@@ -20,6 +20,7 @@
 #include <doca_mmap.h>
 #include <doca_regex_mempool.h>
 
+#include "dns-filter-constants.h"
 #include "dns-filter-core.h"
 
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
@@ -227,8 +228,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	if (remain > 0) {
 		int num_copy = (remain > packets_received)? packets_received : remain;
 		memcpy(&exec_time[index], elapse, sizeof(uint64_t) * num_copy);
-		index += exec_time;
-		remain -= exec_time;
+		index += num_copy;
+		remain -= num_copy;
 	}
 
 doca_buf_cleanup:
