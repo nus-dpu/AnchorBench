@@ -249,6 +249,21 @@ int dns_filter_worker(void *arg) {
 
 	printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", lid, tot_recv_rate , tot_send_rate);
 
+	FILE * fp;
+	sprintf(name, "latency-%d.txt", rte_lcore_id());
+	fp = fopen(name, "w");
+	if (!fp) {
+		printf("Error!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	int start = (int)(0.15 * index);
+	for (int i = start; i < index; i++) {
+		fprintf(fp, "%lu\n", exec_time[i]);
+	}
+
+	fclose(fp);
+	
 	return 0;
 }
 

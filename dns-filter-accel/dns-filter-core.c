@@ -131,6 +131,10 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
 	return 0;
 }
 
+__thread int remain = 128 * 1024;
+__thread int index = 0;
+__thread uint64_t exec_time[128 * 1024];
+
 /*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
  * The inspection includes extracting DNS query and set it to RegEx engine to check a match
@@ -146,6 +150,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	size_t tx_count, rx_count;
 	doca_error_t result;
 	int ret = 0;
+	uint64_t elapse[DEFAULT_PKT_BURST];
 
 	/* Start DNS workload */
 	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
@@ -186,6 +191,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			if (result == DOCA_SUCCESS) {
 				worker_ctx->buffers[tx_count] = buf;
+				elapse[tx_count] = rte_rdtsc();
 				++tx_count;
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
@@ -202,6 +208,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 			if (result == DOCA_SUCCESS) {
 				/* Handle the completed jobs */
+				elapse[rx_count] = rte_rdtsc() - elapse[rx_count];
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
@@ -215,6 +222,13 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				goto doca_buf_cleanup;
 			}
 		}
+	}
+
+	if (remain > 0) {
+		int num_copy = (remain > packets_received)? packets_received : remain;
+		memcpy(&exec_time[index], elapse, sizeof(uint64_t) * num_copy);
+		index += exec_time;
+		remain -= exec_time;
 	}
 
 doca_buf_cleanup:
