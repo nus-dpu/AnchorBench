@@ -225,14 +225,11 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		// struct doca_buf *buf;
 		struct mempool_elt * buf_element;
 		char * data_buf;
-		// int const job_size =
-		// 	regex_cfg->chunk_len < *remaining_bytes ? regex_cfg->chunk_len : *remaining_bytes;
-		// int const read_offset = regex_cfg->data_buffer_len - *remaining_bytes;
 		void *mbuf_data;
-		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buffer, BUF_SIZE, &buf);
-		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
+
 		mempool_get(regex_cfg->buf_mempool, &buf_element);
 		data_buf = buf_element->addr;
+
 		memcpy(data_buf, data, data_len);
 
 		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf_element->buf);
@@ -310,7 +307,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 					__func__, nb_total, nb_free, buf_element, buf_element->buf);
 			doca_buf_refcount_rm(buf_element->buf, NULL);
 			mempool_put(regex_cfg->buf_mempool, buf_element);
-			// regex_scan_report_results(regex_cfg, &event, chunk_len);
+			regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			/* Wait for the job to complete */
@@ -437,30 +434,28 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	}
 
 	/* The main loop, enqueues jobs (chunks) and dequeues for results. */
-	do {
-		while ((read = getline(&line, &len, fp)) != -1) {
-			printf("Retrieved line of length %zu:\n", read);
-			printf("%s", line);
+	while ((read = getline(&line, &len, fp)) != -1) {
+		// printf("Retrieved line of length %zu:\n", read);
+		// printf("%s", line);
+		/* Enqueue jobs */
+		ret = regex_scan_enq_job(&rgx_cfg, line, read);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to enqueue jobs");
+			regex_scan_destroy(&rgx_cfg);
+			return ret;
 		}
-		// /* Enqueue jobs */
-		// ret = regex_scan_enq_job(&rgx_cfg, );
-		// if (ret < 0) {
-		// 	DOCA_LOG_ERR("Failed to enqueue jobs");
-		// 	regex_scan_destroy(&rgx_cfg);
-		// 	return ret;
-		// }
 
-		// nb_enqueued += ret;
+		nb_enqueued += ret;
 
-		// /* Dequeue responses */
-		// ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
-		// if (ret < 0) {
-		// 	DOCA_LOG_ERR("Failed to dequeue jobs responses");
-		// 	regex_scan_destroy(&rgx_cfg);
-		// 	return ret;
-		// }
-		// nb_dequeued += ret;
-	} while (1);
+		/* Dequeue responses */
+		ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to dequeue jobs responses");
+			regex_scan_destroy(&rgx_cfg);
+			return ret;
+		}
+		nb_dequeued += ret;
+	}
 
 	/* RegEx scan recognition cleanup */
 	regex_scan_destroy(&rgx_cfg);
