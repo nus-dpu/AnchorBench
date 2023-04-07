@@ -56,7 +56,7 @@ void mempool_free(struct mempool * mp) {
 }
 
 /*----------------------------------------------------------------------------*/
-int mempool_get(struct mempool * mp, void ** obj) {
+int mempool_get(struct mempool * mp, struct mempool_elt ** obj) {
     struct mempool_elt * elt = list_first_entry_or_null(&mp->elt_free_list, struct mempool_elt, list);
 
     if (!elt) {
@@ -67,20 +67,15 @@ int mempool_get(struct mempool * mp, void ** obj) {
     list_del_init(&elt->list);
     list_add_tail(&elt->list, &mp->elt_used_list);
 
-    *obj = elt->addr;
+    // *obj = elt->addr;
+    *obj = elt;
 
     return 0;
 }
 
 /*----------------------------------------------------------------------------*/
-void mempool_put(struct mempool * mp, void * addr) {
-    struct mempool_elt * elt, * temp;
-    list_for_each_entry_safe(elt, temp, &mp->elt_used_list, list) {
-        if(elt->addr == addr) {
-            list_del_init(&elt->list);
-            memset(elt->addr, 0, elt->size);
-            list_add_tail(&elt->list, &mp->elt_free_list);
-            break;
-        }
-    }
+void mempool_put(struct mempool * mp, struct mempool_elt * elt) {
+    list_del_init(&elt->list);
+    memset(elt->addr, 0, elt->size);
+    list_add_tail(&elt->list, &mp->elt_free_list);
 }

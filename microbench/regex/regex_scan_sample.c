@@ -222,7 +222,8 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg) {
 	printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
 
 	if (nb_free != 0) {
-		struct doca_buf *buf;
+		// struct doca_buf *buf;
+		struct mempool_elt * buf_element;
 		char * data_buf;
 		// int const job_size =
 		// 	regex_cfg->chunk_len < *remaining_bytes ? regex_cfg->chunk_len : *remaining_bytes;
@@ -230,24 +231,25 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg) {
 		void *mbuf_data;
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buffer, BUF_SIZE, &buf);
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
-		mempool_get(regex_cfg->buf_mempool, (void **)&data_buf);
-		printf("\t get data buf: %p\n", data_buf);
-		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf);
+		mempool_get(regex_cfg->buf_mempool, &buf_element);
+		data_buf = buf_element->addr;
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf_element->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
 		}
 
-		doca_buf_get_data(buf, &mbuf_data);
-		doca_buf_set_data(buf, mbuf_data, BUF_SIZE);
+		printf("\t buf element: %p, doca buf: %p\n", buf_element, data_buf);
+		doca_buf_get_data(buf_element->buf, &mbuf_data);
+		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
 		struct doca_regex_job_search const job_request = {
 				.base = {
 					.type = DOCA_REGEX_JOB_SEARCH,
 					.ctx = doca_regex_as_ctx(regex_cfg->doca_regex),
-					.user_data = { .ptr = buf },
+					.user_data = { .ptr = buf_element },
 				},
-				.buffer = buf,
+				.buffer = buf_element->buf,
 				.rule_group_ids = {1, 0, 0, 0},
 				.result = regex_cfg->results + nb_enqueued,
 				.allow_batching = false,
@@ -293,18 +295,19 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	struct timespec ts;
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
-	struct doca_buf * buf;
+	struct mempool_elt * buf_element;
 
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
-			// buf = (struct doca_buf *)event.user_data.ptr;
+			buf_element = (struct mempool_elt *)event.user_data.ptr;
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
-			printf(" >> %s: total: %d, nb free elements: %d, ptr: %p\n", __func__, nb_total, nb_free, event.user_data.ptr);
-			// doca_buf_refcount_rm(buf, NULL);
-			// mempool_put(regex_cfg->buf_mempool, buf);
+			printf(" >> %s: total: %d, nb free elements: %d, buf element: %p, doca buf: %p\n", 
+					__func__, nb_total, nb_free, buf_element, buf_element->buf);
+			doca_buf_refcount_rm(buf_element->buf, NULL);
+			mempool_put(regex_cfg->buf_mempool, buf_element);
 			// regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {

@@ -8,6 +8,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <doca_buf.h>
+
 #include "list.h"
 
 #define CACHE_LINE_SIZE     64
@@ -39,6 +41,8 @@ struct mempool_elt {
     struct list_head    list;
     /* Mempool this element belongs to */
     struct mempool      * mp;
+    /* DOCA buf that holds the element data */
+    struct doca_buf     * buf;     
     /* Mempool element size */
     int                 size;
     /* Element address */
@@ -63,7 +67,7 @@ struct mempool {
 
 extern struct mempool * mempool_create(int num_elt, size_t elt_size);
 extern void mempool_free(struct mempool * mp);
-extern int mempool_get(struct mempool * mp, void ** obj);
-extern void mempool_put(struct mempool * mp, void * addr);
+extern int mempool_get(struct mempool * mp, struct mempool_elt ** obj);
+extern void mempool_put(struct mempool * mp, struct mempool_elt * addr);
 
 #endif  /* _COMMON_MEMPOOL_H_ */
