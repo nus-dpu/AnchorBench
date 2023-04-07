@@ -2,8 +2,7 @@
 
 /*----------------------------------------------------------------------------*/
 struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
-    size_t elt_size_aligned = ALIGN_CEIL(elt_size, CACHE_LINE_SIZE);
-    size_t total_size_aligned = ALIGN_CEIL(elt_size_aligned * num_elt, sysconf(_SC_PAGESIZE));
+    size_t total_size = num_elt * elt_size;
 
     struct mempool * mp = (struct mempool *)malloc(sizeof(struct mempool));
 
@@ -16,8 +15,8 @@ struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
         goto free_mp;
     }
 
-    mp->elt_size = elt_size_aligned;
-    mp->size = total_size_aligned;
+    mp->elt_size = elt_size;
+    mp->size = total_size;
 
     init_list_head(&mp->elt_free_list);
     init_list_head(&mp->elt_used_list);
@@ -25,8 +24,8 @@ struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
     for (int i = 0; i < num_elt; i++) {
         struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt));
         elt->mp = mp;
-        elt->size = elt_size_aligned;
-        elt->addr = mp->addr + i * elt_size_aligned;
+        elt->size = elt_size;
+        elt->addr = mp->addr + i * elt_size;
         list_add_tail(&elt->list, &mp->elt_free_list);
     }
 
