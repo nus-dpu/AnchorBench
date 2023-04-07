@@ -223,7 +223,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 	printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
 
-	if (*remaining_bytes != 0 && nb_free != 0) {
+	if (nb_free != 0) {
 		struct doca_buf *buf;
 		char * data_buf;
 		// int const job_size =
