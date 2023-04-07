@@ -15,6 +15,7 @@ deps = []
 deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
+deps += dependency('libbsd')
 
 machine_args = []
 
