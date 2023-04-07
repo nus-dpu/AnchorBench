@@ -8,7 +8,7 @@
 /*----------------------------------------------------------------------------*/
 struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
     size_t elt_size_aligned = ALIGN_CEIL(elt_size, CACHE_LINE_SIZE);
-    size_t total_size_aligned = ALIGN_CEIL(elt_size_aligned * num_elt, PAGE_SIZE);
+    size_t total_size_aligned = ALIGN_CEIL(elt_size_aligned * num_elt, sysconf(_SC_PAGESIZE));
 
     struct mempool * mp = (struct mempool *)malloc(sizeof(struct mempool));
 
