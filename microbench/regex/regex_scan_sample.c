@@ -62,12 +62,12 @@ struct regex_scan_ctx {
  *
  * @regex_cfg [in]: sample RegEx configuration struct
  * @event [in]: DOCA event structure
- * @chunk_len [in]: chunk size, used for calculate job data offset
  */
 static void
-regex_scan_report_results(struct regex_scan_ctx *regex_cfg, struct doca_event *event, int chunk_len)
+regex_scan_report_results(struct regex_scan_ctx *regex_cfg, struct doca_event *event)
 {
 	int offset;
+	struct mempool_elt * data_element;
 	struct doca_regex_match *ptr;
 	struct doca_regex_search_result * const result = (struct doca_regex_search_result *)event->result.ptr;
 
@@ -75,12 +75,11 @@ regex_scan_report_results(struct regex_scan_ctx *regex_cfg, struct doca_event *e
 		return;
 	ptr = result->matches;
 	/* Match start is relative to the whole file data and not the current chunk */
-	offset = chunk_len * event->user_data.u64;
 	while (ptr != NULL) {
 		DOCA_LOG_INFO("date rule id: %d", ptr->rule_id);
-		regex_cfg->data_buffer[ptr->match_start + offset + ptr->length] = '\0';
-		DOCA_LOG_INFO("date value: %*s", ptr->length,
-			      (char *)(regex_cfg->data_buffer + offset + ptr->match_start));
+		data_element = (struct mempool_elt *)event.user_data.ptr;
+		// regex_cfg->data_buffer[ptr->match_start + offset + ptr->length] = '\0';
+		DOCA_LOG_INFO("date value: %s", data_element->addr);
 		struct doca_regex_match *const to_release_match = ptr;
 
 		ptr = ptr->next;
@@ -305,9 +304,9 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 			printf(" >> %s: total: %d, nb free elements: %d, buf element: %p, doca buf: %p\n", 
 					__func__, nb_total, nb_free, buf_element, buf_element->buf);
+			regex_scan_report_results(regex_cfg, &event);
 			doca_buf_refcount_rm(buf_element->buf, NULL);
 			mempool_put(regex_cfg->buf_mempool, buf_element);
-			regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			/* Wait for the job to complete */
