@@ -1,3 +1,5 @@
+import random
+
 psychology_dns = [
     'www.americanpsychologicalassociation.org'
     'www.psychologytoday.com'
