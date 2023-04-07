@@ -230,7 +230,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		void *mbuf_data;
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buffer, BUF_SIZE, &buf);
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
-		mempool_get(regex_cfg->buf_mempool, &data_buf);
+		mempool_get(regex_cfg->buf_mempool, (void **)&data_buf);
 		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
