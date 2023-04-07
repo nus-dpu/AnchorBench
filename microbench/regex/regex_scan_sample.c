@@ -182,6 +182,12 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		return DOCA_ERROR_NO_MEMORY;
 	}
 
+	uint32_t nb_free, nb_total;
+	nb_free = nb_total = 0;
+
+	printf(" >> total number of element: %d, free element: %d\n", 
+			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free));
+
 	for (int i = 0; i < NB_BUF; i++) {
 		/* Create array of pointers (char*) to hold the queries */
 		regex_cfg->data_buf[i] = data_buf_cont + BUF_SIZE * i;
@@ -221,10 +227,12 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 {
 	doca_error_t result;
 	int nb_enqueued = 0;
+	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
 
+	doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
-	printf(" >> %s: nb free elements: %d\n", __func__, nb_free);
+	printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
 #if 0
 	if (*remaining_bytes != 0 && nb_free != 0) {
 		struct doca_buf *buf;
