@@ -189,7 +189,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		}
 
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inventory, regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, &regex_cfg->buf[i]);
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, &regex_cfg->buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 			return DOCA_ERROR_NO_MEMORY;
@@ -223,7 +223,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 
 	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 	printf(" >> %s: nb free elements: %d\n", __func__, nb_free);
-
+#if 0
 	if (*remaining_bytes != 0 && nb_free != 0) {
 		struct doca_buf *buf;
 		int const job_size =
@@ -259,7 +259,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		/* Prepare next chunk. */
 		job_request->base.user_data.u64++;
 	}
-
+#endif
 	return nb_enqueued;
 }
 
@@ -278,7 +278,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	struct doca_event event = {0};
 	struct timespec ts;
 	uint32_t nb_free = 0;
-
+#if 0
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
@@ -299,7 +299,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 		}
 
 	} while (result == DOCA_SUCCESS);
-
+#endif
 	return nb_dequeued;
 }
 
