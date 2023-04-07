@@ -10,7 +10,5 @@
 # provided with the software product.
 #
 
-# Date Format DD-MM-YYYY
-1, /((0[1-9]|[12]\d|3[01])-(0[1-9]|1[0-2])-[12]\d{3})/
-# Date Format DD.MM.YYYY
-2, /((0[1-9]|[12]\d|3[01])\.(0[1-9]|1[0-2])\.[12]\d{3})/
+# Domain containing psychology
+1, www.*psycho.*
