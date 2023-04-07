@@ -234,8 +234,9 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		// int const read_offset = regex_cfg->data_buffer_len - *remaining_bytes;
 		char * data_buffer = (char *)calloc(BUF_SIZE, sizeof(char));
 		void *mbuf_data;
-
-		if (doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buffer, BUF_SIZE, &buf) != DOCA_SUCCESS) {
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buffer, BUF_SIZE, &buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
 		}
 
