@@ -244,8 +244,8 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		doca_buf_set_data(buf, mbuf_data, BUF_SIZE);
 
 		// regex_cfg->buf = buf;
-		// job_request->base.user_data.ptr = buf;
-		job_request->base.user_data.u64 = 1;
+		job_request->base.user_data.ptr = buf;
+		// job_request->base.user_data.u64 = 1;
 		job_request->buffer = buf;
 		job_request->result = regex_cfg->results + nb_enqueued;
 		job_request->allow_batching = false;
