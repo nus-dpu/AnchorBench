@@ -282,15 +282,17 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	struct doca_event event = {0};
 	struct timespec ts;
 	uint32_t nb_free = 0;
-#if 0
+	uint32_t nb_total = 0;
+
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(regex_cfg->buf, NULL);
+			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
-			printf(" >> %s: nb free elements: %d\n", __func__, nb_free);
-			regex_scan_report_results(regex_cfg, &event, chunk_len);
+			printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
+			// regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			/* Wait for the job to complete */
@@ -303,7 +305,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 		}
 
 	} while (result == DOCA_SUCCESS);
-#endif
+
 	return nb_dequeued;
 }
 
@@ -425,13 +427,13 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		nb_enqueued += ret;
 
 		/* Dequeue responses */
-		// ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
-		// if (ret < 0) {
-		// 	DOCA_LOG_ERR("Failed to dequeue jobs responses");
-		// 	regex_scan_destroy(&rgx_cfg);
-		// 	return ret;
-		// }
-		// nb_dequeued += ret;
+		ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to dequeue jobs responses");
+			regex_scan_destroy(&rgx_cfg);
+			return ret;
+		}
+		nb_dequeued += ret;
 	} while (remaining_bytes > 0 || nb_dequeued != nb_enqueued);
 
 	/* RegEx scan recognition cleanup */
