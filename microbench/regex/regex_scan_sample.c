@@ -195,13 +195,6 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 			DOCA_LOG_ERR("Dynamic allocation failed");
 			return DOCA_ERROR_NO_MEMORY;
 		}
-
-		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, &regex_cfg->buf[i]);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-			return DOCA_ERROR_NO_MEMORY;
-		}
 	}
 
 	regex_cfg->results = calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
@@ -233,23 +226,23 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 	doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 	printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
-#if 0
+
 	if (*remaining_bytes != 0 && nb_free != 0) {
 		struct doca_buf *buf;
-		int const job_size =
-			regex_cfg->chunk_len < *remaining_bytes ? regex_cfg->chunk_len : *remaining_bytes;
-		int const read_offset = regex_cfg->data_buffer_len - *remaining_bytes;
+		// int const job_size =
+		// 	regex_cfg->chunk_len < *remaining_bytes ? regex_cfg->chunk_len : *remaining_bytes;
+		// int const read_offset = regex_cfg->data_buffer_len - *remaining_bytes;
+		char * data_buffer = (char *)calloc(BUF_SIZE, sizeof(char));
 		void *mbuf_data;
 
-		if (doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap,
-						   regex_cfg->data_buffer + read_offset, job_size,
-						   &buf) != DOCA_SUCCESS)
+		if (doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buffer, BUF_SIZE, &buf) != DOCA_SUCCESS) {
 			return nb_enqueued;
+		}
 
 		doca_buf_get_data(buf, &mbuf_data);
 		doca_buf_set_data(buf, mbuf_data, job_size);
 
-		regex_cfg->buf = buf;
+		// regex_cfg->buf = buf;
 		job_request->buffer = buf;
 		job_request->result = regex_cfg->results + nb_enqueued;
 		job_request->allow_batching = false;
@@ -269,7 +262,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		/* Prepare next chunk. */
 		job_request->base.user_data.u64++;
 	}
-#endif
+
 	return nb_enqueued;
 }
 
