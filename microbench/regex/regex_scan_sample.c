@@ -244,6 +244,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		doca_buf_set_data(buf, mbuf_data, BUF_SIZE);
 
 		// regex_cfg->buf = buf;
+		job_request->base.user_data.ptr = buf;
 		job_request->buffer = buf;
 		job_request->result = regex_cfg->results + nb_enqueued;
 		job_request->allow_batching = false;
@@ -283,15 +284,17 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	struct timespec ts;
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
+	struct doca_buf * buf;
 
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
+			buf = (struct doca_buf *)event->user_data.ptr;
 			/* release the buffer back into the pool so it can be re-used */
-			doca_buf_refcount_rm(regex_cfg->buf, NULL);
 			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 			printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
+			doca_buf_refcount_rm(buf, NULL);
 			// regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
