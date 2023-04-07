@@ -166,20 +166,11 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		return result;
 	}
 
-	// result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
-	// 			    NULL, NULL);
-	// if (result != DOCA_SUCCESS) {
-	// 	DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
-	// 	return result;
-	// }
-
-	char * data_buf_cont = (char *)calloc(NB_BUF, sizeof(char) * BUF_SIZE);
-
-	/* register packet in mmap */
-	result = doca_mmap_populate(regex_cfg->mmap, data_buf_cont, NB_BUF * BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
+	result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
+				    NULL, NULL);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-		return DOCA_ERROR_NO_MEMORY;
+		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
+		return result;
 	}
 
 	uint32_t nb_free, nb_total;
@@ -190,7 +181,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 
 	for (int i = 0; i < NB_BUF; i++) {
 		/* Create array of pointers (char*) to hold the queries */
-		regex_cfg->data_buf[i] = data_buf_cont + BUF_SIZE * i;
+		regex_cfg->data_buf[i] = regex_cfg->data_buffer + BUF_SIZE * i;
 		if (regex_cfg->data_buf[i] == NULL) {
 			DOCA_LOG_ERR("Dynamic allocation failed");
 			return DOCA_ERROR_NO_MEMORY;
@@ -232,9 +223,8 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		// int const job_size =
 		// 	regex_cfg->chunk_len < *remaining_bytes ? regex_cfg->chunk_len : *remaining_bytes;
 		// int const read_offset = regex_cfg->data_buffer_len - *remaining_bytes;
-		char * data_buffer = (char *)calloc(BUF_SIZE, sizeof(char));
 		void *mbuf_data;
-		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buffer, BUF_SIZE, &buf);
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
