@@ -211,9 +211,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
  * @return: number of the enqueued jobs or -1
  */
 static int
-regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_search *job_request,
-		   uint32_t *remaining_bytes)
-{
+regex_scan_enq_job(struct regex_scan_ctx * regex_cfg) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -243,13 +241,23 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		doca_buf_get_data(buf, &mbuf_data);
 		doca_buf_set_data(buf, mbuf_data, BUF_SIZE);
 
+		struct doca_regex_job_search const job_request = {
+				.base = {
+					.type = DOCA_REGEX_JOB_SEARCH,
+					.ctx = doca_regex_as_ctx(worker_ctx->app_cfg->doca_reg),
+					.user_data = { .ptr = buf },
+				},
+				.buffer = buf,
+				.rule_group_ids = {1, 0, 0, 0},
+				.result = regex_cfg->results + nb_enqueued,
+				.allow_batching = false,
+		};
+
 		// regex_cfg->buf = buf;
-		job_request->base.user_data.ptr = buf;
-		// job_request->base.user_data.u64 = 1;
-		job_request->buffer = buf;
-		job_request->result = regex_cfg->results + nb_enqueued;
-		job_request->allow_batching = false;
-		result = doca_workq_submit(regex_cfg->workq, (struct doca_job *)job_request);
+		// job_request->buffer = buf;
+		// job_request->result = regex_cfg->results + nb_enqueued;
+		// job_request->allow_batching = false;
+		result = doca_workq_submit(regex_cfg->workq, (struct doca_job *)&job_request);
 		if (result == DOCA_ERROR_NO_MEMORY) {
 			doca_buf_refcount_rm(buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
@@ -376,7 +384,6 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	uint32_t remaining_bytes, nb_dequeued = 0, nb_enqueued = 0;
 	const int nb_chunks = NB_CHUNKS;
 	struct regex_scan_ctx rgx_cfg = {0};
-	struct doca_regex_job_search job_request = {0};
 	int ret;
 
 	/* Set DOCA RegEx configuration fields in regex_cfg according to our sample */
@@ -414,15 +421,10 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		return result;
 	}
 
-
-	job_request.base.type = DOCA_REGEX_JOB_SEARCH;
-	job_request.rule_group_ids[0] = 1;
-	job_request.base.ctx = doca_regex_as_ctx(rgx_cfg.doca_regex);
-	remaining_bytes = data_buffer_len;
 	/* The main loop, enqueues jobs (chunks) and dequeues for results. */
 	do {
 		/* Enqueue jobs */
-		ret = regex_scan_enq_job(&rgx_cfg, &job_request, &remaining_bytes);
+		ret = regex_scan_enq_job(&rgx_cfg);
 		if (ret < 0) {
 			DOCA_LOG_ERR("Failed to enqueue jobs");
 			regex_scan_destroy(&rgx_cfg);
