@@ -216,13 +216,13 @@ main(int argc, char **argv)
 	}
 
 	/* Read data file */
-	result = read_file(cfg.data, &data_buffer, &data_buffer_len);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to load data buffer: %s", doca_get_error_string(result));
-		free(cfg.rules_buffer);
-		doca_argp_destroy();
-		return EXIT_FAILURE;
-	}
+	// result = read_file(cfg.data, &data_buffer, &data_buffer_len);
+	// if (result != DOCA_SUCCESS) {
+	// 	DOCA_LOG_ERR("Failed to load data buffer: %s", doca_get_error_string(result));
+	// 	free(cfg.rules_buffer);
+	// 	doca_argp_destroy();
+	// 	return EXIT_FAILURE;
+	// }
 
 	result = parse_pci_addr(cfg.pci_address, &pcie_dev);
 	if (result != DOCA_SUCCESS) {

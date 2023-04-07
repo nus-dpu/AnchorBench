@@ -168,13 +168,13 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		return result;
 	}
 
-	result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
+	// result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
+	result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->buf_mempool->addr, regex_cfg->buf_mempool->size, sysconf(_SC_PAGESIZE),
 				    NULL, NULL);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
-	printf(" >> data_buffer: %p - %p(len: %d)\n", regex_cfg->data_buffer, regex_cfg->data_buffer + regex_cfg->data_buffer_len, regex_cfg->data_buffer_len);
 
 	uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
@@ -190,7 +190,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 	// 		return DOCA_ERROR_NO_MEMORY;
 	// 	}
 	// }
-	regex_cfg->buf_mempool = mempool_create(regex_cfg->data_buffer, NB_BUF, BUF_SIZE);
+	regex_cfg->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
 
 	regex_cfg->results = calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
 	if (regex_cfg->results == NULL) {

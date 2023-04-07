@@ -1,7 +1,7 @@
 #include "mempool.h"
 
 /*----------------------------------------------------------------------------*/
-struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
+struct mempool * mempool_create(int num_elt, size_t elt_size) {
     size_t total_size = num_elt * elt_size;
 
     struct mempool * mp = (struct mempool *)malloc(sizeof(struct mempool));
@@ -10,7 +10,7 @@ struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
         goto failed;
     }
 
-    mp->addr = buf;
+    mp->addr = (char *)calloc(num_elt, elt_size);
     if (!mp->addr) {
         goto free_mp;
     }
