@@ -437,7 +437,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 			return ret;
 		}
 		nb_dequeued += ret;
-	} while (remaining_bytes > 0 || nb_dequeued != nb_enqueued);
+	} while (1);
 
 	/* RegEx scan recognition cleanup */
 	regex_scan_destroy(&rgx_cfg);
