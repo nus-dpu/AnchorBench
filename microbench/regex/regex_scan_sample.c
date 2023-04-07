@@ -295,7 +295,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 			printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
 			doca_buf_refcount_rm(buf, NULL);
-			mempool_put(regex_cfg->mempool, buf);
+			mempool_put(regex_cfg->buf_mempool, buf);
 			// regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
