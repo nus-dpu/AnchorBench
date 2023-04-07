@@ -28,6 +28,7 @@
 #include <doca_regex_mempool.h>
 
 #include <common.h>
+#include <mempool.h>
 
 DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 
@@ -45,7 +46,8 @@ struct regex_scan_ctx {
 	size_t rules_buffer_len;			/* Length of rules buffer */
 	int chunk_len;					/* size of chunk to send to RegEx */
 	struct doca_pci_bdf *pci_address;		/* RegEx PCI address to use */
-	char * data_buf[NB_BUF];
+	// char * data_buf[NB_BUF];
+	struct mempool *buf_mempool;
 	struct doca_buf *buf[NB_BUF];			/* active job buffer */
 	struct doca_buf_inventory *buf_inv;		/* Pool of doca_buf objects */
 	struct doca_dev *dev;				/* DOCA device */
@@ -179,14 +181,15 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 	printf(" >> total number of element: %d, free element: %d\n", 
 			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free));
 
-	for (int i = 0; i < NB_BUF; i++) {
-		/* Create array of pointers (char*) to hold the queries */
-		regex_cfg->data_buf[i] = regex_cfg->data_buffer + BUF_SIZE * i;
-		if (regex_cfg->data_buf[i] == NULL) {
-			DOCA_LOG_ERR("Dynamic allocation failed");
-			return DOCA_ERROR_NO_MEMORY;
-		}
-	}
+	// for (int i = 0; i < NB_BUF; i++) {
+	// 	/* Create array of pointers (char*) to hold the queries */
+	// 	regex_cfg->data_buf[i] = regex_cfg->data_buffer + BUF_SIZE * i;
+	// 	if (regex_cfg->data_buf[i] == NULL) {
+	// 		DOCA_LOG_ERR("Dynamic allocation failed");
+	// 		return DOCA_ERROR_NO_MEMORY;
+	// 	}
+	// }
+	regex_cfg->buf_mempool = mempool_create(regex_cfg->data_buffer, NB_BUF, BUF_SIZE);
 
 	regex_cfg->results = calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
 	if (regex_cfg->results == NULL) {
@@ -220,12 +223,15 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 
 	if (*remaining_bytes != 0 && nb_free != 0) {
 		struct doca_buf *buf;
+		char * data_buf;
 		// int const job_size =
 		// 	regex_cfg->chunk_len < *remaining_bytes ? regex_cfg->chunk_len : *remaining_bytes;
 		// int const read_offset = regex_cfg->data_buffer_len - *remaining_bytes;
 		void *mbuf_data;
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buffer, BUF_SIZE, &buf);
-		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
+		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
+		mempool_get(regex_cfg->buf_mempool, &data_buf);
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
