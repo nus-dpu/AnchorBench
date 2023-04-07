@@ -261,7 +261,7 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg) {
 		// job_request->allow_batching = false;
 		result = doca_workq_submit(regex_cfg->workq, (struct doca_job *)&job_request);
 		if (result == DOCA_ERROR_NO_MEMORY) {
-			doca_buf_refcount_rm(buf, NULL);
+			doca_buf_refcount_rm(buf_element->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
 		if (result != DOCA_SUCCESS) {
