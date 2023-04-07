@@ -178,20 +178,21 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		regex_cfg->data_buf[i] = (char *)calloc(BUF_SIZE, sizeof(char));
 		if (regex_cfg->data_buf[i] == NULL) {
 			DOCA_LOG_ERR("Dynamic allocation failed");
-			return;
+			return DOCA_ERROR_NO_MEMORY;
 		}
 
 		/* register packet in mmap */
 		result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+			return DOCA_ERROR_NO_MEMORY;
 		}
 
 		/* build doca_buf */
 		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inventory, regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, &regex_cfg->buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-			goto queries_cleanup;
+			return DOCA_ERROR_NO_MEMORY;
 		}
 	}
 
