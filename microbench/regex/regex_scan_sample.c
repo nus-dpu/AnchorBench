@@ -77,7 +77,7 @@ regex_scan_report_results(struct regex_scan_ctx *regex_cfg, struct doca_event *e
 	/* Match start is relative to the whole file data and not the current chunk */
 	while (ptr != NULL) {
 		DOCA_LOG_INFO("date rule id: %d", ptr->rule_id);
-		data_element = (struct mempool_elt *)event.user_data.ptr;
+		data_element = (struct mempool_elt *)event->user_data.ptr;
 		// regex_cfg->data_buffer[ptr->match_start + offset + ptr->length] = '\0';
 		DOCA_LOG_INFO("date value: %s", data_element->addr);
 		struct doca_regex_match *const to_release_match = ptr;
