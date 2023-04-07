@@ -255,7 +255,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 			DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
 			return -1;
 		}
-		*remaining_bytes -= job_size; /* Update remaining bytes to scan. */
+		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
 		--nb_free;
 
