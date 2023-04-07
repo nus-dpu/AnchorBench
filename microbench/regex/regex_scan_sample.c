@@ -289,7 +289,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
-			buf = (struct doca_buf *)event->user_data.ptr;
+			buf = (struct doca_buf *)event.user_data.ptr;
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
