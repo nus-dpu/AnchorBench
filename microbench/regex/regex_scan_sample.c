@@ -240,7 +240,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		}
 
 		doca_buf_get_data(buf, &mbuf_data);
-		doca_buf_set_data(buf, mbuf_data, job_size);
+		doca_buf_set_data(buf, mbuf_data, BUF_SIZE);
 
 		// regex_cfg->buf = buf;
 		job_request->buffer = buf;
