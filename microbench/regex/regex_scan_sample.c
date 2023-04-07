@@ -361,8 +361,7 @@ int
 regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_addr, char *rules_buffer,
 	size_t rules_buffer_len)
 {
-	if (data_buffer == NULL || data_buffer_len == 0 || pci_addr == NULL || rules_buffer == NULL ||
-		rules_buffer_len == 0)
+	if (pci_addr == NULL || rules_buffer == NULL || rules_buffer_len == 0)
 		return DOCA_ERROR_INVALID_VALUE;
 
 	doca_error_t result;
