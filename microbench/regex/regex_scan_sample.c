@@ -426,13 +426,13 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		nb_enqueued += ret;
 
 		/* Dequeue responses */
-		ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
-		if (ret < 0) {
-			DOCA_LOG_ERR("Failed to dequeue jobs responses");
-			regex_scan_destroy(&rgx_cfg);
-			return ret;
-		}
-		nb_dequeued += ret;
+		// ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
+		// if (ret < 0) {
+		// 	DOCA_LOG_ERR("Failed to dequeue jobs responses");
+		// 	regex_scan_destroy(&rgx_cfg);
+		// 	return ret;
+		// }
+		// nb_dequeued += ret;
 	} while (remaining_bytes > 0 || nb_dequeued != nb_enqueued);
 
 	/* RegEx scan recognition cleanup */
