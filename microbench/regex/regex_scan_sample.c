@@ -226,11 +226,14 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		char * data_buf;
 		void *mbuf_data;
 
+		/* Get one free element from the mempool */
 		mempool_get(regex_cfg->buf_mempool, &buf_element);
+		/* Get the memory segment */
 		data_buf = buf_element->addr;
 
 		memcpy(data_buf, data, data_len);
 
+		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf_element->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
@@ -253,10 +256,6 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 				.allow_batching = false,
 		};
 
-		// regex_cfg->buf = buf;
-		// job_request->buffer = buf;
-		// job_request->result = regex_cfg->results + nb_enqueued;
-		// job_request->allow_batching = false;
 		result = doca_workq_submit(regex_cfg->workq, (struct doca_job *)&job_request);
 		if (result == DOCA_ERROR_NO_MEMORY) {
 			doca_buf_refcount_rm(buf_element->buf, NULL);
@@ -269,9 +268,6 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
 		--nb_free;
-
-		/* Prepare next chunk. */
-		// job_request->base.user_data.u64++;
 	}
 
 	return nb_enqueued;
@@ -304,8 +300,11 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
 			printf(" >> %s: total: %d, nb free elements: %d, buf element: %p, doca buf: %p\n", 
 					__func__, nb_total, nb_free, buf_element, buf_element->buf);
+			/* Report the scan result of RegEx engine */
 			regex_scan_report_results(regex_cfg, &event);
+			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(buf_element->buf, NULL);
+			/* Put the element back into the mempool */
 			mempool_put(regex_cfg->buf_mempool, buf_element);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
