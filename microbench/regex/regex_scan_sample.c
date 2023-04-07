@@ -262,7 +262,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		--nb_free;
 
 		/* Prepare next chunk. */
-		job_request->base.user_data.u64++;
+		// job_request->base.user_data.u64++;
 	}
 
 	return nb_enqueued;
