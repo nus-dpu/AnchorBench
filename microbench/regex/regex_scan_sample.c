@@ -244,7 +244,7 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg) {
 		struct doca_regex_job_search const job_request = {
 				.base = {
 					.type = DOCA_REGEX_JOB_SEARCH,
-					.ctx = doca_regex_as_ctx(worker_ctx->app_cfg->doca_reg),
+					.ctx = doca_regex_as_ctx(regex_cfg->doca_regex),
 					.user_data = { .ptr = buf },
 				},
 				.buffer = buf,
