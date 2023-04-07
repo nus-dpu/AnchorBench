@@ -61,7 +61,7 @@ struct mempool {
     struct list_head    elt_used_list;
 };
 
-extern struct mempool * mempool_create(char * name, int num_elt, size_t elt_size);
+extern struct mempool * mempool_create(int num_elt, size_t elt_size);
 extern void mempool_free(struct mempool * mp);
 extern int mempool_get(struct mempool * mp, void ** obj);
 extern void mempool_put(struct mempool * mp, void * addr);
