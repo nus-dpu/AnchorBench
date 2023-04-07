@@ -168,6 +168,8 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		return result;
 	}
 
+	regex_cfg->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+
 	// result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
 	result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->buf_mempool->addr, regex_cfg->buf_mempool->size, sysconf(_SC_PAGESIZE),
 				    NULL, NULL);
@@ -190,7 +192,6 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 	// 		return DOCA_ERROR_NO_MEMORY;
 	// 	}
 	// }
-	regex_cfg->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
 
 	regex_cfg->results = calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
 	if (regex_cfg->results == NULL) {
