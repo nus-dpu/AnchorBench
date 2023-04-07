@@ -195,6 +195,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 	uint32_t nb_free = 0;
 
 	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
+	printf(" >> %s: nb free elements: %d\n", __func__, nb_free);
 
 	if (*remaining_bytes != 0 && nb_free != 0) {
 		struct doca_buf *buf;
@@ -249,12 +250,15 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	int nb_dequeued = 0;
 	struct doca_event event = {0};
 	struct timespec ts;
+	uint32_t nb_free = 0;
 
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(regex_cfg->buf, NULL);
+			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
+			printf(" >> %s: nb free elements: %d\n", __func__, nb_free);
 			regex_scan_report_results(regex_cfg, &event, chunk_len);
 			++nb_dequeued;
 		} else if (result == DOCA_ERROR_AGAIN) {
@@ -378,7 +382,6 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	job_request.rule_group_ids[0] = 1;
 	job_request.base.ctx = doca_regex_as_ctx(rgx_cfg.doca_regex);
 	remaining_bytes = data_buffer_len;
-
 	/* The main loop, enqueues jobs (chunks) and dequeues for results. */
 	do {
 		/* Enqueue jobs */
