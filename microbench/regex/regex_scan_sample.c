@@ -31,8 +31,11 @@
 
 DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 
-#define NB_CHUNKS 6			/* Number of chunks to send to RegEx engine */
+#define NB_CHUNKS 128				/* Number of chunks to send to RegEx engine */
 #define SLEEP_IN_NANOS (10 * 1000)	/* Sample the job every 10 microseconds  */
+
+#define NB_BUF	128
+#define BUF_SIZE	128
 
 /* Sample context structure */
 struct regex_scan_ctx {
@@ -42,7 +45,8 @@ struct regex_scan_ctx {
 	size_t rules_buffer_len;			/* Length of rules buffer */
 	int chunk_len;					/* size of chunk to send to RegEx */
 	struct doca_pci_bdf *pci_address;		/* RegEx PCI address to use */
-	struct doca_buf *buf;				/* active job buffer */
+	char * data_buf[NB_BUF];
+	struct doca_buf *buf[NB_BUF];			/* active job buffer */
 	struct doca_buf_inventory *buf_inv;		/* Pool of doca_buf objects */
 	struct doca_dev *dev;				/* DOCA device */
 	struct doca_mmap *mmap;				/* DOCA Memory orchestration */
@@ -131,7 +135,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 	}
 
 	/* Create and start buffer inventory */
-	result = doca_buf_inventory_create(NULL, 1, DOCA_BUF_EXTENSION_NONE, &regex_cfg->buf_inv);
+	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &regex_cfg->buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -162,11 +166,33 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		return result;
 	}
 
-	result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
-				    NULL, NULL);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
-		return result;
+	// result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buffer, regex_cfg->data_buffer_len, sysconf(_SC_PAGESIZE),
+	// 			    NULL, NULL);
+	// if (result != DOCA_SUCCESS) {
+	// 	DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
+	// 	return result;
+	// }
+
+	for (int i = 0; i < 128; i++) {
+		/* Create array of pointers (char*) to hold the queries */
+		regex_cfg->data_buf[i] = (char *)calloc(BUF_SIZE, sizeof(char));
+		if (regex_cfg->data_buf[i] == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+			return;
+		}
+
+		/* register packet in mmap */
+		result = doca_mmap_populate(regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+		}
+
+		/* build doca_buf */
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inventory, regex_cfg->mmap, regex_cfg->data_buf[i], BUF_SIZE, &regex_cfg->buf[i]);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
+			goto queries_cleanup;
+		}
 	}
 
 	regex_cfg->results = calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
