@@ -26,6 +26,7 @@ struct mempool * mempool_create(char * buf, int num_elt, size_t elt_size) {
         elt->mp = mp;
         elt->size = elt_size;
         elt->addr = mp->addr + i * elt_size;
+	    printf("\t -> element %d: %p\n", i, elt->addr);
         list_add_tail(&elt->list, &mp->elt_free_list);
     }
 

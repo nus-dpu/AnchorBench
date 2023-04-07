@@ -174,6 +174,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
+	printf(" >> data_buffer: %p - %p(len: %d)\n", regex_cfg->data_buffer, regex_cfg->data_buffer + regex_cfg->data_buffer_len, regex_cfg->data_buffer_len);
 
 	uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
@@ -231,6 +232,7 @@ regex_scan_enq_job(struct regex_scan_ctx *regex_cfg, struct doca_regex_job_searc
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buffer, BUF_SIZE, &buf);
 		// result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, regex_cfg->data_buf[0], BUF_SIZE, &buf);
 		mempool_get(regex_cfg->buf_mempool, (void **)&data_buf);
+		printf("\t get data buf: %p\n", data_buf);
 		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
