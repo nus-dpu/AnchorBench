@@ -236,7 +236,7 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
 			if (i % 7 + 1 == lid) {
 				uint16_t src_port = (i << 8);
 				printf("Direct flow with src port %x to core %d\n", src_port, qids[idx]);
-				testpmd_create_flow(infos[idx]->pid, qids[idx], src_port);
+				testpmd_create_flow(infos[idx]->pid, src_port, qids[idx]);
 			}
 		}
 	}
