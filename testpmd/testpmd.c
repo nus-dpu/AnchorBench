@@ -27,17 +27,12 @@ __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
 
-#define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
-#define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
-
 static void pkt_burst_forward(int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx;
 	uint16_t nb_tx;
 	uint32_t retry;
 	uint64_t start_tsc, cur_tsc;
-	char * p;
-	struct udphdr * u;
 
 	/*
 	 * Receive a burst of packets and forward them.
@@ -55,12 +50,6 @@ static void pkt_burst_forward(int pid, int qid) {
 	nr_recv += nb_rx;
 
 	for (int i = 0; i < nb_rx; i++) {
-		p = rte_pktmbuf_mtod(pkts_burst[i], char *);
-		/* Skip UDP and DNS header to get DNS (query) start */
-		p += ETH_HEADER_SIZE;
-		p += IP_HEADER_SIZE;
-		u = (struct udphdr *)p;
-		fprintf(stderr, "core %d receive flow from port %u\n", rte_lcore_id(), ntohs(u->source));
 		start_tsc = rte_rdtsc();
 		do {
 			cur_tsc = rte_rdtsc();
