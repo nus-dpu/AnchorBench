@@ -66,7 +66,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	if (unlikely(nb_tx < nb_rx)) {
 		do {
 			rte_pktmbuf_free(pkts_burst[nb_tx]);
-			RTE_MBUF_PREFETCH_TO_FREE(pkts[nb_tx+1]);
+			RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[nb_tx+1]);
 		} while (++nb_tx < nb_rx);
 	}
 	return;
