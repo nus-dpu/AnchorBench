@@ -55,7 +55,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	nr_recv += nb_rx;
 
 	for (int i = 0; i < nb_rx; i++) {
-		p = rte_pktmbuf_mtod(&pkts_burst[i], char *);
+		p = rte_pktmbuf_mtod(pkts_burst[i], char *);
 		/* Skip UDP and DNS header to get DNS (query) start */
 		p += ETH_HEADER_SIZE;
 		p += IP_HEADER_SIZE;
