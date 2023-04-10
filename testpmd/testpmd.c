@@ -90,8 +90,8 @@ void testpmd_create_flow(int pid, uint16_t sport, uint16_t queueid) {
     */
     memset(&udp_spec, 0, sizeof(struct rte_flow_item_udp));
     memset(&udp_mask, 0, sizeof(struct rte_flow_item_udp));
-    udp_spec.hdr.dst_port = htons(sport);
-    udp_mask.hdr.dst_port = htons(PART_PORT_MASK);
+    udp_spec.hdr.src_port = htons(sport);
+    udp_mask.hdr.src_port = htons(PART_PORT_MASK);
     pattern[2].type = RTE_FLOW_ITEM_TYPE_UDP;
     pattern[2].spec = &udp_spec;
     pattern[2].mask = &udp_mask;
