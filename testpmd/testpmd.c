@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <linux/udp.h>
 #include <sys/time.h>
 
 #include "testpmd.h"
