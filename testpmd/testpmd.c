@@ -36,6 +36,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	uint32_t retry;
 	uint64_t start_tsc, cur_tsc;
 	char * p;
+	struct udphdr * u;
 
 	/*
 	 * Receive a burst of packets and forward them.
