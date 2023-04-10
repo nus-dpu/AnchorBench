@@ -56,13 +56,6 @@ struct rte_eth_conf port_conf = {
                 DEV_TX_OFFLOAD_UDP_CKSUM |
                 DEV_TX_OFFLOAD_TCP_CKSUM),
     },
-    .rx_adv_conf = {
-        .rss_conf = {
-            .rss_key = NULL,
-            .rss_hf =
-                ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP,
-        },
-    },
 };
 
 #include "testpmd-constants.h"
@@ -98,6 +91,92 @@ static struct rte_mempool * testpmd_mempool_create(const char *type, uint8_t pid
     }
 
 	return mp;
+}
+
+#define FULL_IP_MASK   0xffffffff /* full mask */
+#define EMPTY_IP_MASK  0x0 /* empty mask */
+
+#define FULL_PORT_MASK   0xffff /* full mask */
+#define PART_PORT_MASK   0xff00 /* partial mask */
+#define EMPTY_PORT_MASK  0x0 /* empty mask */
+
+#define MAX_PATTERN_NUM		4
+#define MAX_ACTION_NUM		2
+
+void testpmd_create_flow(int pid, uint16_t sport, uint16_t queueid) {
+    uint16_t dst_port;
+	struct rte_flow_error error;
+	struct rte_flow_attr attr;
+	struct rte_flow_item pattern[MAX_PATTERN_NUM];
+	struct rte_flow_action action[MAX_ACTION_NUM];
+	struct rte_flow * flow = NULL;
+	struct rte_flow_action_queue queue = { .index = queueid };
+	struct rte_flow_item_ipv4 ip_spec;
+	struct rte_flow_item_ipv4 ip_mask;
+	struct rte_flow_item_udp udp_spec;
+	struct rte_flow_item_udp udp_mask;
+	int res;
+
+    memset(pattern, 0, sizeof(pattern));
+    memset(action, 0, sizeof(action));
+
+    /*
+    * set the rule attribute.
+    * in this case only ingress packets will be checked.
+    */
+    memset(&attr, 0, sizeof(struct rte_flow_attr));
+    attr.ingress = 1;
+    attr.priority = 0;
+
+    /*
+    * create the action sequence.
+    * one action only,  move packet to queue
+    */
+    action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+    action[0].conf = &queue;
+    action[1].type = RTE_FLOW_ACTION_TYPE_END;
+
+    /*
+    * set the first level of the pattern (ETH).
+    */
+    pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
+
+    /*
+    * setting the second level of the pattern (IP).
+    */
+    memset(&ip_spec, 0, sizeof(struct rte_flow_item_ipv4));
+    memset(&ip_mask, 0, sizeof(struct rte_flow_item_ipv4));
+    pattern[1].type = RTE_FLOW_ITEM_TYPE_IPV4;
+    pattern[1].spec = &ip_spec;
+    pattern[1].mask = &ip_mask;
+
+    /*
+    * setting the third level of the pattern (UDP).
+    */
+    memset(&udp_spec, 0, sizeof(struct rte_flow_item_udp));
+    memset(&udp_mask, 0, sizeof(struct rte_flow_item_udp));
+    udp_spec.hdr.dst_port = htons(sport);
+    udp_mask.hdr.dst_port = htons(PART_PORT_MASK);
+    pattern[2].type = RTE_FLOW_ITEM_TYPE_UDP;
+    pattern[2].spec = &udp_spec;
+    pattern[2].mask = &udp_mask;
+
+    /* the final level must be always type end */
+    pattern[3].type = RTE_FLOW_ITEM_TYPE_END;
+
+    printf("Direct flow to port %x via queue %d\n", dst_port & PART_PORT_MASK, queueid);
+
+    res = rte_flow_validate(pid, &attr, pattern, action, &error);
+    if (!res) {
+retry:
+        flow = rte_flow_create(pid, &attr, pattern, action, &error);
+        if (!flow) {
+            rte_flow_flush(pid, &error);
+            goto retry;
+        }
+    } else {
+        printf("control: invalid flow rule! msg: %s\n", error.message);
+    }
 }
 
 void testpmd_config_ports() {
@@ -172,20 +251,6 @@ void testpmd_config_ports() {
         /* Get a clean copy of the configuration structure */
         rte_memcpy(&conf, &port_conf, sizeof(struct rte_eth_conf));
 
-        if (rt.rx > 1) {
-            conf.rx_adv_conf.rss_conf.rss_key = NULL;
-            conf.rx_adv_conf.rss_conf.rss_hf &= info[pid].dev_info.flow_type_rss_offloads;
-        } else {
-            conf.rx_adv_conf.rss_conf.rss_key = NULL;
-            conf.rx_adv_conf.rss_conf.rss_hf  = 0;
-        }
-
-        if (conf.rx_adv_conf.rss_conf.rss_hf != 0) {
-            conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
-        } else {
-            conf.rxmode.mq_mode = ETH_MQ_RX_NONE;
-        }
-
         /* Configure # of RX and TX queue for port */
         ret = rte_eth_dev_configure(pid, rt.rx, rt.tx, &conf);
     	if (ret < 0) {
@@ -221,6 +286,10 @@ void testpmd_config_ports() {
 				printf("rte_eth_tx_queue_setup: err=%d, port=%d, %s\n", ret, pid, rte_strerror(-ret));
             }
 		}
+
+        for (q = 0; q < rt.rx; q++) {
+            testpmd_create_flow(pid, q << 8, q);
+        }
     }
 
     RTE_ETH_FOREACH_DEV(pid) {
