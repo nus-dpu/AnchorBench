@@ -56,6 +56,13 @@ struct rte_eth_conf port_conf = {
                 DEV_TX_OFFLOAD_UDP_CKSUM |
                 DEV_TX_OFFLOAD_TCP_CKSUM),
     },
+    .rx_adv_conf = {
+        .rss_conf = {
+            .rss_key = NULL,
+            .rss_hf =
+                ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP,
+        },
+    },
 };
 
 #include "testpmd-constants.h"
@@ -164,6 +171,20 @@ void testpmd_config_ports() {
 
         /* Get a clean copy of the configuration structure */
         rte_memcpy(&conf, &port_conf, sizeof(struct rte_eth_conf));
+
+        if (rt.rx > 1) {
+            conf.rx_adv_conf.rss_conf.rss_key = NULL;
+            conf.rx_adv_conf.rss_conf.rss_hf &= info[pid].dev_info.flow_type_rss_offloads;
+        } else {
+            conf.rx_adv_conf.rss_conf.rss_key = NULL;
+            conf.rx_adv_conf.rss_conf.rss_hf  = 0;
+        }
+
+        if (conf.rx_adv_conf.rss_conf.rss_hf != 0) {
+            conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
+        } else {
+            conf.rxmode.mq_mode = ETH_MQ_RX_NONE;
+        }
 
         /* Configure # of RX and TX queue for port */
         ret = rte_eth_dev_configure(pid, rt.rx, rt.tx, &conf);
