@@ -27,6 +27,93 @@ __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
 
+
+#define FULL_IP_MASK   0xffffffff /* full mask */
+#define EMPTY_IP_MASK  0x0 /* empty mask */
+
+#define FULL_PORT_MASK   0xffff /* full mask */
+#define PART_PORT_MASK   0xff00 /* partial mask */
+#define EMPTY_PORT_MASK  0x0 /* empty mask */
+
+#define MAX_PATTERN_NUM		4
+#define MAX_ACTION_NUM		2
+
+void testpmd_create_flow(int pid, uint16_t sport, uint16_t queueid) {
+    uint16_t dst_port;
+	struct rte_flow_error error;
+	struct rte_flow_attr attr;
+	struct rte_flow_item pattern[MAX_PATTERN_NUM];
+	struct rte_flow_action action[MAX_ACTION_NUM];
+	struct rte_flow * flow = NULL;
+	struct rte_flow_action_queue queue = { .index = queueid };
+	struct rte_flow_item_ipv4 ip_spec;
+	struct rte_flow_item_ipv4 ip_mask;
+	struct rte_flow_item_udp udp_spec;
+	struct rte_flow_item_udp udp_mask;
+	int res;
+
+    memset(pattern, 0, sizeof(pattern));
+    memset(action, 0, sizeof(action));
+
+    /*
+    * set the rule attribute.
+    * in this case only ingress packets will be checked.
+    */
+    memset(&attr, 0, sizeof(struct rte_flow_attr));
+    attr.ingress = 1;
+    attr.priority = 0;
+
+    /*
+    * create the action sequence.
+    * one action only,  move packet to queue
+    */
+    action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+    action[0].conf = &queue;
+    action[1].type = RTE_FLOW_ACTION_TYPE_END;
+
+    /*
+    * set the first level of the pattern (ETH).
+    */
+    pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
+
+    /*
+    * setting the second level of the pattern (IP).
+    */
+    memset(&ip_spec, 0, sizeof(struct rte_flow_item_ipv4));
+    memset(&ip_mask, 0, sizeof(struct rte_flow_item_ipv4));
+    pattern[1].type = RTE_FLOW_ITEM_TYPE_IPV4;
+    pattern[1].spec = &ip_spec;
+    pattern[1].mask = &ip_mask;
+
+    /*
+    * setting the third level of the pattern (UDP).
+    */
+    memset(&udp_spec, 0, sizeof(struct rte_flow_item_udp));
+    memset(&udp_mask, 0, sizeof(struct rte_flow_item_udp));
+    udp_spec.hdr.dst_port = htons(sport);
+    udp_mask.hdr.dst_port = htons(PART_PORT_MASK);
+    pattern[2].type = RTE_FLOW_ITEM_TYPE_UDP;
+    pattern[2].spec = &udp_spec;
+    pattern[2].mask = &udp_mask;
+
+    /* the final level must be always type end */
+    pattern[3].type = RTE_FLOW_ITEM_TYPE_END;
+
+    printf("Direct flow to port %x via queue %d\n", dst_port & PART_PORT_MASK, queueid);
+
+    res = rte_flow_validate(pid, &attr, pattern, action, &error);
+    if (!res) {
+retry:
+        flow = rte_flow_create(pid, &attr, pattern, action, &error);
+        if (!flow) {
+            rte_flow_flush(pid, &error);
+            goto retry;
+        }
+    } else {
+        printf("control: invalid flow rule! msg: %s\n", error.message);
+    }
+}
+
 static void pkt_burst_forward(int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx;
@@ -143,6 +230,16 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
+
+	for (idx = 0; idx < rxcnt; idx++) {
+		for (int i = 17; i < 31; i++) {
+			if (i % 7 + 1 == lid) {
+				uint16_t src_port = (i << 8);
+				printf("Direct flow with src port %x to core %d\n", src_port, qids[idx]);
+				testpmd_create_flow(infos[idx]->pid, qids[idx], src_port);
+			}
+		}
+	}
 
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
