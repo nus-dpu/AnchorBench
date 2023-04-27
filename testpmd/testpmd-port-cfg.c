@@ -85,11 +85,11 @@ static struct rte_mempool * testpmd_mempool_create(const char *type, uint8_t pid
 		RTE_MBUF_DEFAULT_BUF_SIZE);
 
 	/* create the mbuf pool */
-	mp = rte_mempool_create(name, nb_mbufs, MBUF_SIZE, cache_size,
+	mp = rte_mempool_create(name, nb_mbufs, MBUF_SIZE, 256,
 							sizeof(struct rte_pktmbuf_pool_private), 
 							rte_pktmbuf_pool_init, NULL,
                             rte_pktmbuf_init, NULL,
-							socket_id, MEMPOOL_F_SP_PUT | MEMPOOL_F_SC_GET);
+							socket_id, 0);
 	if (mp == NULL) {
 		printf("Cannot create mbuf pool (%s) port %d, queue %d, nb_mbufs %d, socket_id %d: %s\n",
 			name, pid, queue_id, nb_mbufs, socket_id, rte_strerror(errno));
@@ -104,7 +104,7 @@ void testpmd_config_ports() {
     rxtx_t rt;
     uint16_t nb_ports;
 	int32_t ret, cache_size;
-    cache_size = MBUF_CACHE_SIZE;
+    cache_size = MAX_MBUFS_PER_PORT;
 
 	/* Find out the total number of ports in the system. */
 	/* We have already blacklisted the ones we needed to in main routine. */
