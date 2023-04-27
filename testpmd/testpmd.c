@@ -149,7 +149,7 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
 
     while (true) {
 		gettimeofday(&curr, NULL);
-		if (curr.tv_sec - last_log.tv_sec > 1) {
+		if (curr.tv_sec - last_log.tv_sec >= 1) {
 			sec_recv = (float)nr_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
 			sec_send = (float)nr_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
 			printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS) / Max RX: %8.2f (KPS), Max TX: %8.2f (KPS)\n", 
