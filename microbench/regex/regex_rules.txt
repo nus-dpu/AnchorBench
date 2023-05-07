@@ -11,4 +11,4 @@
 #
 
 # Domain containing psychology
-1, www.*psycho.*
+1, [\w\.+-]+@[\w\.-]+\.[\w\.-]+
