@@ -29,6 +29,7 @@
 
 #include <common.h>
 #include <mempool.h>
+#include <chrono>
 
 DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 
@@ -201,7 +202,7 @@ regex_scan_init(struct regex_scan_ctx *regex_cfg)
 	// 	}
 	// }
 
-	regex_cfg->results = calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
+	regex_cfg->results = (struct doca_regex_search_result *)calloc(NB_CHUNKS, sizeof(struct doca_regex_search_result));
 	if (regex_cfg->results == NULL) {
 		DOCA_LOG_ERR("Unable to add allocate results storage");
 		return DOCA_ERROR_NO_MEMORY;
