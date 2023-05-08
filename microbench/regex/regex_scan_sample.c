@@ -579,7 +579,7 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 
 	fclose(output_fp);
 
-	int status, result;
+	int status, res;
     lua_State *L;
     L = luaL_newstate();
     luaL_openlibs(L);
@@ -590,8 +590,8 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
         exit(1);
     }
 
-    result = lua_pcall(L, 0, LUA_MULTRET, 0);
-    if (result) {
+    res = lua_pcall(L, 0, LUA_MULTRET, 0);
+    if (res) {
         fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
         exit(1);
     }
