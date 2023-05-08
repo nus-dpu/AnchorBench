@@ -269,7 +269,6 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
 	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
-		printf("ptr: %p, ts: %lu s %lu ns\n", buf_element, buf_element->ts.tv_sec, buf_element->ts.tv_nsec);
 
 		struct doca_regex_job_search const job_request = {
 				.base = {
@@ -326,7 +325,6 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
 			if (nr_latency < MAX_NR_LATENCY) {
-				printf("ptr: %p, ts: %lu s %lu ns, now ts: %lu s %lu ns\n", buf_element, buf_element->ts.tv_sec, buf_element->ts.tv_nsec, now.tv_sec, now.tv_nsec);
 				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			}
 			/* release the buffer back into the pool so it can be re-used */
