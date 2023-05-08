@@ -526,6 +526,23 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		}
 	}
 
+	int start = (int)(0.15 * nr_latency);
+	FILE * fp;
+	char name[32];
+
+	sprintf(name, "latency.txt");
+	fp = fopen(name, "w");
+	if (!fp) {
+		printf("Error opening latency output file!\n");
+		return;
+	}
+
+	for (int i = start; i < nr_latency; i++) {
+		fprintf(fp, "%lu\n", latency[i]);
+	}
+
+	fclose(fp);
+
 	/* RegEx scan recognition cleanup */
 	regex_scan_destroy(&rgx_cfg);
 	return 0;
