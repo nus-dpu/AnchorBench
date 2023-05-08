@@ -80,6 +80,11 @@ struct input_info {
 
 struct input_info input[MAX_NR_RULE];
 
+#define MAX_NR_LATENCY	(128 * 1024)
+
+int nr_latency = 0;
+uint64_t latency[MAX_NR_LATENCY];
+
 /*
  * Printing the RegEx results
  *
@@ -263,6 +268,8 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		doca_buf_get_data(buf_element->buf, &mbuf_data);
 		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
+	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+
 		struct doca_regex_job_search const job_request = {
 				.base = {
 					.type = DOCA_REGEX_JOB_SEARCH,
@@ -309,11 +316,17 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
 	struct mempool_elt * buf_element;
+	struct timespec now;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	do {
 		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
@@ -415,8 +428,6 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
     ssize_t read;
 	int nr_rule = 0;
 	int nr_core = 1;
-	double rate = 1.0;
-	double lambda = nr_core * 1.0e6 / rate;
 
 	uint64_t interval = 0;
 	int index = 0;
@@ -460,7 +471,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		return result;
 	}
 
-	fp = fopen("../dns.txt", "r");
+	fp = fopen(rgx_cfg->data, "r");
     if (fp == NULL) {
         return -1;
 	}
@@ -495,6 +506,10 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		nr_rule++;
 	}
 
+	for (double rate = 1.0; rate < 10.0; rate++) {
+		double lambda = nr_core * 1.0e6 / rate;
+	}
+
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
 		if (current_time.tv_sec - start.tv_sec > 10) {
@@ -526,22 +541,22 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		}
 	}
 
-	int start = (int)(0.15 * nr_latency);
-	FILE * fp;
+	int lat_start = (int)(0.15 * nr_latency);
+	FILE * output_fp;
 	char name[32];
 
 	sprintf(name, "latency.txt");
-	fp = fopen(name, "w");
-	if (!fp) {
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
 		printf("Error opening latency output file!\n");
 		return;
 	}
 
-	for (int i = start; i < nr_latency; i++) {
-		fprintf(fp, "%lu\n", latency[i]);
+	for (int i = lat_start; i < nr_latency; i++) {
+		fprintf(output_fp, "%lu\n", latency[i]);
 	}
 
-	fclose(fp);
+	fclose(output_fp);
 
 	/* RegEx scan recognition cleanup */
 	regex_scan_destroy(&rgx_cfg);
