@@ -19,7 +19,7 @@ myemailaddress@outlook.com
 johnsmith@gmail.com
 janedoe@Posteo.com
 support@yahoo.com
-info@mycompany.com
+info@icloud.com
 tomjones@tutanota.com
 testemail@gmail.com
 karenwhite@mailbox.org
