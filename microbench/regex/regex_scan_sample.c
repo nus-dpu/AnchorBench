@@ -30,9 +30,6 @@
 #include <common.h>
 #include <mempool.h>
 
-#include "generator.h"
-#include "exponential_generator.h"
-
 DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 
 #define NB_CHUNKS 128				/* Number of chunks to send to RegEx engine */
