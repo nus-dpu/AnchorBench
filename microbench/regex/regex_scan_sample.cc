@@ -411,6 +411,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
     Generator<uint64_t> * arrival = new ExponentialGenerator(nr_core * 1.0e6 / rate);
 	uint64_t start, last_enq_time;
 	uint64_t current_time, interval = 0;
+	int index = 0;
 
 	start = last_enq_time = CurrentTime_nanoseconds();
 
@@ -479,8 +480,8 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	}
 #endif
 	while ((read = getline(&line, &len, fp)) != -1) {
-		info[nr_rule].line = line;
-		info[nr_rule].len = len;
+		input[nr_rule].line = line;
+		input[nr_rule].len = len;
 		nr_rule++;
 	}
 
@@ -493,11 +494,13 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		}
 
 		if (current_time - last_enq_time > interval) {
-			ret = regex_scan_enq_job(&rgx_cfg, line, read);
+			// ret = regex_scan_enq_job(&rgx_cfg, line, read);
+			ret = regex_scan_enq_job(&rgx_cfg, input[index].line, input[index].len);
 			if (ret < 0) {
 				DOCA_LOG_ERR("Failed to enqueue jobs");
 				continue;
 			} else {
+				index = (index + 1) % MAX_NR_RULE;
 				nb_enqueued++;
 				interval = arrival->Next();
 				last_enq_time = current_time;
