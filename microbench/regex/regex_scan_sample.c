@@ -29,7 +29,6 @@
 
 #include <common.h>
 #include <mempool.h>
-#include <chrono>
 
 #include "generator.h"
 #include "exponential_generator.h"
