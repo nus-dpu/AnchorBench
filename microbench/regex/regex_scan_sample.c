@@ -447,7 +447,7 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 
 	for (int i = 0; i < DEPTH; i++) {
 		worker[i].interval = 0;
-		clock_gettime(CLOCK_MONOTONIC, worker[i].last_enq_time);
+		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
 	/* Set DOCA RegEx configuration fields in regex_cfg according to our sample */
