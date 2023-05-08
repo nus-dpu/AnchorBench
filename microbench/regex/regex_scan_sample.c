@@ -16,6 +16,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <doca_buf.h>
 #include <doca_buf_inventory.h>
@@ -366,12 +367,7 @@ regex_scan_destroy(struct regex_scan_ctx *regex_cfg)
 		doca_dev_close(regex_cfg->dev);
 		regex_cfg->dev = NULL;
 	}
-}
 
-static inline uint64_t CurrentTime_nanoseconds() {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>
-              (std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-}
 
 double ran_expo(double lambda) {
     double u;
