@@ -395,6 +395,13 @@ regex_scan_destroy(struct regex_scan_ctx *regex_cfg)
 	}
 }
 
+#define DEPTH	32
+
+struct worker {
+	uint64_t interval;
+	struct timespec last_enq_time;
+};
+
 double ran_expo(double lambda) {
     double u;
     u = rand() / (RAND_MAX + 1.0);
@@ -431,12 +438,17 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 	int nr_rule = 0;
 	int nr_core = 1;
 
-	uint64_t interval = 0;
+	struct worker worker[DEPTH];
+
 	int index = 0;
 
-	struct timespec start, last_enq_time, current_time;
+	struct timespec start, current_time;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    clock_gettime(CLOCK_MONOTONIC, &last_enq_time);
+
+	for (int i = 0; i < DEPTH; i++) {
+		worker[i].interval = 0;
+		clock_gettime(CLOCK_MONOTONIC, worker[i].last_enq_time);
+	}
 
 	/* Set DOCA RegEx configuration fields in regex_cfg according to our sample */
 	rgx_cfg.data_buffer = data_buffer;
@@ -539,17 +551,19 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 			break;
 		}
 
-		if (diff_timespec(&last_enq_time, &current_time) > interval) {
-			// ret = regex_scan_enq_job(&rgx_cfg, line, read);
-			ret = regex_scan_enq_job(&rgx_cfg, input[index].line, input[index].len);
-			if (ret < 0) {
-				DOCA_LOG_ERR("Failed to enqueue jobs");
-				continue;
-			} else {
-				index = (index + 1) % MAX_NR_RULE;
-				nb_enqueued++;
-				interval = ran_expo(lambda);
-				last_enq_time = current_time;
+		for (int i = 0; i < DEPTH; i++) {
+			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+				// ret = regex_scan_enq_job(&rgx_cfg, line, read);
+				ret = regex_scan_enq_job(&rgx_cfg, input[index].line, input[index].len);
+				if (ret < 0) {
+					DOCA_LOG_ERR("Failed to enqueue jobs");
+					continue;
+				} else {
+					index = (index + 1) % MAX_NR_RULE;
+					nb_enqueued++;
+					worker[i].interval = ran_expo(lambda);
+					worker[i].last_enq_time = current_time;
+				}
 			}
 		}
 
