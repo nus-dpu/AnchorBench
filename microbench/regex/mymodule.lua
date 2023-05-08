@@ -1,7 +1,3 @@
-local mymodule = {}
-
-function mymodule.sayhi()
-  print('Why hello from mymodule!')
+function bar( )
+    io.write("hello, world!\n")
 end
-
-return mymodule

@@ -579,11 +579,24 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 
 	fclose(output_fp);
 
-	lua_State *L = luaL_newstate();
-	luaL_openlibs(L);
-	luaL_dofile(L, "mymodule.lua");
-	lua_setglobal(L, "mymodule");
-	lua_settop(L, 0);
+	int status, result;
+    lua_State *L;
+    L = luaL_newstate();
+    luaL_openlibs(L);
+
+    status = luaL_loadfile(L, "mymodule.lua");
+    if (status) {
+        fprintf(stderr, "Couldn't load file: %s\n", lua_tostring(L, -1));
+        exit(1);
+    }
+
+    result = lua_pcall(L, 0, LUA_MULTRET, 0);
+    if (result) {
+        fprintf(stderr, "Failed to run script: %s\n", lua_tostring(L, -1));
+        exit(1);
+    }
+
+    lua_close(L);
 
 	/* RegEx scan recognition cleanup */
 	regex_scan_destroy(&rgx_cfg);
