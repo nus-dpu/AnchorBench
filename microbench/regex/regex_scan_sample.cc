@@ -377,6 +377,12 @@ static inline uint64_t CurrentTime_nanoseconds() {
               (std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
+double ran_expo(double lambda) {
+    double u;
+    u = rand() / (RAND_MAX + 1.0);
+    return -log(1- u) / lambda;
+}
+
 /*
  * Run DOCA RegEx sample
  *
@@ -407,7 +413,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	int nr_rule = 0;
 	int nr_core = 1;
 	double rate = 1.0;
-    Generator<uint64_t> * arrival = new ExponentialGenerator(nr_core * 1.0e6 / rate);
+	double lambda = nr_core * 1.0e6 / rate;
 	uint64_t start, last_enq_time;
 	uint64_t current_time, interval = 0;
 	int index = 0;
@@ -501,7 +507,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 			} else {
 				index = (index + 1) % MAX_NR_RULE;
 				nb_enqueued++;
-				interval = arrival->Next();
+				interval = ran_expo(lambda);
 				last_enq_time = current_time;
 			}
 		}
