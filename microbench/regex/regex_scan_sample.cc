@@ -38,6 +38,8 @@ DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 #define NB_BUF	128
 #define BUF_SIZE	128
 
+#define NSEC_PER_SEC    1000000000L
+
 /* Sample context structure */
 struct regex_scan_ctx {
 	char *data_buffer;				/* Data buffer */
@@ -56,6 +58,15 @@ struct regex_scan_ctx {
 	struct doca_workq *workq;			/* DOCA work queue */
 	struct doca_regex_search_result *results;	/* Pointer to array of result objects */
 };
+
+#define MAX_NR_RULE	1000
+
+struct input_info {
+	char * line;
+	int len;
+};
+
+struct input_info input[MAX_NR_RULE];
 
 /*
  * Printing the RegEx results
@@ -76,10 +87,8 @@ regex_scan_report_results(struct regex_scan_ctx *regex_cfg, struct doca_event *e
 	ptr = result->matches;
 	/* Match start is relative to the whole file data and not the current chunk */
 	while (ptr != NULL) {
-		DOCA_LOG_INFO("date rule id: %d", ptr->rule_id);
 		data_element = (struct mempool_elt *)event->user_data.ptr;
 		// regex_cfg->data_buffer[ptr->match_start + offset + ptr->length] = '\0';
-		DOCA_LOG_INFO("date value: %s", data_element->addr);
 		struct doca_regex_match *const to_release_match = ptr;
 
 		ptr = ptr->next;
@@ -218,7 +227,6 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 
 	doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
-	printf(" >> %s: total: %d, nb free elements: %d\n", __func__, nb_total, nb_free);
 
 	if (nb_free != 0) {
 		// struct doca_buf *buf;
@@ -298,8 +306,6 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
-			printf(" >> %s: total: %d, nb free elements: %d, buf element: %p, doca buf: %p\n", 
-					__func__, nb_total, nb_free, buf_element, buf_element->buf);
 			/* Report the scan result of RegEx engine */
 			regex_scan_report_results(regex_cfg, &event);
 			/* release the buffer back into the pool so it can be re-used */
@@ -363,6 +369,11 @@ regex_scan_destroy(struct regex_scan_ctx *regex_cfg)
 	}
 }
 
+static inline uint64_t CurrentTime_nanoseconds() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>
+              (std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
 /*
  * Run DOCA RegEx sample
  *
@@ -390,6 +401,14 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
+	int nr_rule = 0;
+	int nr_core = 1;
+	double rate = 1.0;
+    Generator<uint64_t> * arrival = new ExponentialGenerator(nr_core * 1.0e6 / rate);
+	uint64_t start, last_enq_time;
+	uint64_t current_time, interval = 0;
+
+	start = last_enq_time = CurrentTime_nanoseconds();
 
 	/* Set DOCA RegEx configuration fields in regex_cfg according to our sample */
 	rgx_cfg.data_buffer = data_buffer;
@@ -430,7 +449,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
     if (fp == NULL) {
         return -1;
 	}
-
+#if 0
 	/* The main loop, enqueues jobs (chunks) and dequeues for results. */
 	while ((read = getline(&line, &len, fp)) != -1) {
 		// printf("Retrieved line of length %zu:\n", read);
@@ -453,6 +472,41 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 			return ret;
 		}
 		nb_dequeued += ret;
+	}
+#endif
+	while ((read = getline(&line, &len, fp)) != -1) {
+		info[nr_rule].line = line;
+		info[nr_rule].len = len;
+		nr_rule++;
+	}
+
+	while (1) {
+		current_time = CurrentTime_nanoseconds();
+		if (current - start > 10 * NSEC_PER_SEC) {
+			printf("Enqueue: %u, %6.2f(RPS)\n", nb_enqueued, nb_enqueued * 1000000000 / (current - start));
+			printf("Dequeue: %u, %6.2f(RPS)\n", nb_dequeued, nb_dequeued * 1000000000 / (current - start));
+			break;
+		}
+
+		if (current_time - last_enq_time > interval) {
+			ret = regex_scan_enq_job(&rgx_cfg, line, read);
+			if (ret < 0) {
+				DOCA_LOG_ERR("Failed to enqueue jobs");
+				continue;
+			} else {
+				nb_enqueued++;
+				interval = arrival->Next();
+				last_enq_time = current_time;
+			}
+		}
+
+		ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to dequeue jobs responses");
+			continue;
+		} else {
+			nb_dequeued++;
+		}
 	}
 
 	/* RegEx scan recognition cleanup */
