@@ -488,8 +488,8 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	while (1) {
 		current_time = CurrentTime_nanoseconds();
 		if (current_time - start > 10 * NSEC_PER_SEC) {
-			printf("Enqueue: %u, %6.2f(RPS)\n", nb_enqueued, nb_enqueued * 1000000000 / (current_time - start));
-			printf("Dequeue: %u, %6.2f(RPS)\n", nb_dequeued, nb_dequeued * 1000000000 / (current_time - start));
+			printf("Enqueue: %lu, %6.2ld(RPS)\n", nb_enqueued, nb_enqueued * 1000000000 / (current_time - start));
+			printf("Dequeue: %lu, %6.2ld(RPS)\n", nb_dequeued, nb_dequeued * 1000000000 / (current_time - start));
 			break;
 		}
 
