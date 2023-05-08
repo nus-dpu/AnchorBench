@@ -312,7 +312,7 @@ static int
 regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 {
 	doca_error_t result;
-	int nb_dequeued = 0;
+	int finished = 0;
 	struct doca_event event = {0};
 	struct timespec ts;
 	uint32_t nb_free = 0;
@@ -338,7 +338,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 			doca_buf_refcount_rm(buf_element->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(regex_cfg->buf_mempool, buf_element);
-			++nb_dequeued;
+			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			/* Wait for the job to complete */
 			ts.tv_sec = 0;
@@ -351,7 +351,7 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 
 	} while (result == DOCA_SUCCESS);
 
-	return nb_dequeued;
+	return finished;
 }
 
 /*
@@ -572,7 +572,7 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 			DOCA_LOG_ERR("Failed to dequeue jobs responses");
 			continue;
 		} else {
-			nb_dequeued++;
+			nb_dequeued += ret;
 		}
 	}
 
