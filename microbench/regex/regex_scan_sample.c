@@ -269,7 +269,7 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
 	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
-		printf("ptr: %p, ts: %lu s %lu ns\n", ptr, buf_element->ts.tv_sec, buf_element->ts.tv_nsec);
+		printf("ptr: %p, ts: %lu s %lu ns\n", buf_element, buf_element->ts.tv_sec, buf_element->ts.tv_nsec);
 
 		struct doca_regex_job_search const job_request = {
 				.base = {
