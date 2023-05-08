@@ -16,7 +16,7 @@ deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
 deps += dependency('libbsd')
-deps += dependency(lua5.3, version: '>=5.3', required: false)
+deps += dependency('lua5.3', version: '>=5.3', required: false)
 
 machine_args = []
 
