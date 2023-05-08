@@ -471,7 +471,7 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		return result;
 	}
 
-	fp = fopen(rgx_cfg->data, "r");
+	fp = fopen(rgx_cfg.data, "r");
     if (fp == NULL) {
         return -1;
 	}
@@ -506,9 +506,11 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 		nr_rule++;
 	}
 
-	for (double rate = 1.0; rate < 10.0; rate++) {
-		double lambda = nr_core * 1.0e6 / rate;
-	}
+	// for (double rate = 1.0; rate < 10.0; rate++) {
+	// 	double lambda = nr_core * 1.0e6 / rate;
+	// }
+
+	double lambda = nr_core * 1.0e6 / rate;
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
