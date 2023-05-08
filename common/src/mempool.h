@@ -45,6 +45,8 @@ struct mempool_elt {
     struct doca_buf     * buf;     
     /* Mempool element size */
     int                 size;
+    /* Timestamp */
+    struct timespec     ts;
     /* Element address */
     char                * addr;
 };
