@@ -23,6 +23,16 @@ default_cflags = machine_args
 cflags = default_cflags
 cflags += '-I/usr/include/lua5.3'
 
+foreach name : ['lua', 'lua5.3', 'lua-5.3', 'lua53']
+    luaDep = dependency(name, version: '>=5.3', required: false)
+    if luaDep.found()
+        break
+    endif
+endforeach
+if not luaDep.found()
+    error('Lua could not be found!')
+endif
+
 common_path = '../../' + 'common'
 common_src_path = '../../' + 'common/src'
 
@@ -45,5 +55,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
-        link_args: '-lm -llua -llualib',
+        link_args: '-lm',
         install: false)
