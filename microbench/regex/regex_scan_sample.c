@@ -516,8 +516,24 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
 		if (current_time.tv_sec - start.tv_sec > 10) {
-			printf("Enqueue: %u, %6.2ld(RPS)\n", nb_enqueued, nb_enqueued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
-			printf("Dequeue: %u, %6.2ld(RPS)\n", nb_dequeued, nb_dequeued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+			printf("Enqueue: %u, %6.2lf(RPS)\n", nb_enqueued, nb_enqueued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+			printf("Dequeue: %u, %6.2lf(RPS)\n", nb_dequeued, nb_dequeued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+
+			FILE * output_fp;
+			char name[32];
+
+			sprintf(name, "thp.txt");
+			output_fp = fopen(name, "w");
+			if (!output_fp) {
+				printf("Error opening throughput output file!\n");
+				return;
+			}
+
+			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
+				nb_enqueued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)), 
+				nb_dequeued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+
+			fclose(output_fp);
 			break;
 		}
 
