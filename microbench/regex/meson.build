@@ -16,22 +16,12 @@ deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
 deps += dependency('libbsd')
+deps += dependency(lua5.3, version: '>=5.3', required: false)
 
 machine_args = []
 
 default_cflags = machine_args
 cflags = default_cflags
-cflags += '-I/usr/include/lua5.3'
-
-foreach name : ['lua', 'lua5.3', 'lua-5.3', 'lua53']
-    luaDep = dependency(name, version: '>=5.3', required: false)
-    if luaDep.found()
-        break
-    endif
-endforeach
-if not luaDep.found()
-    error('Lua could not be found!')
-endif
 
 common_path = '../../' + 'common'
 common_src_path = '../../' + 'common/src'
