@@ -252,7 +252,6 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 			return nb_enqueued;
 		}
 
-		printf("\t buf element: %p, doca buf: %p\n", buf_element, data_buf);
 		doca_buf_get_data(buf_element->buf, &mbuf_data);
 		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
@@ -262,8 +261,8 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 					.ctx = doca_regex_as_ctx(regex_cfg->doca_regex),
 					.user_data = { .ptr = buf_element },
 				},
-				.buffer = buf_element->buf,
 				.rule_group_ids = {1, 0, 0, 0},
+				.buffer = buf_element->buf,
 				.result = regex_cfg->results + nb_enqueued,
 				.allow_batching = false,
 		};
