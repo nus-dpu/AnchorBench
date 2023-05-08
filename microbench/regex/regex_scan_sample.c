@@ -367,7 +367,7 @@ regex_scan_destroy(struct regex_scan_ctx *regex_cfg)
 		doca_dev_close(regex_cfg->dev);
 		regex_cfg->dev = NULL;
 	}
-
+}
 
 double ran_expo(double lambda) {
     double u;
