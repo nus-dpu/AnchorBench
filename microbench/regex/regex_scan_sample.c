@@ -525,7 +525,7 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 	// }
 	
 	double rate = 1.0;
-	double lambda = nr_core * 1.0e6 / rate;
+	double lambda = DEPTH * nr_core * 1.0e6 / rate;
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
