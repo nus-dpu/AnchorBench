@@ -10,13 +10,15 @@
  * provided with the software product.
  *
  */
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
 
 #include <doca_buf.h>
 #include <doca_buf_inventory.h>

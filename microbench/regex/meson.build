@@ -44,5 +44,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
-        link_args: '-lm',
+        link_args: '-lm -llua -llualib',
         install: false)
