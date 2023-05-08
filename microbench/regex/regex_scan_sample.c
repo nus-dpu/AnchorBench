@@ -577,6 +577,10 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 
 	fclose(output_fp);
 
+	lua_State *L = luaL_newstate();
+    luaL_openlibs(L);
+	luaL_dofile(L, '../report.lua');
+
 	/* RegEx scan recognition cleanup */
 	regex_scan_destroy(&rgx_cfg);
 	return 0;
