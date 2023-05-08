@@ -44,7 +44,7 @@ DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
-	struct timespec diff = {.tv_sec = t1->tv_sec - t2->tv_sec, .tv_nsec = t1->tv_nsec - t2->tv_nsec};
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
 		diff.tv_nsec += NSEC_PER_SEC;
 		diff.tv_sec--;
@@ -539,7 +539,7 @@ regex_scan(char * data_file, char *data_buffer, size_t data_buffer_len, struct d
 			break;
 		}
 
-		if (diff_timespec(&current_time, &last_enq_time) > interval) {
+		if (diff_timespec(&last_enq_time, &current_time) > interval) {
 			// ret = regex_scan_enq_job(&rgx_cfg, line, read);
 			ret = regex_scan_enq_job(&rgx_cfg, input[index].line, input[index].len);
 			if (ret < 0) {
