@@ -55,6 +55,6 @@ email_addr = [
 
 with open('dns.txt', 'w') as f:
     for i in range(0, 1000):
-        dns = random.choice(psychology_dns)
-        f.write(dns)
+        addr = random.choice(email_addr)
+        f.write(addr)
         f.write('\n')
