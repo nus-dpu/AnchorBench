@@ -41,6 +41,8 @@ DOCA_LOG_REGISTER(REGEX_SCAN::SAMPLE);
 
 #define NSEC_PER_SEC    1000000000L
 
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
 /* Sample context structure */
 struct regex_scan_ctx {
 	char *data_buffer;				/* Data buffer */
@@ -406,11 +408,13 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	int nr_core = 1;
 	double rate = 1.0;
 	double lambda = nr_core * 1.0e6 / rate;
-	uint64_t start, last_enq_time;
-	uint64_t current_time, interval = 0;
+
+	uint64_t interval = 0;
 	int index = 0;
 
-	start = last_enq_time = CurrentTime_nanoseconds();
+	struct timespec start, last_enq_time, current_time;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_gettime(CLOCK_MONOTONIC, &last_enq_time);
 
 	/* Set DOCA RegEx configuration fields in regex_cfg according to our sample */
 	rgx_cfg.data_buffer = data_buffer;
@@ -483,10 +487,10 @@ regex_scan(char *data_buffer, size_t data_buffer_len, struct doca_pci_bdf *pci_a
 	}
 
 	while (1) {
-		current_time = CurrentTime_nanoseconds();
-		if (current_time - start > 10 * NSEC_PER_SEC) {
-			printf("Enqueue: %u, %6.2ld(RPS)\n", nb_enqueued, nb_enqueued * 1000000000 / (current_time - start));
-			printf("Dequeue: %u, %6.2ld(RPS)\n", nb_dequeued, nb_dequeued * 1000000000 / (current_time - start));
+    	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - start.tv_sec > 10) {
+			printf("Enqueue: %u, %6.2ld(RPS)\n", nb_enqueued, nb_enqueued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+			printf("Dequeue: %u, %6.2ld(RPS)\n", nb_dequeued, nb_dequeued * 1000000000L / (TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
 			break;
 		}
 

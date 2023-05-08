@@ -16,7 +16,6 @@ deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
 deps += dependency('libbsd')
-deps += dependency('libm')
 
 machine_args = []
 
@@ -45,4 +44,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
+        link_args: '-lm',
         install: false)
