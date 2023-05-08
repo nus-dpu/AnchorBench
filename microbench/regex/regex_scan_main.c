@@ -231,7 +231,7 @@ main(int argc, char **argv)
 	}
 
 	/* Run RegEx sample */
-	ret = regex_scan(data_buffer, data_buffer_len, &pcie_dev, cfg.rules_buffer, cfg.rules_buffer_len);
+	ret = regex_scan(cfg.data, data_buffer, data_buffer_len, &pcie_dev, cfg.rules_buffer, cfg.rules_buffer_len);
 	if (ret < 0) {
 		DOCA_LOG_ERR("Sample function has failed: %s", strerror(abs(ret)));
 		free(data_buffer);
