@@ -21,6 +21,7 @@ machine_args = []
 
 default_cflags = machine_args
 cflags = default_cflags
+cflags += '-I/usr/include/lua5.3'
 
 common_path = '../../' + 'common'
 common_src_path = '../../' + 'common/src'
