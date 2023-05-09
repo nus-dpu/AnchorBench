@@ -372,8 +372,8 @@ int main(int argc, char **argv) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
 
-		regex_ctx = (struct regex_ctx *)calloc(1, sizeof(struct regex_ctx));
-        regex_init_lcore(regex_ctx);
+		rgx_ctx = (struct regex_ctx *)calloc(1, sizeof(struct regex_ctx));
+        regex_init_lcore(rgx_ctx);
 
         /* The pthread_create() call stores the thread ID into
             corresponding element of tinfo[]. */
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
 
-        ret = pthread_create(&pids[i], &pattr, &regex_work_lcore, (void *)regex_ctx);
+        ret = pthread_create(&pids[i], &pattr, &regex_work_lcore, (void *)rgx_ctx);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }
