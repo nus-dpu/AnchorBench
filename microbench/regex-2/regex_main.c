@@ -390,6 +390,13 @@ int main(int argc, char **argv) {
         }
     }
 
+	for (int i = 0; i < cfg.nr_core; i++) {
+		ret = pthread_join(pids[i], NULL);
+        if (ret != 0) {
+            printf("pthread_join failed!(err: %d)\n", errno);
+        }
+	}
+
     /* Cleanup */
 	if (data_buffer != NULL)
 		free(data_buffer);
