@@ -153,15 +153,15 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	struct mempool_elt * buf_element;
 	struct timespec now;
 
-	// clock_gettime(CLOCK_MONOTONIC, &now);
+	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			// if (nr_latency < MAX_NR_LATENCY) {
-			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			// }
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
@@ -208,7 +208,7 @@ void * regex_work_lcore(void * arg) {
 
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
-		// clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
+		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
     fp = fopen(cfg.data, "r");
@@ -230,10 +230,8 @@ void * regex_work_lcore(void * arg) {
     start = rte_rdtsc();
 
 	while (1) {
-    	// clock_gettime(CLOCK_MONOTONIC, &current_time);
-        current_time = rte_rdtsc();
-		// if (current_time.tv_sec - start.tv_sec > 10) {
-		if (current_time - start > 2000000000) {
+    	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - start.tv_sec > 10) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
@@ -258,30 +256,19 @@ void * regex_work_lcore(void * arg) {
 		}
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
-			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-			// 	ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
-			// 	if (ret < 0) {
-			// 		DOCA_LOG_ERR("Failed to enqueue jobs");
-			// 		continue;
-			// 	} else {
-			// 		index = (index + 1) % MAX_NR_RULE;
-			// 		nb_enqueued++;
-			// 		interval = ran_expo(mean);
-			// 		worker[i].interval = (uint64_t)round(interval);
-			// 		worker[i].last_enq_time = current_time;
-			// 	}
-			// }
-            ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
-            if (ret < 0) {
-                DOCA_LOG_ERR("Failed to enqueue jobs");
-                continue;
-            } else {
-                index = (index + 1) % MAX_NR_RULE;
-                nb_enqueued++;
-                interval = ran_expo(mean);
-                // worker[i].interval = (uint64_t)round(interval);
-                // worker[i].last_enq_time = current_time;
-            }
+			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+				if (ret < 0) {
+					DOCA_LOG_ERR("Failed to enqueue jobs");
+					continue;
+				} else {
+					index = (index + 1) % MAX_NR_RULE;
+					nb_enqueued++;
+					interval = ran_expo(mean);
+					worker[i].interval = (uint64_t)round(interval);
+					worker[i].last_enq_time = current_time;
+				}
+			}
 		}
 
 		ret = regex_scan_deq_job(rgx_ctx);
