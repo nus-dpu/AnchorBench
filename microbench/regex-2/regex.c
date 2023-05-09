@@ -216,7 +216,7 @@ int regex_work_lcore(void * arg) {
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
                 printf("Time to enqueue job!\n");
-				ret = regex_scan_enq_job(&rgx_ctx, input[index].line, input[index].len);
+				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
@@ -229,7 +229,7 @@ int regex_work_lcore(void * arg) {
 			}
 		}
 
-		ret = regex_scan_deq_job(&rgx_ctx);
+		ret = regex_scan_deq_job(rgx_ctx);
 		if (ret < 0) {
 			DOCA_LOG_ERR("Failed to dequeue jobs responses");
 			continue;
