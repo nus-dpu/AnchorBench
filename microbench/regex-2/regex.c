@@ -77,6 +77,9 @@ int regex_work_lcore(void * arg) {
 	doca_error_t result;
 	struct regex_ctx rgx_ctx = {0};
 
+    rgx_ctx.dev = rgx_cfg.dev;
+    rgx_ctx.doca_regex = rgx_cfg.doca_regex;
+
     regex_init_lcore(&rgx_ctx);
 
     printf("CPU %02d| initialization done!\n", sched_getcpu());
