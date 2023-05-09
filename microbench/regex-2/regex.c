@@ -187,8 +187,8 @@ void * regex_work_lcore(void * arg) {
 
 	double interval;
 
-    // struct timespec start, current_time;
-    // clock_gettime(CLOCK_MONOTONIC, &start);
+    struct timespec begin, end;
+    clock_gettime(CLOCK_MONOTONIC, &begin);
     uint64_t start, current_time;
     start = rdtsc();
 
@@ -206,9 +206,10 @@ void * regex_work_lcore(void * arg) {
         current_time = rdtsc();
 		// if (current_time.tv_sec - start.tv_sec > 10) {
 		if (current_time - start > 10000000000) {
+            clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
-                nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)),
-                nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+                nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(start)),
+                nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(start)));
 
 			FILE * output_fp;
 			char name[32];
@@ -221,8 +222,8 @@ void * regex_work_lcore(void * arg) {
 			}
 
 			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
-				nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)), 
-				nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+				nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(start)), 
+				nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(start)));
 
 			fclose(output_fp);
 			break;
