@@ -23,7 +23,7 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
-    double u = (double) rand() / RAND_MAX;
+    double u = (double) rand_r() / RAND_MAX;
     return -log(1- u) * mean;
 }
 
