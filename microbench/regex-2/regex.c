@@ -122,6 +122,12 @@ static void regex_scan_report_results(struct regex_ctx *ctx, struct doca_event *
 	}
 }
 
+unsigned long long rdtsc(void){
+    unsigned int lo, hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64_t)hi << 32) | lo;
+}
+
 /*
  * Dequeue jobs responses
  *
@@ -139,15 +145,15 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	struct mempool_elt * buf_element;
 	struct timespec now;
 
-	clock_gettime(CLOCK_MONOTONIC, &now);
+	// clock_gettime(CLOCK_MONOTONIC, &now);
 
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			// }
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
@@ -181,21 +187,25 @@ void * regex_work_lcore(void * arg) {
 
 	double interval;
 
-    struct timespec start, current_time;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    // struct timespec start, current_time;
+    // clock_gettime(CLOCK_MONOTONIC, &start);
+    uint64_t start, current_time;
+    start = rdtsc();
 
     srand(time(NULL));
 
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
-		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
+		// clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
 	while (1) {
-    	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - start.tv_sec > 10) {
+    	// clock_gettime(CLOCK_MONOTONIC, &current_time);
+        current_time = rdtsc();
+		// if (current_time.tv_sec - start.tv_sec > 10) {
+		if (current_time - start > 10000000000) {
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)),
                 nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
@@ -218,21 +228,31 @@ void * regex_work_lcore(void * arg) {
 			break;
 		}
 
-
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
-			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
-				if (ret < 0) {
-					DOCA_LOG_ERR("Failed to enqueue jobs");
-					continue;
-				} else {
-					index = (index + 1) % MAX_NR_RULE;
-					nb_enqueued++;
-					interval = ran_expo(mean);
-					worker[i].interval = (uint64_t)round(interval);
-					worker[i].last_enq_time = current_time;
-				}
-			}
+			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+			// 	ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+			// 	if (ret < 0) {
+			// 		DOCA_LOG_ERR("Failed to enqueue jobs");
+			// 		continue;
+			// 	} else {
+			// 		index = (index + 1) % MAX_NR_RULE;
+			// 		nb_enqueued++;
+			// 		interval = ran_expo(mean);
+			// 		worker[i].interval = (uint64_t)round(interval);
+			// 		worker[i].last_enq_time = current_time;
+			// 	}
+			// }
+            ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+            if (ret < 0) {
+                DOCA_LOG_ERR("Failed to enqueue jobs");
+                continue;
+            } else {
+                index = (index + 1) % MAX_NR_RULE;
+                nb_enqueued++;
+                interval = ran_expo(mean);
+                // worker[i].interval = (uint64_t)round(interval);
+                // worker[i].last_enq_time = current_time;
+            }
 		}
 
 		ret = regex_scan_deq_job(rgx_ctx);
