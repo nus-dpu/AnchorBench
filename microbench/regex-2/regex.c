@@ -197,7 +197,7 @@ void * regex_work_lcore(void * arg) {
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
-    char * msg[] = "johndoe@gmail.com";
+    char msg[] = "johndoe@gmail.com";
 
 	while (1) {
     	// clock_gettime(CLOCK_MONOTONIC, &current_time);
