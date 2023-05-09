@@ -230,6 +230,77 @@ static doca_error_t regex_init(struct regex_config *regex_cfg) {
 	return result;
 }
 
+static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
+    doca_error_t result;
+    uint32_t nb_free, nb_total;
+	nb_free = nb_total = 0;
+
+    result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
+		// regex_scan_destroy(&rgx_cfg);
+		return result;
+	}
+
+	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->doca_regex), ctx->workq);
+	if (result != DOCA_SUCCESS) {
+		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
+		// regex_scan_destroy(&rgx_cfg);
+		return result;
+	}
+
+    /* Create and start buffer inventory */
+	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->buf_inv);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	result = doca_buf_inventory_start(ctx->buf_inv);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to start buffer inventory. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and start mmap */
+	result = doca_mmap_create(NULL, &ctx->mmap);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	result = doca_mmap_start(ctx->mmap);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to start memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	result = doca_mmap_dev_add(ctx->mmap, ctx->dev);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add device to memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+
+	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	printf(" >> total number of element: %d, free element: %d\n", 
+			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
+
+	ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
+	if (ctx->results == NULL) {
+		DOCA_LOG_ERR("Unable to add allocate results storage");
+		return DOCA_ERROR_NO_MEMORY;
+	}
+
+	return result;
+}
+
 int main(int argc, char **argv) {
 	int ret;
 	doca_error_t result;
@@ -238,6 +309,7 @@ int main(int argc, char **argv) {
     pthread_t pids[MAX_NR_CORE];
     pthread_attr_t pattr;
     cpu_set_t cpu;
+	struct regex_ctx *rgx_ctx = NULL;
 
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("regex", &cfg);
@@ -300,6 +372,9 @@ int main(int argc, char **argv) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
 
+		regex_ctx = (struct regex_ctx *)calloc(1, sizeof(struct regex_ctx));
+        regex_init_lcore(regex_ctx);
+
         /* The pthread_create() call stores the thread ID into
             corresponding element of tinfo[]. */
 
@@ -308,7 +383,7 @@ int main(int argc, char **argv) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
 
-        ret = pthread_create(&pids[i], &pattr, &regex_work_lcore, NULL);
+        ret = pthread_create(&pids[i], &pattr, &regex_work_lcore, (void *)regex_ctx);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }
