@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-    fp = fopen(cfg.data_file, "r");
+    fp = fopen(cfg.data, "r");
     if (fp == NULL) {
         return -1;
 	}
