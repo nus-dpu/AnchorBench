@@ -15,6 +15,7 @@ __thread struct input_info input[MAX_NR_RULE];
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
+__thread unsigned int seed;
 __thread struct drand48_data drand_buf;
 
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
@@ -27,9 +28,14 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
+#if 0
     double u, x;
     drand48_r(&drand_buf, &x);
     u = x / RAND_MAX;
+    return -log(1- u) * mean;
+#endif
+    double u;
+    u = (double) rand_r(&seed) / RAND_MAX;
     return -log(1- u) * mean;
 }
 
@@ -200,6 +206,7 @@ void * regex_work_lcore(void * arg) {
     start = rte_rdtsc();
 
     srand48_r(time(NULL), &drand_buf);
+    seed = (unsigned int) time(NULL);
 
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
