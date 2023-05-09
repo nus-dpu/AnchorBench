@@ -20,7 +20,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 
 	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->doca_regex), ctx->workq);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
+		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
 		return result;
 	}
