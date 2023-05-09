@@ -339,8 +339,6 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 int main(int argc, char **argv) {
 	int ret;
 	doca_error_t result;
-	char *data_buffer = NULL;
-	size_t data_buffer_len = 0;
     pthread_t pids[MAX_NR_CORE];
     pthread_attr_t pattr;
     cpu_set_t cpu;

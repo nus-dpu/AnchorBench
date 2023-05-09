@@ -169,9 +169,8 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	return finished;
 }
 
-int regex_work_lcore(void * arg) {
+void regex_work_lcore(void * arg) {
     int ret;
-	doca_error_t result;
 	struct regex_ctx * rgx_ctx = (struct regex_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	int index = 0;
@@ -262,5 +261,5 @@ int regex_work_lcore(void * arg) {
 
 	fclose(output_fp);
 
-    return 0;
+    return;
 }
