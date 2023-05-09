@@ -340,15 +340,11 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 			mempool_put(regex_cfg->buf_mempool, buf_element);
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
-			/* Wait for the job to complete */
-			ts.tv_sec = 0;
-			ts.tv_nsec = SLEEP_IN_NANOS;
-			nanosleep(&ts, &ts);
+			break;
 		} else {
 			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
 			return -1;
 		}
-
 	} while (result == DOCA_SUCCESS);
 
 	return finished;
