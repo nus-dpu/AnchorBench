@@ -226,6 +226,8 @@ void * regex_work_lcore(void * arg) {
 
     pthread_barrier_wait(&barrier);
 
+    char msg[] = "johndoe@gmail.com";
+
     clock_gettime(CLOCK_MONOTONIC, &begin);
     start = rte_rdtsc();
 
@@ -271,7 +273,8 @@ void * regex_work_lcore(void * arg) {
 			// 		worker[i].last_enq_time = current_time;
 			// 	}
 			// }
-            ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+            // ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+            ret = regex_scan_enq_job(rgx_ctx, msg, strlen(len));
             if (ret < 0) {
                 DOCA_LOG_ERR("Failed to enqueue jobs");
                 continue;
