@@ -269,6 +269,11 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+    ret = pthread_attr_init(&pattr);
+    if (ret != 0) {
+        printf("pthread_attr_init failed!(err: %d)\n", errno);
+    }
+
     for (int i = 0; i < cfg.nr_core; i++) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
