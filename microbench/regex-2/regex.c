@@ -274,7 +274,7 @@ void * regex_work_lcore(void * arg) {
 			// 	}
 			// }
             // ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
-            ret = regex_scan_enq_job(rgx_ctx, msg, strlen(len));
+            ret = regex_scan_enq_job(rgx_ctx, msg, strlen(msg));
             if (ret < 0) {
                 DOCA_LOG_ERR("Failed to enqueue jobs");
                 continue;
