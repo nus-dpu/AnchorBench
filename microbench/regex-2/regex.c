@@ -21,8 +21,7 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
-    double u;
-    u = rand() / (RAND_MAX + 1.0);
+    double u = (double) rand() / RAND_MAX;
     return -log(1- u) * mean;
 }
 
@@ -184,6 +183,8 @@ int regex_work_lcore(void * arg) {
 
     struct timespec start, current_time;
     clock_gettime(CLOCK_MONOTONIC, &start);
+
+    srand(time(NULL));
 
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
