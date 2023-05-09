@@ -354,6 +354,10 @@ int main(int argc, char **argv) {
         CPU_SET(i, &cpu);
 
 		rgx_ctx = (struct regex_ctx *)calloc(1, sizeof(struct regex_ctx));
+
+        rgx_ctx->dev = cfg.dev;
+        rgx_ctx->doca_regex = cfg.doca_regex;
+
         regex_init_lcore(rgx_ctx);
 
         /* The pthread_create() call stores the thread ID into
