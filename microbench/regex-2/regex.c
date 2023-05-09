@@ -62,7 +62,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	}
 
 	printf(" >> total number of element: %d, free element: %d\n", 
-			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
+			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
 
 	ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
 	if (ctx->results == NULL) {
@@ -77,7 +77,7 @@ int regex_work_lcore(void * arg) {
 	doca_error_t result;
 	struct regex_ctx rgx_ctx = {0};
 
-    regex_init_lcore(&rgx_cfg);
+    regex_init_lcore(&rgx_ctx);
 
     printf("CPU %02d| initialization done!\n", sched_getcpu());
 
