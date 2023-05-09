@@ -197,11 +197,13 @@ void * regex_work_lcore(void * arg) {
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
+    char * msg[] = "johndoe@gmail.com";
+
 	while (1) {
     	// clock_gettime(CLOCK_MONOTONIC, &current_time);
         current_time = rte_rdtsc();
 		// if (current_time.tv_sec - start.tv_sec > 10) {
-		if (current_time - start > 10000000000) {
+		if (current_time - start > 20000000000) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
@@ -239,7 +241,8 @@ void * regex_work_lcore(void * arg) {
 			// 		worker[i].last_enq_time = current_time;
 			// 	}
 			// }
-            ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+            // ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+            ret = regex_scan_enq_job(rgx_ctx, msg, strlen(msg));
             if (ret < 0) {
                 DOCA_LOG_ERR("Failed to enqueue jobs");
                 continue;
