@@ -2,6 +2,19 @@
 
 DOCA_LOG_REGISTER(REGEX::CORE);
 
+#define NSEC_PER_SEC    1000000000L
+
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
+uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
+	if (diff.tv_nsec < 0) {
+		diff.tv_nsec += NSEC_PER_SEC;
+		diff.tv_sec--;
+	}
+	return TIMESPEC_TO_NSEC(diff);
+}
+
 /*
  * Enqueue job to DOCA RegEx qp
  *
