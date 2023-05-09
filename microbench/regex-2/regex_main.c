@@ -173,9 +173,16 @@ static doca_error_t register_regex_scan_params() {
 static doca_error_t regex_init(struct regex_config *regex_cfg) {
     doca_error_t result = DOCA_SUCCESS;
 	const int mempool_size = 8;
+	struct doca_pci_bdf pcie_dev = {0};
+
+    result = parse_pci_addr(regex_cfg->pci_address, &pcie_dev);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to parse PCI address: %s", doca_get_error_string(result));
+		return EXIT_FAILURE;
+	}
 
 	/* Find doca_dev according to the PCI address */
-	result = open_doca_device_with_pci(regex_cfg->pci_address, NULL, &regex_cfg->dev);
+	result = open_doca_device_with_pci(&pcie_dev, NULL, &regex_cfg->dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("No device matching PCI address found.");
 		return result;
@@ -227,7 +234,6 @@ int main(int argc, char **argv) {
 	char *data_buffer = NULL;
 	size_t data_buffer_len = 0;
 	struct regex_config cfg = {0};
-	struct doca_pci_bdf pcie_dev = {0};
     pthread_t pids[MAX_NR_CORE];
     pthread_attr_t pattr;
     cpu_set_t cpu;
@@ -254,12 +260,6 @@ int main(int argc, char **argv) {
 		if (cfg.rules_buffer != NULL)
 			free(cfg.rules_buffer);
 		doca_argp_destroy();
-		return EXIT_FAILURE;
-	}
-
-    result = parse_pci_addr(cfg.pci_address, &pcie_dev);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to parse PCI address: %s", doca_get_error_string(result));
 		return EXIT_FAILURE;
 	}
 
