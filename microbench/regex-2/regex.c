@@ -28,15 +28,15 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
-#if 0
     double u, x;
     drand48_r(&drand_buf, &x);
     u = x / RAND_MAX;
     return -log(1- u) * mean;
-#endif
+#if 0
     double u;
     u = (double) rand_r(&seed) / RAND_MAX;
     return -log(1- u) * mean;
+#endif
 }
 
 /*
@@ -226,8 +226,6 @@ void * regex_work_lcore(void * arg) {
 
     pthread_barrier_wait(&barrier);
 
-    char msg[] = "johndoe@gmail.com";
-
     clock_gettime(CLOCK_MONOTONIC, &begin);
     start = rte_rdtsc();
 
@@ -273,8 +271,7 @@ void * regex_work_lcore(void * arg) {
 			// 		worker[i].last_enq_time = current_time;
 			// 	}
 			// }
-            // ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
-            ret = regex_scan_enq_job(rgx_ctx, msg, strlen(msg));
+            ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
             if (ret < 0) {
                 DOCA_LOG_ERR("Failed to enqueue jobs");
                 continue;
