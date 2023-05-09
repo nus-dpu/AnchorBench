@@ -10,8 +10,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int
-regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len) {
+static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -34,7 +33,7 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		memcpy(data_buf, data, data_len);
 
 		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf_element->buf);
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &ctx->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
@@ -48,16 +47,16 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 		struct doca_regex_job_search const job_request = {
 				.base = {
 					.type = DOCA_REGEX_JOB_SEARCH,
-					.ctx = doca_regex_as_ctx(regex_cfg->doca_regex),
+					.ctx = doca_regex_as_ctx(ctx->doca_regex),
 					.user_data = { .ptr = buf_element },
 				},
 				.rule_group_ids = {1, 0, 0, 0},
 				.buffer = buf_element->buf,
-				.result = regex_cfg->results + nb_enqueued,
+				.result = ctx->results + nb_enqueued,
 				.allow_batching = false,
 		};
 
-		result = doca_workq_submit(regex_cfg->workq, (struct doca_job *)&job_request);
+		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 		if (result == DOCA_ERROR_NO_MEMORY) {
 			doca_buf_refcount_rm(buf_element->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
@@ -75,15 +74,39 @@ regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len)
 }
 
 /*
+ * Printing the RegEx results
+ *
+ * @regex_cfg [in]: sample RegEx configuration struct
+ * @event [in]: DOCA event structure
+ */
+static void regex_scan_report_results(struct regex_ctx *ctx, struct doca_event *event) {
+	int offset;
+	struct mempool_elt * data_element;
+	struct doca_regex_match *ptr;
+	struct doca_regex_search_result * const result = (struct doca_regex_search_result *)event->result.ptr;
+
+	if (result->num_matches == 0)
+		return;
+	ptr = result->matches;
+	/* Match start is relative to the whole file data and not the current chunk */
+	while (ptr != NULL) {
+		data_element = (struct mempool_elt *)event->user_data.ptr;
+		// regex_cfg->data_buffer[ptr->match_start + offset + ptr->length] = '\0';
+		struct doca_regex_match *const to_release_match = ptr;
+
+		ptr = ptr->next;
+		doca_regex_mempool_put_obj(result->matches_mempool, to_release_match);
+	}
+}
+
+/*
  * Dequeue jobs responses
  *
  * @regex_cfg [in]: regex_scan_ctx configuration struct
  * @chunk_len [in]: job chunk size
  * @return: number of the dequeue jobs or a negative posix status code.
  */
-static int
-regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
-{
+static int regex_scan_deq_job(struct regex_ctx *ctx, int chunk_len) {
 	doca_error_t result;
 	int finished = 0;
 	struct doca_event event = {0};
@@ -96,21 +119,21 @@ regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	do {
-		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
 			if (nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			}
 			/* release the buffer back into the pool so it can be re-used */
-			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
-			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
+			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+			doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			/* Report the scan result of RegEx engine */
-			regex_scan_report_results(regex_cfg, &event);
+			regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(buf_element->buf, NULL);
 			/* Put the element back into the mempool */
-			mempool_put(regex_cfg->buf_mempool, buf_element);
+			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
