@@ -194,7 +194,7 @@ void * regex_work_lcore(void * arg) {
     ssize_t read;
 	int nr_rule = 0;
 
-	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
+	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e9 / cfg.rate;
 
 	struct worker worker[WORKQ_DEPTH];
 
