@@ -185,8 +185,8 @@ static doca_error_t register_regex_scan_params() {
 		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
 		return result;
 	}
-	doca_argp_param_set_short_name(rate_param, "r");
-	doca_argp_param_set_long_name(rate_param, "rate");
+	doca_argp_param_set_short_name(rate_param, "s");
+	doca_argp_param_set_long_name(rate_param, "speed");
 	doca_argp_param_set_arguments(rate_param, "<rate>");
 	doca_argp_param_set_description(rate_param, "Request generation rate");
 	doca_argp_param_set_callback(rate_param, rate_callback);
