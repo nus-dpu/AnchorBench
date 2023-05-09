@@ -58,6 +58,8 @@ struct regex_config {
 	struct doca_regex *doca_regex;			/* DOCA RegEx interface */
 };
 
+extern struct regex_config cfg;
+
 extern int regex_work_lcore(void * arg);
 
 #endif  /* _REGEX_H_ */

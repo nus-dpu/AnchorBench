@@ -7,6 +7,8 @@
 
 DOCA_LOG_REGISTER(REGEX::MAIN);
 
+struct regex_config cfg;
+
 /*
  * ARGP Callback - Handle RegEx PCI address parameter
  *
@@ -233,7 +235,6 @@ int main(int argc, char **argv) {
 	doca_error_t result;
 	char *data_buffer = NULL;
 	size_t data_buffer_len = 0;
-	struct regex_config cfg = {0};
     pthread_t pids[MAX_NR_CORE];
     pthread_attr_t pattr;
     cpu_set_t cpu;
