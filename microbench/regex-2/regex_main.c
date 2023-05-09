@@ -2,9 +2,6 @@
 
 DOCA_LOG_REGISTER(REGEX::MAIN);
 
-struct input_info input[MAX_NR_RULE];
-struct regex_config cfg;
-
 pthread_barrier_t barrier;
 
 /*
@@ -339,11 +336,6 @@ int main(int argc, char **argv) {
     pthread_attr_t pattr;
     cpu_set_t cpu;
 	struct regex_ctx *rgx_ctx = NULL;
-    FILE * fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-	int nr_rule = 0;
 
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("regex", &cfg);
@@ -374,17 +366,6 @@ int main(int argc, char **argv) {
 	if (regex_init(&cfg) != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to init DOCA RegEx: %s", doca_get_error_string(result));
 		return EXIT_FAILURE;
-	}
-
-    fp = fopen(cfg.data, "r");
-    if (fp == NULL) {
-        return -1;
-	}
-
-    while ((read = getline(&line, &len, fp)) != -1) {
-		input[nr_rule].line = line;
-		input[nr_rule].len = len;
-		nr_rule++;
 	}
 
     ret = pthread_attr_init(&pattr);

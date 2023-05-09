@@ -10,6 +10,9 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define MAX_NR_LATENCY	(128 * 1024)
 
+__thread struct input_info input[MAX_NR_RULE];
+__thread struct regex_config cfg;
+
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
@@ -180,6 +183,11 @@ void * regex_work_lcore(void * arg) {
 	struct regex_ctx * rgx_ctx = (struct regex_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	int index = 0;
+    FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+	int nr_rule = 0;
 
 	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
 
@@ -197,6 +205,17 @@ void * regex_work_lcore(void * arg) {
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
 		// clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
+	}
+
+    fp = fopen(cfg.data, "r");
+    if (fp == NULL) {
+        return -1;
+	}
+
+    while ((read = getline(&line, &len, fp)) != -1) {
+		input[nr_rule].line = line;
+		input[nr_rule].len = len;
+		nr_rule++;
 	}
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
