@@ -20,10 +20,10 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	return TIMESPEC_TO_NSEC(diff);
 }
 
-double ran_expo(double lambda) {
+double ran_expo(double mean) {
     double u;
     u = rand() / (RAND_MAX + 1.0);
-    return -log(1- u) / lambda;
+    return -log(1- u) * mean;
 }
 
 /*
@@ -178,7 +178,7 @@ int regex_work_lcore(void * arg) {
 	int index = 0;
 
     double rate = 1.0;
-	double lambda = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / rate;
+	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / rate;
 
 	struct worker worker[WORKQ_DEPTH];
 
@@ -227,7 +227,8 @@ int regex_work_lcore(void * arg) {
 				} else {
 					index = (index + 1) % MAX_NR_RULE;
 					nb_enqueued++;
-					worker[i].interval = ran_expo(lambda);
+					worker[i].interval = ran_expo(mean);
+                    printf("interval: %.2f\n", worker[i].interval);
 					worker[i].last_enq_time = current_time;
 				}
 			}
