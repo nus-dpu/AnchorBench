@@ -195,8 +195,9 @@ int regex_work_lcore(void * arg) {
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
 		if (current_time.tv_sec - start.tv_sec > 10) {
-			printf("Enqueue: %u, %6.2lf(RPS)\n", nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
-			printf("Dequeue: %u, %6.2lf(RPS)\n", nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
+                nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)),
+                nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
 
 			FILE * output_fp;
 			char name[32];
