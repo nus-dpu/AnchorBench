@@ -1,5 +1,7 @@
 #include "regex.h"
 
+#include <rte_cycles.h>
+
 DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define NSEC_PER_SEC    1000000000L
@@ -122,12 +124,6 @@ static void regex_scan_report_results(struct regex_ctx *ctx, struct doca_event *
 	}
 }
 
-unsigned long long rdtsc(void){
-    unsigned int lo, hi;
-    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-    return ((uint64_t)hi << 32) | lo;
-}
-
 /*
  * Dequeue jobs responses
  *
@@ -190,7 +186,7 @@ void * regex_work_lcore(void * arg) {
     struct timespec begin, end;
     clock_gettime(CLOCK_MONOTONIC, &begin);
     uint64_t start, current_time;
-    start = rdtsc();
+    start = rte_rdtsc();
 
     srand(time(NULL));
 
@@ -203,7 +199,7 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	// clock_gettime(CLOCK_MONOTONIC, &current_time);
-        current_time = rdtsc();
+        current_time = rte_rdtsc();
 		// if (current_time.tv_sec - start.tv_sec > 10) {
 		if (current_time - start > 10000000000) {
             clock_gettime(CLOCK_MONOTONIC, &end);
