@@ -58,6 +58,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 			return nb_enqueued;
 		}
 
+        printf("Submitting RegEx job...\n");
+
 		doca_buf_get_data(buf_element->buf, &mbuf_data);
 		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
@@ -213,6 +215,7 @@ int regex_work_lcore(void * arg) {
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+                printf("Time to enqueue job!\n");
 				ret = regex_scan_enq_job(&rgx_ctx, input[index].line, input[index].len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
