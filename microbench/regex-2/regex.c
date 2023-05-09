@@ -7,12 +7,16 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
 
+    printf("CPU %02d| create DOCA workq...\n", sched_getcpu());
+
     result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
 		return result;
 	}
+
+    printf("CPU %02d| add DOCA workq to DOCA ctx...\n", sched_getcpu());
 
 	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->doca_regex), ctx->workq);
 	if (result != DOCA_SUCCESS) {
@@ -21,6 +25,8 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
+    printf("CPU %02d| create DOCA buf...\n", sched_getcpu());
+
     /* Create and start buffer inventory */
 	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->buf_inv);
 	if (result != DOCA_SUCCESS) {
@@ -28,11 +34,15 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
+    printf("CPU %02d| start DOCA buf...\n", sched_getcpu());
+
 	result = doca_buf_inventory_start(ctx->buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
+
+    printf("CPU %02d| create DOCA mmap...\n", sched_getcpu());
 
 	/* Create and start mmap */
 	result = doca_mmap_create(NULL, &ctx->mmap);
@@ -41,11 +51,15 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
+    printf("CPU %02d| start DOCA mmap...\n", sched_getcpu());
+
 	result = doca_mmap_start(ctx->mmap);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start memory map. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
+
+    printf("CPU %02d| add DOCA mmap to dev...\n", sched_getcpu());
 
 	result = doca_mmap_dev_add(ctx->mmap, ctx->dev);
 	if (result != DOCA_SUCCESS) {
@@ -54,6 +68,8 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	}
 
 	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+
+    printf("CPU %02d| populate DOCA mmap...\n", sched_getcpu());
 
 	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
