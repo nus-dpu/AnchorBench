@@ -181,6 +181,8 @@ int regex_work_lcore(void * arg) {
 
 	struct worker worker[WORKQ_DEPTH];
 
+	double interval;
+
     struct timespec start, current_time;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
@@ -228,8 +230,8 @@ int regex_work_lcore(void * arg) {
 				} else {
 					index = (index + 1) % MAX_NR_RULE;
 					nb_enqueued++;
-					worker[i].interval = ran_expo(mean);
-                    printf("interval: %.2f\n", worker[i].interval);
+					interval = ran_expo(mean);
+					worker[i].interval = (uint64_t)round(interval);
 					worker[i].last_enq_time = current_time;
 				}
 			}
