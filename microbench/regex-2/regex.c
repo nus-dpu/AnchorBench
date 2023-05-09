@@ -13,6 +13,8 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
+__thread unsigned int seed;
+
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
@@ -23,7 +25,7 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
-    double u = (double) rand_r() / RAND_MAX;
+    double u = (double) rand_r(&seed) / RAND_MAX;
     return -log(1- u) * mean;
 }
 
@@ -188,7 +190,7 @@ void * regex_work_lcore(void * arg) {
     uint64_t start, current_time;
     start = rte_rdtsc();
 
-    srand(time(NULL));
+    seed = time(NULL);
 
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
@@ -203,7 +205,7 @@ void * regex_work_lcore(void * arg) {
     	// clock_gettime(CLOCK_MONOTONIC, &current_time);
         current_time = rte_rdtsc();
 		// if (current_time.tv_sec - start.tv_sec > 10) {
-		if (current_time - start > 20000000000) {
+		if (current_time - start > 2000000000) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
