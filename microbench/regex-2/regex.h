@@ -1,6 +1,10 @@
 #ifndef _REGEX_H_
 #define _REGEX_H_
 
+#define _GNU_SOURCE
+#define __USE_GNU
+#include <sched.h>
+#include <pthread.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,5 +80,7 @@ struct worker {
 };
 
 extern void * regex_work_lcore(void * arg);
+
+extern pthread_barrier_t barrier;
 
 #endif  /* _REGEX_H_ */

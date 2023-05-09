@@ -13,7 +13,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
-__thread struct drand48_data drand_buf;;
+__thread struct drand48_data drand_buf;
 
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
@@ -201,7 +201,7 @@ void * regex_work_lcore(void * arg) {
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
-    char msg[] = "johndoe@gmail.com";
+    pthread_barrier_wait(&barrier);
 
 	while (1) {
     	// clock_gettime(CLOCK_MONOTONIC, &current_time);
@@ -245,8 +245,7 @@ void * regex_work_lcore(void * arg) {
 			// 		worker[i].last_enq_time = current_time;
 			// 	}
 			// }
-            // ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
-            ret = regex_scan_enq_job(rgx_ctx, msg, strlen(msg));
+            ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
             if (ret < 0) {
                 DOCA_LOG_ERR("Failed to enqueue jobs");
                 continue;

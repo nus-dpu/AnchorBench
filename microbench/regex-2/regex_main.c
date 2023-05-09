@@ -1,14 +1,11 @@
-#define _GNU_SOURCE
-#define __USE_GNU
-#include <sched.h>
-#include <pthread.h>
-
 #include "regex.h"
 
 DOCA_LOG_REGISTER(REGEX::MAIN);
 
 struct input_info input[MAX_NR_RULE];
 struct regex_config cfg;
+
+pthread_barrier_t barrier;
 
 /*
  * ARGP Callback - Handle RegEx PCI address parameter
@@ -395,6 +392,8 @@ int main(int argc, char **argv) {
         printf("pthread_attr_init failed!(err: %d)\n", errno);
     }
 
+	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
+
     for (int i = 0; i < cfg.nr_core; i++) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
@@ -426,6 +425,8 @@ int main(int argc, char **argv) {
             printf("pthread_join failed!(err: %d)\n", errno);
         }
 	}
+
+    pthread_barrier_destroy(&barrier);
 
     /* Cleanup */
 	if (cfg.rules_buffer != NULL)
