@@ -6,6 +6,11 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
+#define MAX_NR_LATENCY	(128 * 1024)
+
+__thread int nr_latency = 0;
+__thread uint64_t latency[MAX_NR_LATENCY];
+
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
@@ -141,9 +146,9 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			// if (nr_latency < MAX_NR_LATENCY) {
-			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			// }
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
@@ -196,7 +201,7 @@ int regex_work_lcore(void * arg) {
 			FILE * output_fp;
 			char name[32];
 
-			sprintf(name, "thp.txt");
+			sprintf(name, "thp-%d.txt", sched_getcpu());
 			output_fp = fopen(name, "w");
 			if (!output_fp) {
 				printf("Error opening throughput output file!\n");
@@ -211,17 +216,14 @@ int regex_work_lcore(void * arg) {
 			break;
 		}
 
-        printf("Looping...\n");
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-                printf("Enqueue new job...\n");
 				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
-                    printf("Enqueue succeeded!\n");
 					index = (index + 1) % MAX_NR_RULE;
 					nb_enqueued++;
 					worker[i].interval = ran_expo(lambda);
@@ -230,16 +232,31 @@ int regex_work_lcore(void * arg) {
 			}
 		}
 
-        printf("Dequeue job...\n");
 		ret = regex_scan_deq_job(rgx_ctx);
 		if (ret < 0) {
 			DOCA_LOG_ERR("Failed to dequeue jobs responses");
 			continue;
 		} else {
-            printf("Dequeued: %d\n", ret);
 			nb_dequeued += ret;
 		}
 	}
+
+    int lat_start = (int)(0.15 * nr_latency);
+	FILE * output_fp;
+	char name[32];
+
+	sprintf(name, "latency-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening latency output file!\n");
+		return;
+	}
+
+	for (int i = lat_start; i < nr_latency; i++) {
+		fprintf(output_fp, "%lu\n", latency[i]);
+	}
+
+	fclose(output_fp);
 
     return 0;
 }
