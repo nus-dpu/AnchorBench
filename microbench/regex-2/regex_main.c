@@ -86,7 +86,7 @@ static doca_error_t nr_core_callback(void *param, void *config) {
  */
 static doca_error_t register_regex_scan_params() {
 	doca_error_t result = DOCA_SUCCESS;
-	struct doca_argp_param *pci_param, *rules_param, *data_param;
+	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param;
 
 	/* Create and register PCI address of RegEx device param */
 	result = doca_argp_param_create(&pci_param);
@@ -211,7 +211,7 @@ static doca_error_t regex_init(struct regex_config *regex_cfg) {
 	}
 
     /* Start DOCA RegEx */
-	result = doca_ctx_start(doca_regex_as_ctx(rgx_cfg.doca_regex));
+	result = doca_ctx_start(doca_regex_as_ctx(regex_cfg->doca_regex));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start DOCA RegEx. [%s]", doca_get_error_string(result));
 		regex_scan_destroy(&rgx_cfg);
@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
 	}
 
     /* Init DOCA RegEx */
-	if (regex_init(&rgx_cfg) != DOCA_SUCCESS) {
+	if (regex_init(&cfg) != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to init DOCA RegEx: %s", doca_get_error_string(result));
 		return EXIT_FAILURE;
 	}
