@@ -16,8 +16,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
 
-	doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
+	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
 	if (nb_free != 0) {
 		// struct doca_buf *buf;
@@ -26,7 +26,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		void *mbuf_data;
 
 		/* Get one free element from the mempool */
-		mempool_get(regex_cfg->buf_mempool, &buf_element);
+		mempool_get(ctx->buf_mempool, &buf_element);
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
 
@@ -122,9 +122,9 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			// }
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
