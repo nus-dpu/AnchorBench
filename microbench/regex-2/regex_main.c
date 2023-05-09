@@ -429,8 +429,6 @@ int main(int argc, char **argv) {
 	}
 
     /* Cleanup */
-	if (data_buffer != NULL)
-		free(data_buffer);
 	if (cfg.rules_buffer != NULL)
 		free(cfg.rules_buffer);
 
