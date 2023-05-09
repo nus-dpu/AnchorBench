@@ -83,13 +83,28 @@ static doca_error_t nr_core_callback(void *param, void *config) {
 }
 
 /*
+ * ARGP Callback - Handle data to scan path parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t rate_callback(void *param, void *config) {
+	struct regex_config *rgx_cfg = (struct regex_config *)config;
+	char *nr_core_str = (char *)param;
+    char *ptr;
+	rgx_cfg->rate = strtod(nr_core_str, &ptr);
+	return DOCA_SUCCESS;
+}
+
+/*
  * Register the command line parameters for the sample.
  *
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t register_regex_scan_params() {
 	doca_error_t result = DOCA_SUCCESS;
-	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param;
+	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param;
 
 	/* Create and register PCI address of RegEx device param */
 	result = doca_argp_param_create(&pci_param);
@@ -159,6 +174,24 @@ static doca_error_t register_regex_scan_params() {
 	doca_argp_param_set_callback(nr_core_param, nr_core_callback);
 	doca_argp_param_set_type(nr_core_param, DOCA_ARGP_TYPE_STRING);
 	result = doca_argp_register_param(nr_core_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and register rate param*/
+	result = doca_argp_param_create(&rate_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(rate_param, "r");
+	doca_argp_param_set_long_name(rate_param, "rate");
+	doca_argp_param_set_arguments(rate_param, "<rate>");
+	doca_argp_param_set_description(rate_param, "Request generation rate");
+	doca_argp_param_set_callback(rate_param, rate_callback);
+	doca_argp_param_set_type(rate_param, DOCA_ARGP_TYPE_STRING);
+	result = doca_argp_register_param(rate_param);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
 		return result;

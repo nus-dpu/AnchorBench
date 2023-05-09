@@ -53,6 +53,7 @@ struct regex_config {
 	char pci_address[MAX_ARG_SIZE];		/* RegEx PCI address to use */
 	char data[MAX_FILE_NAME];		/* Data to scan file path */
     int nr_core;    /* Number of worker cores */
+    double rate;    /* Request generation rate */
 
 	struct doca_dev *dev;				/* DOCA device */
 	struct doca_regex *doca_regex;			/* DOCA RegEx interface */

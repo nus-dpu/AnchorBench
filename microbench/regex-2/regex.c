@@ -176,8 +176,7 @@ int regex_work_lcore(void * arg) {
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	int index = 0;
 
-    double rate = 1.0;
-	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / rate;
+	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
 
 	struct worker worker[WORKQ_DEPTH];
 
