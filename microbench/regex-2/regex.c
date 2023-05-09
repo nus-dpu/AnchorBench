@@ -106,7 +106,7 @@ static void regex_scan_report_results(struct regex_ctx *ctx, struct doca_event *
  * @chunk_len [in]: job chunk size
  * @return: number of the dequeue jobs or a negative posix status code.
  */
-static int regex_scan_deq_job(struct regex_ctx *ctx, int chunk_len) {
+static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	doca_error_t result;
 	int finished = 0;
 	struct doca_event event = {0};
@@ -147,6 +147,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx, int chunk_len) {
 }
 
 int regex_work_lcore(void * arg) {
+    int ret;
 	doca_error_t result;
 	struct regex_ctx * rgx_ctx = (struct regex_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
@@ -206,7 +207,7 @@ int regex_work_lcore(void * arg) {
 			}
 		}
 
-		ret = regex_scan_deq_job(&rgx_ctx, rgx_cfg.chunk_len);
+		ret = regex_scan_deq_job(&rgx_ctx);
 		if (ret < 0) {
 			DOCA_LOG_ERR("Failed to dequeue jobs responses");
 			continue;
