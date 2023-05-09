@@ -72,8 +72,6 @@ struct input_info {
 	int len;
 };
 
-extern struct input_info input[MAX_NR_RULE];
-
 struct worker {
 	uint64_t interval;
 	struct timespec last_enq_time;

@@ -11,7 +11,6 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 #define MAX_NR_LATENCY	(128 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
-__thread struct regex_config cfg;
 
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];

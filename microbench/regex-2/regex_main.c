@@ -2,6 +2,7 @@
 
 DOCA_LOG_REGISTER(REGEX::MAIN);
 
+struct regex_config cfg;
 pthread_barrier_t barrier;
 
 /*
