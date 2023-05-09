@@ -200,8 +200,7 @@ void * regex_work_lcore(void * arg) {
 
 	double interval;
 
-    struct timespec begin, end;
-    uint64_t start, current_time;
+    struct timespec begin, end, current_time;
 
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
