@@ -197,6 +197,8 @@ static doca_error_t regex_init(struct regex_config *regex_cfg) {
 		return result;
 	}
 
+    printf("CPU %02d| dev: %p, regex: %p, initializing...\n", sched_getcpu(), regex_cfg->dev, regex_cfg->doca_regex);
+
 	/* Set the RegEx device as the main HW accelerator */
 	result = doca_ctx_dev_add(doca_regex_as_ctx(regex_cfg->doca_regex), regex_cfg->dev);
 	if (result != DOCA_SUCCESS) {
