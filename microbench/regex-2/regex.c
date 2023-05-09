@@ -169,7 +169,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	return finished;
 }
 
-void regex_work_lcore(void * arg) {
+void * regex_work_lcore(void * arg) {
     int ret;
 	struct regex_ctx * rgx_ctx = (struct regex_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
@@ -252,7 +252,7 @@ void regex_work_lcore(void * arg) {
 	output_fp = fopen(name, "w");
 	if (!output_fp) {
 		printf("Error opening latency output file!\n");
-		return;
+		return NULL;
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
@@ -261,5 +261,5 @@ void regex_work_lcore(void * arg) {
 
 	fclose(output_fp);
 
-    return;
+    return NULL;
 }

@@ -75,6 +75,6 @@ struct worker {
 	struct timespec last_enq_time;
 };
 
-extern void regex_work_lcore(void * arg);
+extern void * regex_work_lcore(void * arg);
 
 #endif  /* _REGEX_H_ */
