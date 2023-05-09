@@ -1,4 +1,6 @@
-#include "regex_"
+#include "regex.h"
+
+DOCA_LOG_REGISTER(REGEX::CORE);
 
 static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     doca_error_t result;
@@ -71,7 +73,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	return result;
 }
 
-int regex_scan(void * arg) {
+int regex_work_lcore(void * arg) {
 	doca_error_t result;
 	struct regex_ctx rgx_ctx = {0};
 

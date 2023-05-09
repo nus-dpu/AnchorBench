@@ -1,4 +1,11 @@
+#define _GNU_SOURCE
+#define __USE_GNU
+#include <sched.h>
+#include <pthread.h>
+
 #include "regex.h"
+
+DOCA_LOG_REGISTER(REGEX::MAIN);
 
 /*
  * ARGP Callback - Handle RegEx PCI address parameter
@@ -274,7 +281,7 @@ int main(int argc, char **argv) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
 
-        ret = pthread_create(&pids[i], &pattr, &client_main, NULL);
+        ret = pthread_create(&pids[i], &pattr, &regex_work_lcore, NULL);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }

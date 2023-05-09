@@ -23,6 +23,8 @@
 
 #define WORKQ_DEPTH 128
 #define MAX_NR_CORE 8
+#define MAX_FILE_NAME 255			/* Maximal length of file path */
+#define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
 struct regex_ctx {
 	struct doca_pci_bdf *pci_address;		/* RegEx PCI address to use */
@@ -45,5 +47,7 @@ struct regex_config {
 
     int nr_core;    /* Number of worker cores */
 };
+
+extern int regex_work_lcore(void * arg);
 
 #endif  /* _REGEX_H_ */
