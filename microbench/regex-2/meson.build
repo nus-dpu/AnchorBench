@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2018 Intel Corporation
 
-project('ipsec', 'C',
+project('regex', 'C',
     license: 'BSD',
     default_options: ['buildtype=debug'],
 	meson_version: '>= 0.51.0'
@@ -16,7 +16,6 @@ deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
 deps += dependency('libbsd')
-deps += dependency('libpthread')
 
 machine_args = []
 
@@ -45,5 +44,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
-        link_args: '-lm',
+        link_args: ['-lm','-lpthread],
         install: false)
