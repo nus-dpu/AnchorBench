@@ -226,11 +226,10 @@ void * regex_work_lcore(void * arg) {
     pthread_barrier_wait(&barrier);
 
     clock_gettime(CLOCK_MONOTONIC, &begin);
-    start = rte_rdtsc();
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - start.tv_sec > 10) {
+		if (current_time.tv_sec - begin.tv_sec > 10) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
