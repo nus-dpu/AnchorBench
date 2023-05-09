@@ -201,9 +201,7 @@ void * regex_work_lcore(void * arg) {
 	double interval;
 
     struct timespec begin, end;
-    clock_gettime(CLOCK_MONOTONIC, &begin);
     uint64_t start, current_time;
-    start = rte_rdtsc();
 
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
@@ -227,6 +225,9 @@ void * regex_work_lcore(void * arg) {
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
     pthread_barrier_wait(&barrier);
+
+    clock_gettime(CLOCK_MONOTONIC, &begin);
+    start = rte_rdtsc();
 
 	while (1) {
     	// clock_gettime(CLOCK_MONOTONIC, &current_time);
