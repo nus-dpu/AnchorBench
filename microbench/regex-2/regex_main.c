@@ -270,6 +270,23 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+    printf("CPU %02d| create DOCA workq...\n", sched_getcpu());
+
+	struct doca_workq *workq;			/* DOCA work queue */
+    result = doca_workq_create(WORKQ_DEPTH, &workq);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
+		// regex_scan_destroy(&rgx_cfg);
+		return result;
+	}
+
+	result = doca_ctx_workq_add(doca_regex_as_ctx(cfg.doca_regex), workq);
+	if (result != DOCA_SUCCESS) {
+		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
+		// regex_scan_destroy(&rgx_cfg);
+		return result;
+	}
+
     ret = pthread_attr_init(&pattr);
     if (ret != 0) {
         printf("pthread_attr_init failed!(err: %d)\n", errno);
