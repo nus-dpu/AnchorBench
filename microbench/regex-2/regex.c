@@ -2,13 +2,195 @@
 
 DOCA_LOG_REGISTER(REGEX::CORE);
 
+/*
+ * Enqueue job to DOCA RegEx qp
+ *
+ * @regex_cfg [in]: regex_scan_ctx configuration struct
+ * @job_request [in]: RegEx job request, already initialized with first chunk.
+ * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
+ * @return: number of the enqueued jobs or -1
+ */
+static int
+regex_scan_enq_job(struct regex_scan_ctx * regex_cfg, char * data, int data_len) {
+	doca_error_t result;
+	int nb_enqueued = 0;
+	uint32_t nb_total = 0;
+	uint32_t nb_free = 0;
 
+	doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
+	doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
+
+	if (nb_free != 0) {
+		// struct doca_buf *buf;
+		struct mempool_elt * buf_element;
+		char * data_buf;
+		void *mbuf_data;
+
+		/* Get one free element from the mempool */
+		mempool_get(regex_cfg->buf_mempool, &buf_element);
+		/* Get the memory segment */
+		data_buf = buf_element->addr;
+
+		memcpy(data_buf, data, data_len);
+
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(regex_cfg->buf_inv, regex_cfg->mmap, data_buf, BUF_SIZE, &buf_element->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+			return nb_enqueued;
+		}
+
+		doca_buf_get_data(buf_element->buf, &mbuf_data);
+		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
+
+	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+
+		struct doca_regex_job_search const job_request = {
+				.base = {
+					.type = DOCA_REGEX_JOB_SEARCH,
+					.ctx = doca_regex_as_ctx(regex_cfg->doca_regex),
+					.user_data = { .ptr = buf_element },
+				},
+				.rule_group_ids = {1, 0, 0, 0},
+				.buffer = buf_element->buf,
+				.result = regex_cfg->results + nb_enqueued,
+				.allow_batching = false,
+		};
+
+		result = doca_workq_submit(regex_cfg->workq, (struct doca_job *)&job_request);
+		if (result == DOCA_ERROR_NO_MEMORY) {
+			doca_buf_refcount_rm(buf_element->buf, NULL);
+			return nb_enqueued; /* qp is full, try to dequeue. */
+		}
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
+			return -1;
+		}
+		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
+		nb_enqueued++;
+		--nb_free;
+	}
+
+	return nb_enqueued;
+}
+
+/*
+ * Dequeue jobs responses
+ *
+ * @regex_cfg [in]: regex_scan_ctx configuration struct
+ * @chunk_len [in]: job chunk size
+ * @return: number of the dequeue jobs or a negative posix status code.
+ */
+static int
+regex_scan_deq_job(struct regex_scan_ctx *regex_cfg, int chunk_len)
+{
+	doca_error_t result;
+	int finished = 0;
+	struct doca_event event = {0};
+	struct timespec ts;
+	uint32_t nb_free = 0;
+	uint32_t nb_total = 0;
+	struct mempool_elt * buf_element;
+	struct timespec now;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	do {
+		result = doca_workq_progress_retrieve(regex_cfg->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+		if (result == DOCA_SUCCESS) {
+			buf_element = (struct mempool_elt *)event.user_data.ptr;
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
+			/* release the buffer back into the pool so it can be re-used */
+			doca_buf_inventory_get_num_elements(regex_cfg->buf_inv, &nb_total);
+			doca_buf_inventory_get_num_free_elements(regex_cfg->buf_inv, &nb_free);
+			/* Report the scan result of RegEx engine */
+			regex_scan_report_results(regex_cfg, &event);
+			/* release the buffer back into the pool so it can be re-used */
+			doca_buf_refcount_rm(buf_element->buf, NULL);
+			/* Put the element back into the mempool */
+			mempool_put(regex_cfg->buf_mempool, buf_element);
+			++finished;
+		} else if (result == DOCA_ERROR_AGAIN) {
+			break;
+		} else {
+			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
+			return -1;
+		}
+	} while (result == DOCA_SUCCESS);
+
+	return finished;
+}
 
 int regex_work_lcore(void * arg) {
 	doca_error_t result;
 	struct regex_ctx * rgx_ctx = (struct regex_ctx *)arg;
+	int index = 0;
+
+    double rate = 1.0;
+	double lambda = WORKQ_DEPTH * nr_core * 1.0e6 / rate;
+
+	struct worker worker[WORKQ_DEPTH];
+
+    struct timespec start, current_time;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+	for (int i = 0; i < WORKQ_DEPTH; i++) {
+		worker[i].interval = 0;
+		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
+	}
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
+
+	while (1) {
+    	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - start.tv_sec > 10) {
+			printf("Enqueue: %u, %6.2lf(RPS)\n", nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+			printf("Dequeue: %u, %6.2lf(RPS)\n", nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+
+			FILE * output_fp;
+			char name[32];
+
+			sprintf(name, "thp.txt");
+			output_fp = fopen(name, "w");
+			if (!output_fp) {
+				printf("Error opening throughput output file!\n");
+				return;
+			}
+
+			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
+				nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)), 
+				nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(start)));
+
+			fclose(output_fp);
+			break;
+		}
+
+		for (int i = 0; i < DEPTH; i++) {
+			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+				// ret = regex_scan_enq_job(&rgx_cfg, line, read);
+				ret = regex_scan_enq_job(&rgx_cfg, input[index].line, input[index].len);
+				if (ret < 0) {
+					DOCA_LOG_ERR("Failed to enqueue jobs");
+					continue;
+				} else {
+					index = (index + 1) % MAX_NR_RULE;
+					nb_enqueued++;
+					worker[i].interval = ran_expo(lambda);
+					worker[i].last_enq_time = current_time;
+				}
+			}
+		}
+
+		ret = regex_scan_deq_job(&rgx_cfg, rgx_cfg.chunk_len);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to dequeue jobs responses");
+			continue;
+		} else {
+			nb_dequeued += ret;
+		}
+	}
 
     return 0;
 }

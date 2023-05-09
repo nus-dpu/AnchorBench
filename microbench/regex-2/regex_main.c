@@ -7,6 +7,7 @@
 
 DOCA_LOG_REGISTER(REGEX::MAIN);
 
+struct input_info input[MAX_NR_RULE];
 struct regex_config cfg;
 
 /*
@@ -289,9 +290,6 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
-	printf(" >> total number of element: %d, free element: %d\n", 
-			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
-
 	ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
 	if (ctx->results == NULL) {
 		DOCA_LOG_ERR("Unable to add allocate results storage");
@@ -310,6 +308,11 @@ int main(int argc, char **argv) {
     pthread_attr_t pattr;
     cpu_set_t cpu;
 	struct regex_ctx *rgx_ctx = NULL;
+    FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+	int nr_rule = 0;
 
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("regex", &cfg);
@@ -342,7 +345,16 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-    printf("CPU %02d| create DOCA workq...\n", sched_getcpu());
+    fp = fopen(cfg.data_file, "r");
+    if (fp == NULL) {
+        return -1;
+	}
+
+    while ((read = getline(&line, &len, fp)) != -1) {
+		input[nr_rule].line = line;
+		input[nr_rule].len = len;
+		nr_rule++;
+	}
 
     ret = pthread_attr_init(&pattr);
     if (ret != 0) {

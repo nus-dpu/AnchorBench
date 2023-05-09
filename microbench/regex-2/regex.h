@@ -60,6 +60,20 @@ struct regex_config {
 
 extern struct regex_config cfg;
 
+#define MAX_NR_RULE	1000
+
+struct input_info {
+	char * line;
+	int len;
+};
+
+extern struct input_info input[MAX_NR_RULE];
+
+struct worker {
+	uint64_t interval;
+	struct timespec last_enq_time;
+};
+
 extern int regex_work_lcore(void * arg);
 
 #endif  /* _REGEX_H_ */
