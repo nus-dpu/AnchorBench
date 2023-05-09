@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
     cpu_set_t cpu;
 
 	/* Parse cmdline/json arguments */
-	result = doca_argp_init("regex_scan", &cfg);
+	result = doca_argp_init("regex", &cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to init ARGP resources: %s", doca_get_error_string(result));
 		return EXIT_FAILURE;

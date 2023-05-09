@@ -80,6 +80,8 @@ int regex_work_lcore(void * arg) {
     rgx_ctx.dev = cfg.dev;
     rgx_ctx.doca_regex = cfg.doca_regex;
 
+    printf("CPU %02d| dev: %p, regex: %p, initializing...\n", sched_getcpu(), rgx_ctx.dev, rgx_ctx.doca_regex);
+
     regex_init_lcore(&rgx_ctx);
 
     printf("CPU %02d| initialization done!\n", sched_getcpu());
