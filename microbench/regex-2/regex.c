@@ -13,7 +13,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
-__thread unsigned int seed;
+__thread struct drand48_data drand_buf;;
 
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
@@ -25,7 +25,9 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
-    double u = (double) rand_r(&seed) / RAND_MAX;
+    double u, x;
+    drand48_r(&drand_buf, &x);
+    u = x / RAND_MAX;
     return -log(1- u) * mean;
 }
 
@@ -190,7 +192,7 @@ void * regex_work_lcore(void * arg) {
     uint64_t start, current_time;
     start = rte_rdtsc();
 
-    seed = time(NULL);
+    srand48_r(time(NULL), &drand_buf);
 
 	for (int i = 0; i < WORKQ_DEPTH; i++) {
 		worker[i].interval = 0;
