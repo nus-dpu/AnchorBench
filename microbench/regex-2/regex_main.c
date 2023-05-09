@@ -290,6 +290,10 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
+    	printf(" >> total number of element: %d, free element: %d\n", 
+			doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
+
+
 	ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
 	if (ctx->results == NULL) {
 		DOCA_LOG_ERR("Unable to add allocate results storage");
