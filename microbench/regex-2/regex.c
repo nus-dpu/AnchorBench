@@ -15,6 +15,12 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	return TIMESPEC_TO_NSEC(diff);
 }
 
+double ran_expo(double lambda) {
+    double u;
+    u = rand() / (RAND_MAX + 1.0);
+    return -log(1- u) / lambda;
+}
+
 /*
  * Enqueue job to DOCA RegEx qp
  *
