@@ -214,7 +214,7 @@ static doca_error_t regex_init(struct regex_config *regex_cfg) {
 	result = doca_ctx_start(doca_regex_as_ctx(regex_cfg->doca_regex));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start DOCA RegEx. [%s]", doca_get_error_string(result));
-		regex_scan_destroy(&rgx_cfg);
+		// regex_scan_destroy(&regex_cfg);
 		return result;
 	}
 

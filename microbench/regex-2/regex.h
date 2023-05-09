@@ -7,13 +7,16 @@
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
+#include <bsd/string.h>
+#include <utils.h>
 
+#include <doca_argp.h>
+#include <doca_log.h>
 #include <doca_buf.h>
 #include <doca_buf_inventory.h>
 #include <doca_ctx.h>
 #include <doca_dev.h>
 #include <doca_error.h>
-#include <doca_log.h>
 #include <doca_mmap.h>
 #include <doca_regex.h>
 #include <doca_regex_mempool.h>
