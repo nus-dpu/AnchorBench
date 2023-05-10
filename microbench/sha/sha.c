@@ -92,10 +92,10 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 				.type = DOCA_SHA_JOB_SHA256,
 				.flags = DOCA_JOB_FLAGS_NONE,
 				.ctx = doca_sha_as_ctx(ctx->doca_sha),
-				.user_data = { .ptr = src_doca_buf },
+				.user_data = { .ptr = buf_element },
 			},
 			.resp_buf = dst_data_buf,
-			.req_buf = src_doca_buf->buf,
+			.req_buf = buf_element->buf,
 			.flags = DOCA_SHA_JOB_FLAGS_NONE,
 		};
 
