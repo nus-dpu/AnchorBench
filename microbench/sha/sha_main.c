@@ -306,8 +306,6 @@ int main(int argc, char **argv) {
 	result = doca_argp_start(argc, argv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to parse sample input: %s", doca_get_error_string(result));
-		if (cfg.rules_buffer != NULL)
-			free(cfg.rules_buffer);
 		doca_argp_destroy();
 		return EXIT_FAILURE;
 	}
@@ -329,12 +327,12 @@ int main(int argc, char **argv) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
 
-		rgx_ctx = (struct sha_ctx *)calloc(1, sizeof(struct sha_ctx));
+		sha_ctx = (struct sha_ctx *)calloc(1, sizeof(struct sha_ctx));
 
-        rgx_ctx->dev = cfg.dev;
-        rgx_ctx->doca_sha = cfg.doca_sha;
+        sha_ctx->dev = cfg.dev;
+        sha_ctx->doca_sha = cfg.doca_sha;
 
-        sha_init_lcore(rgx_ctx);
+        sha_init_lcore(sha_ctx);
 
         /* The pthread_create() call stores the thread ID into
             corresponding element of tinfo[]. */
@@ -344,7 +342,7 @@ int main(int argc, char **argv) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
 
-        ret = pthread_create(&pids[i], &pattr, &sha_work_lcore, (void *)rgx_ctx);
+        ret = pthread_create(&pids[i], &pattr, &sha_work_lcore, (void *)sha_ctx);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }
@@ -358,10 +356,6 @@ int main(int argc, char **argv) {
 	}
 
     pthread_barrier_destroy(&barrier);
-
-    /* Cleanup */
-	if (cfg.rules_buffer != NULL)
-		free(cfg.rules_buffer);
 
 	/* ARGP cleanup */
 	doca_argp_destroy();

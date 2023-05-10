@@ -4,6 +4,9 @@
 
 DOCA_LOG_REGISTER(SHA::CORE);
 
+#define SHA_DATA_LEN	1024
+#define M_1				1048576
+
 #define NSEC_PER_SEC    1000000000L
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
@@ -181,12 +184,14 @@ void * sha_work_lcore(void * arg) {
     int ret;
 	struct sha_ctx * sha_ctx = (struct sha_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
-	int index = 0;
+	int cur_ptr = 0;
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
 	int nr_rule = 0;
+	char * input;
+	int input_size;
 
 	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
 
@@ -204,16 +209,20 @@ void * sha_work_lcore(void * arg) {
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
-    fp = fopen(cfg.data, "r");
+	input = (char *)calloc(M_1, sizeof(char));
+
+    fp = fopen(cfg.data, "rb");
     if (fp == NULL) {
         return -1;
 	}
 
-    while ((read = getline(&line, &len, fp)) != -1) {
-		input[nr_rule].line = line;
-		input[nr_rule].len = len;
-		nr_rule++;
-	}
+	/* Seek to the beginning of the file */
+	fseek(fp, 0, SEEK_SET);
+
+	/* Read and display data */
+	input_size = fread((char **)input, sizeof(char), M_1, fp);
+
+	fclose(fp);
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -249,12 +258,15 @@ void * sha_work_lcore(void * arg) {
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				ret = sha_enq_job(sha_ctx, input[index].line, input[index].len);
+				if (cur_ptr * SHA_DATA_LEN >= M_1) {
+					cur_ptr = 0;
+				}
+				ret = sha_enq_job(sha_ctx, input + cur_ptr * SHA_DATA_LEN, SHA_DATA_LEN);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
-					index = (index + 1) % MAX_NR_RULE;
+					cur_ptr += SHA_DATA_LEN;
 					nb_enqueued++;
 					interval = ran_expo(mean);
 					worker[i].interval = (uint64_t)round(interval);
