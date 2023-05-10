@@ -49,6 +49,7 @@ struct mempool_elt {
     struct timespec     ts;
     /* Element address */
     char                * addr;
+    void                * response;
 };
 
 /* Mempool structure */
