@@ -105,7 +105,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
 		if (result == DOCA_ERROR_NO_MEMORY) {
-			doca_buf_refcount_rm(buf_element->buf, NULL);
+			doca_buf_refcount_rm(src_buf->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
 		if (result != DOCA_SUCCESS) {
