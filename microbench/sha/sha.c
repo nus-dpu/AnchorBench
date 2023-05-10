@@ -71,6 +71,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		src_data_buf = src_buf->addr;
 		dst_data_buf = dst_buf->addr;
 
+		memset(src_data_buf, 0, BUF_SIZE);
 		memcpy(src_data_buf, data, data_len);
 
 		/* Create a DOCA buffer for this memory region */
