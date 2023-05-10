@@ -89,7 +89,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		}
 
 		doca_buf_get_data(src_buf->buf, &mbuf_data);
-		doca_buf_set_data(src_buf->buf, mbuf_data, BUF_SIZE);
+		doca_buf_set_data(src_buf->buf, mbuf_data, SHA_DATA_LEN);
 
 		src_buf->response = dst_buf;
 
