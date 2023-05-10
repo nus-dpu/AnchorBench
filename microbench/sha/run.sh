@@ -1,6 +1,7 @@
 mkdir result/
 
-for nr_core in $(seq 1 1 8); do 
+# for nr_core in $(seq 1 1 8); do 
+nr_core = 8
 	echo ">> Test with $nr_core cores >>"
 
 	mkdir result/thp-$nr_core/
@@ -15,6 +16,6 @@ for nr_core in $(seq 1 1 8); do
 		echo "  >> Test done!"
 		sleep 10
 	done
-done
+# done
 
 rm thp-*.txt latency-*.txt
