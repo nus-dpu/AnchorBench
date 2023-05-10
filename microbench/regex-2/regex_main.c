@@ -321,11 +321,17 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	printf(" >> total number of element: %d, free element: %d\n", 
 		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
 
-	ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
-	if (ctx->results == NULL) {
-		DOCA_LOG_ERR("Unable to add allocate results storage");
-		return DOCA_ERROR_NO_MEMORY;
-	}
+	/* Segment the region into pieces */
+    for (int i = 0; i < NB_BUF; i++) {
+        struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt));
+        elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
+    }
+
+	// ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
+	// if (ctx->results == NULL) {
+	// 	DOCA_LOG_ERR("Unable to add allocate results storage");
+	// 	return DOCA_ERROR_NO_MEMORY;
+	// }
 
 	return result;
 }
