@@ -155,7 +155,6 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
 	struct mempool_elt * src_doca_buf, * dst_doca_buf;
-	char * dst_data_buf;
 	struct timespec now;
 
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -173,7 +172,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			/* Report the scan result of SHA engine */
-			sha_report_results(dst_data_buf);
+			sha_report_results(dst_doca_buf->buf);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
