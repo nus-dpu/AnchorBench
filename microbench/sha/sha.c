@@ -104,7 +104,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 			},
 			.resp_buf = dst_buf->buf,
 			.req_buf = src_buf->buf,
-			.flags = DOCA_SHA_JOB_FLAGS_NONE,
+			.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
