@@ -109,6 +109,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
 		if (result == DOCA_ERROR_NO_MEMORY) {
 			doca_buf_refcount_rm(src_buf->buf, NULL);
+			doca_buf_refcount_rm(dst_buf->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
 		if (result != DOCA_SUCCESS) {
@@ -170,6 +171,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 			sha_report_results(dst_data_buf);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
+			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, src_doca_buf);
 			++finished;
