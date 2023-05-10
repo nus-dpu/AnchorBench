@@ -4,9 +4,6 @@
 
 DOCA_LOG_REGISTER(SHA::CORE);
 
-#define SHA_DATA_LEN	1024
-#define M_1				1048576
-
 #define NSEC_PER_SEC    1000000000L
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
