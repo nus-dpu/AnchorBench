@@ -89,7 +89,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 		src_buf->response = dst_buf;
 
-	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+	    clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
 
 		struct doca_sha_job const sha_job = {
 			.base = (struct doca_job) {
