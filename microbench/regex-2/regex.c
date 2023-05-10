@@ -30,8 +30,8 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 double ran_expo(double mean) {
     double u, x;
     drand48_r(&drand_buf, &x);
-    u = x / RAND_MAX;
-    return -log(1- u) * mean;
+    // u = x / RAND_MAX;
+    return -log(1 - x) * mean;
 #if 0
     double u;
     u = (double) rand_r(&seed) / RAND_MAX;
@@ -194,7 +194,7 @@ void * regex_work_lcore(void * arg) {
     ssize_t read;
 	int nr_rule = 0;
 
-	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e9 / cfg.rate;
+	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
 
 	struct worker worker[WORKQ_DEPTH];
 

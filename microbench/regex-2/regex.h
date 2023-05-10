@@ -35,7 +35,7 @@
 #define MAX_FILE_NAME 255			/* Maximal length of file path */
 #define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
-#define NB_BUF	128
+#define NB_BUF	512
 #define BUF_SIZE	128
 
 struct regex_ctx {
