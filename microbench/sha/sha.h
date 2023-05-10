@@ -37,7 +37,7 @@
 #define NB_BUF	2048
 #define BUF_SIZE	1200
 
-#define SHA_DATA_LEN	1024
+#define SHA_DATA_LEN	64
 #define M_1				1048576
 
 struct sha_ctx {
