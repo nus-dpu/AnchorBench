@@ -134,6 +134,9 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 static void sha_report_results(struct doca_buf *buf) {
 	uint8_t * resp;
 	doca_buf_get_data(buf, (void **)&resp);
+	for (int i = 0; i < DOCA_SHA256_BYTE_COUNT; i++)
+		sprintf(sha_output + (2 * i), "%02x", resp[i]);
+	DOCA_LOG_INFO("SHA256 output of %s is: %s", src_buffer, sha_output);
 }
 
 /*
@@ -161,6 +164,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			src_doca_buf = (struct mempool_elt *)event.user_data.ptr;
 			dst_doca_buf = (struct mempool_elt *)src_doca_buf->response;
+			printf(" data >> \n%s\n", src_doca_buf->addr);
 			if (nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&src_doca_buf->ts, &now);
 			}
