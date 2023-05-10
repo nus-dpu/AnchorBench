@@ -35,7 +35,7 @@
 #define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
 #define NB_BUF	1024
-#define BUF_SIZE	128
+#define BUF_SIZE	1200
 
 struct sha_ctx {
 	struct doca_pci_bdf *pci_address;		/* SHA PCI address to use */

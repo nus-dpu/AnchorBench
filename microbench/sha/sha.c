@@ -75,14 +75,14 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		memcpy(src_data_buf, data, data_len);
 
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_doca_buf->buf);
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, DOCA_SHA256_BYTE_COUNT, &src_doca_buf->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
 		}
 
 		doca_buf_get_data(src_doca_buf->buf, &mbuf_data);
-		doca_buf_set_data(src_doca_buf->buf, mbuf_data, BUF_SIZE);
+		doca_buf_set_data(src_doca_buf->buf, mbuf_data, DOCA_SHA256_BYTE_COUNT);
 
 	    clock_gettime(CLOCK_MONOTONIC, &src_doca_buf->ts);
 
@@ -92,7 +92,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 				.flags = DOCA_JOB_FLAGS_NONE,
 				.ctx = doca_sha_as_ctx(ctx->doca_sha),
 				.user_data = { .ptr = src_doca_buf },
-				},
+			},
 			.resp_buf = dst_data_buf,
 			.req_buf = src_doca_buf->buf,
 			.flags = DOCA_SHA_JOB_FLAGS_NONE,
@@ -110,6 +110,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
 		--nb_free;
+		break;
 	}
 
 	return nb_enqueued;
