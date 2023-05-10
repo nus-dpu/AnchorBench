@@ -1,5 +1,6 @@
 #include "sha.h"
 
+#include <assert.h>
 #include <rte_cycles.h>
 
 DOCA_LOG_REGISTER(SHA::CORE);

@@ -34,7 +34,7 @@
 #define MAX_FILE_NAME 255			/* Maximal length of file path */
 #define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
-#define NB_BUF	1024
+#define NB_BUF	2048
 #define BUF_SIZE	1200
 
 #define SHA_DATA_LEN	1024
