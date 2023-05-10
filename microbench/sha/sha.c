@@ -110,7 +110,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
 		--nb_free;
-		break;
+		exit();
 	}
 
 	return nb_enqueued;
