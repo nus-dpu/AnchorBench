@@ -60,31 +60,32 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
 	if (nb_free != 0) {
-		// struct doca_buf *buf;
-		struct mempool_elt * src_doca_buf;
 		char * src_data_buf, * dst_data_buf;
-		void *mbuf_data;
 
 		dst_data_buf = (char *)calloc(DOCA_SHA256_BYTE_COUNT, sizeof(char));
 
-		/* Get one free element from the mempool */
-		mempool_get(ctx->buf_mempool, &src_doca_buf);
-		src_doca_buf->response = (void *)dst_data_buf;
-		/* Get the memory segment */
-		src_data_buf = src_doca_buf->addr;
-		memcpy(src_data_buf, data, data_len);
+		struct mempool_elt * buf_element;
+		char * data_buf;
+		void *mbuf_data;
 
-		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, DOCA_SHA256_BYTE_COUNT, &src_doca_buf->buf);
+		/* Get one free element from the mempool */
+		mempool_get(ctx->buf_mempool, &buf_element);
+		/* Get the memory segment */
+		data_buf = buf_element->addr;
+
+		memcpy(data_buf, data, data_len);
+
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &buf_element->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
 		}
 
-		doca_buf_get_data(src_doca_buf->buf, &mbuf_data);
-		doca_buf_set_data(src_doca_buf->buf, mbuf_data, DOCA_SHA256_BYTE_COUNT);
+		doca_buf_get_data(buf_element->buf, &mbuf_data);
+		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
 
-	    clock_gettime(CLOCK_MONOTONIC, &src_doca_buf->ts);
+	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
 		struct doca_sha_job const sha_job = {
 			.base = (struct doca_job) {
