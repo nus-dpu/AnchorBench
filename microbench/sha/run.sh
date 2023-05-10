@@ -14,7 +14,7 @@ nr_core = 8
 		cat thp-*.txt > result/thp-$nr_core/thp-rate-$rate.txt
 		cat latency-*.txt > result/lat-$nr_core/lat-rate-$rate.txt
 		echo "  >> Test done!"
-		sleep 10
+		sleep 5
 	done
 # done
 
