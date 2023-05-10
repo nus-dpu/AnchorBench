@@ -133,10 +133,11 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
  */
 static void sha_report_results(struct doca_buf *buf) {
 	uint8_t * resp;
+	char sha_output[DOCA_SHA256_BYTE_COUNT * 2 + 1] = {0};
 	doca_buf_get_data(buf, (void **)&resp);
 	for (int i = 0; i < DOCA_SHA256_BYTE_COUNT; i++)
 		sprintf(sha_output + (2 * i), "%02x", resp[i]);
-	DOCA_LOG_INFO("SHA256 output of %s is: %s", src_buffer, sha_output);
+	printf(" result >> %s", sha_output);
 }
 
 /*
