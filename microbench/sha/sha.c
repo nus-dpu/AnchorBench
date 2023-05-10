@@ -165,7 +165,6 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			src_doca_buf = (struct mempool_elt *)event.user_data.ptr;
 			dst_doca_buf = (struct mempool_elt *)src_doca_buf->response;
-			printf(" data >> \n%s\n", src_doca_buf->addr);
 			if (nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&src_doca_buf->ts, &now);
 			}
@@ -173,7 +172,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			/* Report the scan result of SHA engine */
-			sha_report_results(dst_doca_buf->buf);
+			// sha_report_results(dst_doca_buf->buf);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
