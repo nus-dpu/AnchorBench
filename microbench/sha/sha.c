@@ -170,6 +170,179 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 	return finished;
 }
 
+/*
+ * Run sha_create sample
+ *
+ * @pci_dev [in]: pci address struct for doca device
+ * @src_buffer [in]: source data for the SHA job
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise.
+ */
+doca_error_t sha_create(struct doca_pci_bdf *pci_dev, char *src_buffer, char *dst_buffer) {
+	doca_error_t result;
+	// struct timespec ts;
+	uint32_t workq_depth = 1;		/* The sample will run 1 sha job */
+	uint32_t max_chunks = 2;		/* The sample will use 2 doca buffers */
+	size_t pg_sz = sysconf(_SC_PAGESIZE);	/* OS Page Size */
+
+	result = doca_sha_create(&sha_ctx);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create sha engine: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	state.ctx = doca_sha_as_ctx(sha_ctx);
+
+	result = open_doca_device_with_pci(pci_dev, NULL, &state.dev);
+	if (result != DOCA_SUCCESS) {
+		result = doca_sha_destroy(sha_ctx);
+		return result;
+	}
+
+	result = init_core_objects(&state, DOCA_BUF_EXTENSION_NONE, workq_depth, max_chunks);
+	if (result != DOCA_SUCCESS) {
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	if (doca_mmap_populate(state.mmap, dst_buffer, DOCA_SHA256_BYTE_COUNT, pg_sz, NULL, NULL) != DOCA_SUCCESS ||
+	    doca_mmap_populate(state.mmap, src_buffer, MAX_DATA_LEN, pg_sz, NULL, NULL) != DOCA_SUCCESS) {
+		free(dst_buffer);
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	/* Construct DOCA buffer for each address range */
+	result = doca_buf_inventory_buf_by_addr(state.buf_inv, state.mmap, src_buffer, MAX_DATA_LEN, &src_doca_buf);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to acquire DOCA buffer representing source buffer: %s", doca_get_error_string(result));
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+	/* Set data address and length in the doca_buf. */
+	result = doca_buf_set_data(src_doca_buf, src_buffer, MAX_DATA_LEN);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("doca_buf_set_data() for request doca_buf failure");
+		doca_buf_refcount_rm(src_doca_buf, NULL);
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	/* Construct DOCA buffer for each address range */
+	result = doca_buf_inventory_buf_by_addr(state.buf_inv, state.mmap, dst_buffer, DOCA_SHA256_BYTE_COUNT, &dst_doca_buf);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to acquire DOCA buffer representing destination buffer: %s", doca_get_error_string(result));
+		doca_buf_refcount_rm(src_doca_buf, NULL);
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	return result;
+}
+
+/*
+ * Run sha_submit
+ *
+ * @pci_dev [in]: pci address struct for doca device
+ * @src_buffer [in]: source data for the SHA job
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise.
+ */
+doca_error_t sha_submit(struct sha_ctx *ctx, char *data, int len) {
+	doca_error_t result;
+
+	struct doca_buf *src_doca_buf;
+	struct doca_buf *dst_doca_buf;
+
+	char *dst_buffer;
+	dst_buffer = malloc(DOCA_SHA256_BYTE_COUNT);
+
+	/* Engine outputs hex format. For char format output, we need double the length */
+	// char sha_output[DOCA_SHA256_BYTE_COUNT * 2 + 1] = {0};
+	uint8_t *resp_head;
+
+	/* Construct DOCA buffer for each address range */
+	result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, state.mmap, src_buffer, MAX_DATA_LEN, &src_doca_buf);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to acquire DOCA buffer representing source buffer: %s", doca_get_error_string(result));
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+	/* Set data address and length in the doca_buf. */
+	result = doca_buf_set_data(src_doca_buf, data, len);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("doca_buf_set_data() for request doca_buf failure");
+		doca_buf_refcount_rm(src_doca_buf, NULL);
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	/* Construct DOCA buffer for each address range */
+	result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, dst_buffer, DOCA_SHA256_BYTE_COUNT, &dst_doca_buf);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to acquire DOCA buffer representing destination buffer: %s", doca_get_error_string(result));
+		doca_buf_refcount_rm(src_doca_buf, NULL);
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	/* Construct sha job */
+	const struct doca_sha_job sha_job = {
+		.base = (struct doca_job) {
+			.type = DOCA_SHA_JOB_SHA256,
+			.flags = DOCA_JOB_FLAGS_NONE,
+			.ctx = state.ctx,
+			.user_data.u64 = DOCA_SHA_JOB_SHA256,
+			},
+		.resp_buf = dst_doca_buf,
+		.req_buf = src_doca_buf,
+		.flags = DOCA_SHA_JOB_FLAGS_NONE,
+	};
+
+	/* Enqueue sha job */
+	result = doca_workq_submit(ctx->workq, &sha_job);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to submit sha job: %s", doca_get_error_string(result));
+		doca_buf_refcount_rm(dst_doca_buf, NULL);
+		doca_buf_refcount_rm(src_doca_buf, NULL);
+		sha_cleanup(&state, sha_ctx);
+		return result;
+	}
+
+	/* Wait for job completion */
+	while ((result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE)) == DOCA_ERROR_AGAIN) {
+		/* Wait for the job to complete */
+		// ts.tv_sec = 0;
+		// ts.tv_nsec = SLEEP_IN_NANOS;
+		// nanosleep(&ts, &ts);
+	}
+
+	if (result != DOCA_SUCCESS)
+		DOCA_LOG_ERR("Failed to retrieve sha job: %s", doca_get_error_string(result));
+
+	else if (event.result.u64 != DOCA_SUCCESS)
+		DOCA_LOG_ERR("sha job finished unsuccessfully");
+
+	else if (((int)(event.type) != (int)DOCA_SHA_JOB_SHA256) ||
+		(event.user_data.u64 != DOCA_SHA_JOB_SHA256))
+		DOCA_LOG_ERR("Received wrong event");
+
+	else {
+		doca_buf_get_data(sha_job.resp_buf, (void **)&resp_head);
+		// for (int i = 0; i < DOCA_SHA256_BYTE_COUNT; i++)
+		// 	sprintf(sha_output + (2 * i), "%02x", resp_head[i]);
+		// DOCA_LOG_INFO("SHA256 output of %s is: %s", src_buffer, sha_output);
+	}
+
+	if (doca_buf_refcount_rm(src_doca_buf, NULL) != DOCA_SUCCESS ||
+	    doca_buf_refcount_rm(dst_doca_buf, NULL) != DOCA_SUCCESS)
+		DOCA_LOG_ERR("Failed to decrease DOCA buffer reference count");
+
+	/* Clean and destroy all relevant objects */
+	// sha_cleanup(&state, sha_ctx);
+
+	return result;
+}
+
+
 void * sha_work_lcore(void * arg) {
     int ret;
 	struct sha_ctx * sha_ctx = (struct sha_ctx *)arg;
@@ -219,7 +392,7 @@ void * sha_work_lcore(void * arg) {
     pthread_barrier_wait(&barrier);
 
     clock_gettime(CLOCK_MONOTONIC, &begin);
-
+#if 0
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
 		if (current_time.tv_sec - begin.tv_sec > 10) {
@@ -271,6 +444,19 @@ void * sha_work_lcore(void * arg) {
 			continue;
 		} else {
 			nb_dequeued += ret;
+		}
+	}
+#endif
+
+	for (int int i = 0; i < input_size / SHA_DATA_LEN; i++) {
+		if (cur_ptr * SHA_DATA_LEN >= M_1) {
+			cur_ptr = 0;
+		}
+
+		memcpy(sha_cfg.data, input + i * SHA_DATA_LEN, SHA_DATA_LEN);
+		result = sha_submit(sha_ctx, input + i * SHA_DATA_LEN, SHA_DATA_LEN);
+		if (result != DOCA_SUCCESS) {
+			exit_status = EXIT_FAILURE;
 		}
 	}
 
