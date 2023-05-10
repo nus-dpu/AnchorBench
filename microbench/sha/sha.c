@@ -105,12 +105,12 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		}
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
+			exit(1);
 			return -1;
 		}
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
 		--nb_free;
-		exit(1);
 	}
 
 	return nb_enqueued;
