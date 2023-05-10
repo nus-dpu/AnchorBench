@@ -137,7 +137,7 @@ static void sha_report_results(struct doca_buf *buf) {
 	doca_buf_get_data(buf, (void **)&resp);
 	for (int i = 0; i < DOCA_SHA256_BYTE_COUNT; i++)
 		sprintf(sha_output + (2 * i), "%02x", resp[i]);
-	printf(" result >> %s", sha_output);
+	printf(" result >> %s\n", sha_output);
 }
 
 /*
