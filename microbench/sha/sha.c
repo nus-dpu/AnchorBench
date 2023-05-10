@@ -77,6 +77,13 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 		memcpy(src_data_buf, data, data_len);
 
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &dst_doca_buf->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+			return nb_enqueued;
+		}
+
 		/* Create a DOCA buffer for this memory region */
 		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_doca_buf->buf);
 		if (result != DOCA_SUCCESS) {
