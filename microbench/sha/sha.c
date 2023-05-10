@@ -60,10 +60,6 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
 	if (nb_free != 0) {
-		char * src_data_buf, * dst_data_buf;
-
-		dst_data_buf = (char *)calloc(DOCA_SHA256_BYTE_COUNT, sizeof(char));
-
 		struct mempool_elt * buf_element;
 		char * data_buf;
 		void *mbuf_data;
@@ -94,7 +90,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 				.ctx = doca_sha_as_ctx(ctx->doca_sha),
 				.user_data = { .ptr = buf_element },
 			},
-			.resp_buf = dst_data_buf,
+			.resp_buf = buf_element->response,
 			.req_buf = buf_element->buf,
 			.flags = DOCA_SHA_JOB_FLAGS_NONE,
 		};

@@ -269,6 +269,11 @@ static doca_error_t sha_init_lcore(struct sha_ctx * ctx) {
 	printf(" >> total number of element: %d, free element: %d\n", 
 		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
 
+	struct mempool_elt *elt;
+    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
+		elt->response = (void *)calloc(1, SHA_DATA_LEN);
+	}
+
 	return result;
 }
 
