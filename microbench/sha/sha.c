@@ -69,7 +69,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 		/* Get one free element from the mempool */
 		mempool_get(ctx->buf_mempool, &src_doca_buf);
-		src_doca_buf->response = (void *)dst_doca_buf;
+		src_doca_buf->response = (void *)dst_data_buf;
 		/* Get the memory segment */
 		src_data_buf = src_doca_buf->addr;
 		memcpy(src_data_buf, data, data_len);
