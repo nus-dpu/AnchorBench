@@ -174,6 +174,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, src_doca_buf);
+			mempool_put(ctx->buf_mempool, dst_doca_buf);
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
