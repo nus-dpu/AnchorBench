@@ -199,13 +199,6 @@ static doca_error_t sha_init(struct sha_config *sha_cfg) {
 		return result;
 	}
 
-	/* Size per workq memory pool */
-	result = doca_sha_set_workq_matches_memory_pool_size(sha_cfg->doca_sha, mempool_size);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable set matches mempool size. Reason: %s", doca_get_error_string(result));
-		return result;
-	}
-
     /* Start DOCA SHA */
 	result = doca_ctx_start(doca_sha_as_ctx(sha_cfg->doca_sha));
 	if (result != DOCA_SUCCESS) {
@@ -295,7 +288,7 @@ int main(int argc, char **argv) {
 	}
 
 	/* Register SHA params */
-	result = register_sha_scan_params();
+	result = register_sha_params();
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register sample parameters: %s", doca_get_error_string(result));
 		doca_argp_destroy();
