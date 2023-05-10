@@ -278,7 +278,7 @@ void * sha_work_lcore(void * arg) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
-					cur_ptr += SHA_DATA_LEN;
+					cur_ptr++;
 					nb_enqueued++;
 					interval = ran_expo(mean);
 					worker[i].interval = (uint64_t)round(interval);
