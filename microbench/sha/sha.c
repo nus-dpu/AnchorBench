@@ -61,28 +61,18 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 	if (nb_free != 0) {
 		// struct doca_buf *buf;
-		struct mempool_elt * dst_doca_buf, * src_doca_buf;
-		char * dst_data_buf, * src_data_buf;
+		struct mempool_elt * src_doca_buf;
+		char * src_data_buf, * dst_data_buf;
 		void *mbuf_data;
 
+		dst_data_buf = (char *)calloc(DOCA_SHA256_BYTE_COUNT, sizeof(char));
+
 		/* Get one free element from the mempool */
-		mempool_get(ctx->buf_mempool, &dst_doca_buf);
 		mempool_get(ctx->buf_mempool, &src_doca_buf);
-
 		src_doca_buf->response = (void *)dst_doca_buf;
-
 		/* Get the memory segment */
-		dst_data_buf = dst_doca_buf->addr;
 		src_data_buf = src_doca_buf->addr;
-
 		memcpy(src_data_buf, data, data_len);
-
-		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &dst_doca_buf->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-			return nb_enqueued;
-		}
 
 		/* Create a DOCA buffer for this memory region */
 		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_doca_buf->buf);
@@ -103,14 +93,13 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 				.ctx = doca_sha_as_ctx(ctx->doca_sha),
 				.user_data = { .ptr = src_doca_buf },
 				},
-			.resp_buf = dst_doca_buf->buf,
+			.resp_buf = dst_data_buf,
 			.req_buf = src_doca_buf->buf,
 			.flags = DOCA_SHA_JOB_FLAGS_NONE,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
 		if (result == DOCA_ERROR_NO_MEMORY) {
-			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
@@ -132,7 +121,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
  * @sha_ctx [in]: sample SHA configuration struct
  * @event [in]: DOCA event structure
  */
-static void sha_report_results(struct sha_ctx *ctx, struct doca_buf *buf) {
+static void sha_report_results(char *buf) {
 	uint8_t * resp;
 	doca_buf_get_data(buf, (void **)&resp);
 }
@@ -151,7 +140,8 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 	struct timespec ts;
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
-	struct mempool_elt * dst_doca_buf, * src_doca_buf;
+	struct mempool_elt * src_doca_buf;
+	char * dst_data_buf;
 	struct timespec now;
 
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -160,7 +150,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			src_doca_buf = (struct mempool_elt *)event.user_data.ptr;
-			dst_doca_buf = (struct mempool_elt *)src_doca_buf->response;
+			dst_data_buf = (char *)src_doca_buf->response;
 			if (nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&src_doca_buf->ts, &now);
 			}
@@ -168,13 +158,11 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			/* Report the scan result of SHA engine */
-			sha_report_results(ctx, dst_doca_buf->buf);
+			sha_report_results(ctx, dst_data_buf);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
-			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, src_doca_buf);
-			mempool_put(ctx->buf_mempool, dst_doca_buf);
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
