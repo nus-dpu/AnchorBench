@@ -1,7 +1,7 @@
 data_size=(16 32 64 128 256 512 1024)
 
 for size in "${data_size[@]}"; do
-	mkdir ${sizeB}-result/
+	mkdir ${size}B-result/
 
 	# for nr_core in $(seq 1 1 8); do 
 	# 	echo ">> Test with $nr_core cores >>"
