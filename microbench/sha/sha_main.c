@@ -5,6 +5,8 @@ DOCA_LOG_REGISTER(SHA::MAIN);
 struct sha_config cfg;
 pthread_barrier_t barrier;
 
+int data_len = 64;
+
 /*
  * ARGP Callback - Handle SHA PCI address parameter
  *
@@ -84,7 +86,7 @@ static doca_error_t rate_callback(void *param, void *config) {
  */
 static doca_error_t register_sha_params() {
 	doca_error_t result = DOCA_SUCCESS;
-	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param;
+	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param, *len_param;
 
 	/* Create and register PCI address of SHA device param */
 	result = doca_argp_param_create(&pci_param);
@@ -153,6 +155,24 @@ static doca_error_t register_sha_params() {
 	doca_argp_param_set_callback(rate_param, rate_callback);
 	doca_argp_param_set_type(rate_param, DOCA_ARGP_TYPE_STRING);
 	result = doca_argp_register_param(rate_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and register len param*/
+	result = doca_argp_param_create(&len_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(len_param, "b");
+	doca_argp_param_set_long_name(len_param, "block_size");
+	doca_argp_param_set_arguments(len_param, "<block data size>");
+	doca_argp_param_set_description(len_param, "Set data length");
+	doca_argp_param_set_callback(len_param, len_callback);
+	doca_argp_param_set_type(len_param, DOCA_ARGP_TYPE_STRING);
+	result = doca_argp_register_param(len_param);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
 		return result;

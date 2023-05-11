@@ -89,7 +89,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		}
 
 		doca_buf_get_data(src_buf->buf, &mbuf_data);
-		doca_buf_set_data(src_buf->buf, mbuf_data, SHA_DATA_LEN);
+		doca_buf_set_data(src_buf->buf, mbuf_data, data_len);
 
 		src_buf->response = dst_buf;
 
@@ -269,10 +269,10 @@ void * sha_work_lcore(void * arg) {
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				if (cur_ptr * SHA_DATA_LEN >= M_1) {
+				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
 				}
-				ret = sha_enq_job(sha_ctx, input + cur_ptr * SHA_DATA_LEN, SHA_DATA_LEN);
+				ret = sha_enq_job(sha_ctx, input + cur_ptr * data_len, data_len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;

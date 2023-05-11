@@ -78,6 +78,7 @@ struct worker {
 
 extern void * sha_work_lcore(void * arg);
 
+extern int data_len;
 extern pthread_barrier_t barrier;
 
 #endif  /* _SHA_H_ */
