@@ -77,7 +77,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		}
 
 		doca_buf_get_data(buf_element->buf, &mbuf_data);
-		doca_buf_set_data(buf_element->buf, mbuf_data, BUF_SIZE);
+		doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
 	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
