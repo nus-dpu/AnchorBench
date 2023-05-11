@@ -35,6 +35,8 @@
 #define MAX_FILE_NAME 255			/* Maximal length of file path */
 #define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
+#define REGEX_DATA_LEN	1024
+
 #define NB_BUF	512
 #define BUF_SIZE	128
 
