@@ -80,6 +80,21 @@ static doca_error_t rate_callback(void *param, void *config) {
 }
 
 /*
+ * ARGP Callback - Handle data to scan path parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t len_callback(void *param, void *config) {
+	char *len = (char *)param;
+	char *ptr;
+
+	data_len = strtol(len, &ptr, 10);
+	return DOCA_SUCCESS;
+}
+
+/*
  * Register the command line parameters for the sample.
  *
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
