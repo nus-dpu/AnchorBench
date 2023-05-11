@@ -36,6 +36,7 @@
 #define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
 #define REGEX_DATA_LEN	1024
+#define M_1				1048576
 
 #define NB_BUF	1024
 #define BUF_SIZE	1024
