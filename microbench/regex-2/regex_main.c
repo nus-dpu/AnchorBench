@@ -216,9 +216,9 @@ static doca_error_t register_regex_scan_params() {
 		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
 		return result;
 	}
-	doca_argp_param_set_short_name(len_param, "l");
-	doca_argp_param_set_long_name(len_param, "length");
-	doca_argp_param_set_arguments(len_param, "<data length>");
+	doca_argp_param_set_short_name(len_param, "b");
+	doca_argp_param_set_long_name(len_param, "block_size");
+	doca_argp_param_set_arguments(len_param, "<block data size>");
 	doca_argp_param_set_description(len_param, "Set data length");
 	doca_argp_param_set_callback(len_param, len_callback);
 	doca_argp_param_set_type(len_param, DOCA_ARGP_TYPE_STRING);
