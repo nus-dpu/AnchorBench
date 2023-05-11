@@ -72,11 +72,10 @@ static doca_error_t data_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t len_callback(void *param, void *config) {
-	struct regex_config *rgx_cfg = (struct regex_config *)config;
 	char *len = (char *)param;
 	char *ptr;
 
-	data_len = strtol(len, ptr, 10);
+	data_len = strtol(len, &ptr, 10);
 	return DOCA_SUCCESS;
 }
 
