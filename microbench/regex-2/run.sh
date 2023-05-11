@@ -12,7 +12,7 @@ for size in "${data_size[@]}"; do
 		for rate in $(seq 10 140 5000); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops) with data size $size Bytes"
-			./build/regex -l 50 -p 03:00.0 -r /tmp/regex_rules.rof2.binary -d $(pwd)/alice_in_wonderland.txt -c $nr_core -s $rate
+			./build/regex -l 50 -p 03:00.0 -r /tmp/regex_rules.rof2.binary -d $(pwd)/alice_in_wonderland.txt -c $nr_core -s $rate -b $size
 			cat thp-*.txt > ${size}B-result/thp-$nr_core/thp-rate-$rate.txt
 			cat latency-*.txt > ${size}B-result/lat-$nr_core/lat-rate-$rate.txt
 			echo "  >> Test done!"
