@@ -262,10 +262,10 @@ void * regex_work_lcore(void * arg) {
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				if (cur_ptr * REGEX_DATA_LEN >= M_1) {
+				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
 				}
-				ret = regex_scan_enq_job(rgx_ctx, input + cur_ptr * REGEX_DATA_LEN, REGEX_DATA_LEN);
+				ret = regex_scan_enq_job(rgx_ctx, input + cur_ptr * data_len, data_len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
