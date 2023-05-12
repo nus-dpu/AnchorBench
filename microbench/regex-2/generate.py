@@ -1,8 +1,8 @@
 import random
 import sys
-from numpy import loadtxt
 
-data = loadtxt(sys.argv[1])
+src_file = open(sys.argv[1], 'r')
+data = src_file.read()
 print(data)
 with open('url.txt', 'w') as f:
     for i in range(0, 1000):
