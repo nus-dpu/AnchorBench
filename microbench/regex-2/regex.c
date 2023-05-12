@@ -210,8 +210,6 @@ void * regex_work_lcore(void * arg) {
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
-	input = (char *)calloc(M_1, sizeof(char));
-
     fp = fopen(cfg.data, "rb");
     if (fp == NULL) {
         return -1;
