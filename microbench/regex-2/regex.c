@@ -219,7 +219,8 @@ void * regex_work_lcore(void * arg) {
 		if (nr_rule >= MAX_NR_RULE) {
 			break;
 		}
-		input[nr_rule].line = line;
+		printf("line: %s, len: %d\n", line, len);
+		memcpy(input[nr_rule].line, line, len);
 		input[nr_rule].len = len;
 		nr_rule++;
 	}

@@ -70,7 +70,7 @@ extern struct regex_config cfg;
 #define MAX_NR_RULE	1000
 
 struct input_info {
-	char * line;
+	char line[512];
 	int len;
 };
 
