@@ -216,6 +216,9 @@ void * regex_work_lcore(void * arg) {
 	}
 
 	while ((read = getline(&line, &len, fp)) != -1) {
+		if (nr_rule >= MAX_NR_RULE) {
+			break;
+		}
 		input[nr_rule].line = line;
 		input[nr_rule].len = len;
 		nr_rule++;
@@ -260,7 +263,7 @@ void * regex_work_lcore(void * arg) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
-					index = (index + 1) % MAX_NR_RULE;
+					index = (index + 1) % nr_rule;
 					nb_enqueued++;
 					interval = ran_expo(mean);
 					worker[i].interval = (uint64_t)round(interval);
