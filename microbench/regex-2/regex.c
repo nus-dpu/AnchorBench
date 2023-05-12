@@ -221,7 +221,7 @@ void * regex_work_lcore(void * arg) {
 		}
 		memcpy(input[nr_rule].line, line, strlen(line));
 		input[nr_rule].len = strlen(line);
-		printf("line: %s(%d), len: %d\n", line, strlen(len), len);
+		printf("line: %s(%d), len: %d\n", line, strlen(line), len);
 		nr_rule++;
 	}
 
