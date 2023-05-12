@@ -193,9 +193,6 @@ void * regex_work_lcore(void * arg) {
     size_t len = 0;
     ssize_t read;
 	int nr_rule = 0;
-	char * input;
-	int input_size;
-	int cur_ptr = 0;
 
 	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
 
@@ -220,13 +217,11 @@ void * regex_work_lcore(void * arg) {
         return -1;
 	}
 
-	/* Seek to the beginning of the file */
-	fseek(fp, 0, SEEK_SET);
-
-	/* Read and display data */
-	input_size = fread((char **)input, sizeof(char), M_1, fp);
-
-	fclose(fp);
+	while ((read = getline(&line, &len, fp)) != -1) {
+		input[nr_rule].line = line;
+		input[nr_rule].len = len;
+		nr_rule++;
+	}
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -265,12 +260,12 @@ void * regex_work_lcore(void * arg) {
 				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
 				}
-				ret = regex_scan_enq_job(rgx_ctx, input + cur_ptr * data_len, data_len);
+				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
-					cur_ptr++;
+					index = (index + 1) % MAX_NR_RULE;
 					nb_enqueued++;
 					interval = ran_expo(mean);
 					worker[i].interval = (uint64_t)round(interval);
