@@ -1,4 +1,4 @@
-data_size=(30 60 100 200 300)
+data_size=(30 60 100 200 300 400)
 
 for size in "${data_size[@]}"; do
 	mkdir ${size}B-result/
