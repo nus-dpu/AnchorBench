@@ -131,7 +131,7 @@ static doca_error_t queuedepth_callback(void *param, void *config) {
  */
 static doca_error_t register_regex_scan_params() {
 	doca_error_t result = DOCA_SUCCESS;
-	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param, *len_param;
+	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param, *len_param, *queuedepth_param;
 
 	/* Create and register PCI address of RegEx device param */
 	result = doca_argp_param_create(&pci_param);
@@ -219,6 +219,24 @@ static doca_error_t register_regex_scan_params() {
 	doca_argp_param_set_callback(rate_param, rate_callback);
 	doca_argp_param_set_type(rate_param, DOCA_ARGP_TYPE_STRING);
 	result = doca_argp_register_param(rate_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and register rate param*/
+	result = doca_argp_param_create(&queuedepth_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(queuedepth_param, "q");
+	doca_argp_param_set_long_name(queuedepth_param, "queue");
+	doca_argp_param_set_arguments(queuedepth_param, "<queue depth>");
+	doca_argp_param_set_description(queuedepth_param, "Work queue depth");
+	doca_argp_param_set_callback(queuedepth_param, queuedepth_callback);
+	doca_argp_param_set_type(queuedepth_param, DOCA_ARGP_TYPE_STRING);
+	result = doca_argp_register_param(queuedepth_param);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
 		return result;

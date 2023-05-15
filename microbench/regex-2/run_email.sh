@@ -12,7 +12,7 @@ for size in "${queue_depth[@]}"; do
 		for rate in $(seq 10 140 5000); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops) with data size $size Bytes"
-			./build/regex -l 50 -p 03:00.0 -r /tmp/regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -b $size
+			./build/regex -l 50 -p 03:00.0 -r /tmp/regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q $size
 			cat thp-*.txt > ${size}wqd-result/thp-$nr_core/thp-rate-$rate.txt
 			cat latency-*.txt > ${size}wqd-result/lat-$nr_core/lat-rate-$rate.txt
 			echo "  >> Test done!"
