@@ -1,4 +1,4 @@
-queue_depth=(16 32 64 128 256 512)
+queue_depth=(16 32 64 128 256)
 
 for size in "${queue_depth[@]}"; do
 	mkdir ${size}wqd-result/
