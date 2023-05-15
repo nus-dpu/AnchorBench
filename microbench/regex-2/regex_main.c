@@ -314,7 +314,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
 
-    result = doca_workq_create(ctx->queue_depth, &ctx->workq);
+    result = doca_workq_create(cfg.queue_depth, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
