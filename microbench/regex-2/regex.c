@@ -194,9 +194,9 @@ void * regex_work_lcore(void * arg) {
     ssize_t read;
 	int nr_rule = 0;
 
-	double mean = WORKQ_DEPTH * cfg.nr_core * 1.0e6 / cfg.rate;
+	double mean = cfg.queue_depth * cfg.nr_core * 1.0e6 / cfg.rate;
 
-	struct worker worker[WORKQ_DEPTH];
+	struct worker worker[cfg.queue_depth];
 
 	double interval;
 
@@ -205,7 +205,7 @@ void * regex_work_lcore(void * arg) {
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
 
-	for (int i = 0; i < WORKQ_DEPTH; i++) {
+	for (int i = 0; i < cfg.queue_depth; i++) {
 		worker[i].interval = 0;
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
@@ -256,7 +256,7 @@ void * regex_work_lcore(void * arg) {
 			break;
 		}
 
-		for (int i = 0; i < WORKQ_DEPTH; i++) {
+		for (int i = 0; i < cfg.queue_depth; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
 				if (ret < 0) {

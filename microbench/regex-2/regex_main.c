@@ -110,6 +110,21 @@ static doca_error_t rate_callback(void *param, void *config) {
 }
 
 /*
+ * ARGP Callback - Handle data to scan path parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t queuedepth_callback(void *param, void *config) {
+	struct regex_config *rgx_cfg = (struct regex_config *)config;
+	char *queue_depth = (char *)param;
+    char *ptr;
+	rgx_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
+	return DOCA_SUCCESS;
+}
+
+/*
  * Register the command line parameters for the sample.
  *
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
@@ -299,7 +314,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
 
-    result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
+    result = doca_workq_create(ctx->queue_depth, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
