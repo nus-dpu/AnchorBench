@@ -90,7 +90,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 				.rule_group_ids = {1, 0, 0, 0},
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
-				.allow_batching = false,
+				// .allow_batching = false,
+				.allow_batching = ((nb_enqueued + 1) % cfg.queue_depth == 0)? true : false,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
