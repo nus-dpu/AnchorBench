@@ -1,22 +1,21 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2018 Intel Corporation
 
-project('ipsec', 'C', 'CPP',
+project('regex', 'C',
     license: 'BSD',
     default_options: ['buildtype=debug'],
 	meson_version: '>= 0.51.0'
 )
 
-project_name = 'regex_scan'
+project_name = 'regex'
 
-add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])
+add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c'])
 
 deps = []
 deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-regex')
 deps += dependency('libbsd')
-deps += dependency('lua5.3', version: '>=5.3', required: false)
 
 machine_args = []
 
@@ -33,8 +32,8 @@ inc_dirs = [
 ]
 
 sources = files(
+    project_name + '.c',
     project_name + '_main.c',
-    project_name + '_sample.c',
 	common_src_path + '/utils.c',
 	common_path + '/common.c',
 	common_path + '/src/mempool.c',
@@ -45,5 +44,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
-        link_args: '-lm',
+        link_args: ['-lm','-lpthread'],
         install: false)
