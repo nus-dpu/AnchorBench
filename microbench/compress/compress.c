@@ -135,7 +135,7 @@ static void compress_report_results(struct doca_buf *buf) {
 	doca_buf_get_head(buf, (void **)&resp_head);
 	doca_buf_get_data_len(buf, &data_len);
 	for (int i = 0; i < data_len; i++) {
-		fprintf(stderr, "%hhn", resp_head + i);
+		fprintf(stderr, "%u", resp_head + i);
 	}
 }
 
