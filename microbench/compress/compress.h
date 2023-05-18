@@ -22,7 +22,7 @@
 #include <doca_dev.h>
 #include <doca_error.h>
 #include <doca_mmap.h>
-#include <doca_sha.h>
+#include <doca_compress.h>
 
 #include <common.h>
 #include <mempool.h>
