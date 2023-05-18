@@ -169,6 +169,7 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+			compress_report_results(dst_doca_buf);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
