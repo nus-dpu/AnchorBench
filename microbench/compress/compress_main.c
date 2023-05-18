@@ -102,7 +102,7 @@ static doca_error_t len_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t queuedepth_callback(void *param, void *config) {
-	struct compress_cfg *compress_cfg = (struct compress_cfg *)config;
+	struct compress_config *compress_cfg = (struct compress_cfg *)config;
 	char *queue_depth = (char *)param;
     char *ptr;
 	compress_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
