@@ -1,17 +1,15 @@
-#include "sha.h"
+#include "dma.h"
 
 #include <assert.h>
 #include <rte_cycles.h>
 
-DOCA_LOG_REGISTER(SHA::CORE);
+DOCA_LOG_REGISTER(DMA::CORE);
 
 #define NSEC_PER_SEC    1000000000L
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
 #define MAX_NR_LATENCY	(128 * 1024)
-
-__thread struct input_info input[MAX_NR_RULE];
 
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
@@ -41,14 +39,14 @@ double ran_expo(double mean) {
 }
 
 /*
- * Enqueue job to DOCA SHA qp
+ * Enqueue job to DOCA DMA qp
  *
- * @sha_ctx [in]: sha_ctx configuration struct
- * @job_request [in]: SHA job request, already initialized with first chunk.
+ * @dma_ctx [in]: dma_ctx configuration struct
+ * @job_request [in]: DMA job request, already initialized with first chunk.
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
+static int dma_enq_job(struct dma_ctx * ctx, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -95,19 +93,18 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 	    clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
 
-		struct doca_sha_job const sha_job = {
+		struct doca_dma_job_memcpy const dma_job = {
 			.base = (struct doca_job) {
-				.type = DOCA_SHA_JOB_SHA256,
+				.type = DOCA_DMA_JOB_MEMCPY,
 				.flags = DOCA_JOB_FLAGS_NONE,
-				.ctx = doca_sha_as_ctx(ctx->doca_sha),
+				.ctx = doca_dma_as_ctx(ctx->doca_dma),
 				.user_data = { .ptr = src_buf },
 			},
-			.resp_buf = dst_buf->buf,
-			.req_buf = src_buf->buf,
-			.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
+			.dst_buff = dst_buf->buf,
+			.src_buff = src_buf->buf,
 		};
 
-		result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
+		result = doca_workq_submit(ctx->workq, (struct doca_job *)&dma_job);
 		if (result == DOCA_ERROR_NO_MEMORY) {
 			doca_buf_refcount_rm(src_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_buf->buf, NULL);
@@ -127,28 +124,29 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 }
 
 /*
- * Printing the SHA results
+ * Printing the DMA results
  *
- * @sha_ctx [in]: sample SHA configuration struct
+ * @dma_ctx [in]: sample DMA configuration struct
  * @event [in]: DOCA event structure
  */
-static void sha_report_results(struct doca_buf *buf) {
-	uint8_t * resp;
-	char sha_output[DOCA_SHA256_BYTE_COUNT * 2 + 1] = {0};
-	doca_buf_get_data(buf, (void **)&resp);
-	for (int i = 0; i < DOCA_SHA256_BYTE_COUNT; i++)
-		sprintf(sha_output + (2 * i), "%02x", resp[i]);
-	printf(" result >> %s\n", sha_output);
+static void dma_report_results(struct doca_buf *buf) {
+	uint8_t *resp_head;
+	size_t data_len;
+	doca_buf_get_head(buf, (void **)&resp_head);
+	doca_buf_get_data_len(buf, &data_len);
+	for (int i = 0; i < data_len; i++) {
+		fprintf(stderr, "%u", resp_head + i);
+	}
 }
 
 /*
  * Dequeue jobs responses
  *
- * @sha_ctx [in]: sha_ctx configuration struct
+ * @dma_ctx [in]: dma_ctx configuration struct
  * @chunk_len [in]: job chunk size
  * @return: number of the dequeue jobs or a negative posix status code.
  */
-static int sha_deq_job(struct sha_ctx *ctx) {
+static int dma_deq_job(struct dma_ctx *ctx) {
 	doca_error_t result;
 	int finished = 0;
 	struct doca_event event = {0};
@@ -171,8 +169,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
-			/* Report the scan result of SHA engine */
-			// sha_report_results(dst_doca_buf->buf);
+			// dma_report_results(dst_doca_buf);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
@@ -193,9 +190,9 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 
 #define NUM_WORKER	256
 
-void * sha_work_lcore(void * arg) {
+void * dma_work_lcore(void * arg) {
     int ret;
-	struct sha_ctx * sha_ctx = (struct sha_ctx *)arg;
+	struct dma_ctx * dma_ctx = (struct dma_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	int cur_ptr = 0;
     FILE * fp;
@@ -274,7 +271,7 @@ void * sha_work_lcore(void * arg) {
 				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
 				}
-				ret = sha_enq_job(sha_ctx, input + cur_ptr * data_len, data_len);
+				ret = dma_enq_job(dma_ctx, input + cur_ptr * data_len, data_len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
@@ -288,7 +285,7 @@ void * sha_work_lcore(void * arg) {
 			}
 		}
 
-		ret = sha_deq_job(sha_ctx);
+		ret = dma_deq_job(dma_ctx);
 		if (ret < 0) {
 			DOCA_LOG_ERR("Failed to dequeue jobs responses");
 			continue;

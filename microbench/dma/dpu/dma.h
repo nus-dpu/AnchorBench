@@ -1,5 +1,5 @@
-#ifndef _SHA_H_
-#define _SHA_H_
+#ifndef _DMA_H_
+#define _DMA_H_
 
 #define _GNU_SOURCE
 #define __USE_GNU
@@ -22,7 +22,7 @@
 #include <doca_dev.h>
 #include <doca_error.h>
 #include <doca_mmap.h>
-#include <doca_sha.h>
+#include <doca_dma.h>
 
 #include <common.h>
 #include <mempool.h>
@@ -37,49 +37,40 @@
 #define NB_BUF	2048
 #define BUF_SIZE	1200
 
-#define SHA_DATA_LEN	1024
 #define M_1				1048576
 
-struct sha_ctx {
-	struct doca_pci_bdf *pci_address;		/* SHA PCI address to use */
+struct dma_ctx {
+	struct doca_pci_bdf *pci_address;		/* DMA PCI address to use */
 	struct mempool *buf_mempool;
 	// struct doca_buf *buf[NB_BUF];			/* active job buffer */
 	struct doca_buf_inventory *buf_inv;		/* Pool of doca_buf objects */
 	struct doca_dev *dev;				/* DOCA device */
 	struct doca_mmap *mmap;				/* DOCA Memory orchestration */
-	struct doca_sha *doca_sha;			/* DOCA SHA interface */
+	struct doca_dma *doca_dma;			/* DOCA DMA interface */
 	struct doca_workq *workq;			/* DOCA work queue */
 };
 
 /* Configuration struct */
-struct sha_config {
-	char pci_address[MAX_ARG_SIZE];		/* SHA PCI address to use */
+struct dma_config {
+	char pci_address[MAX_ARG_SIZE];		/* DMA PCI address to use */
 	char data[MAX_FILE_NAME];		/* Data to scan file path */
     int nr_core;    /* Number of worker cores */
     double rate;    /* Request generation rate */
 	int queue_depth;	/* Work queue depth */
 
 	struct doca_dev *dev;				/* DOCA device */
-	struct doca_sha *doca_sha;			/* DOCA SHA interface */
+	struct doca_dma *doca_dma;			/* DOCA DMA interface */
 };
 
-extern struct sha_config cfg;
-
-#define MAX_NR_RULE	1000
-
-struct input_info {
-	char * line;
-	int len;
-};
+extern struct dma_config cfg;
 
 struct worker {
 	uint64_t interval;
 	struct timespec last_enq_time;
 };
 
-extern void * sha_work_lcore(void * arg);
+extern void * dma_work_lcore(void * arg);
 
-extern int data_len;
 extern pthread_barrier_t barrier;
 
 #endif  /* _SHA_H_ */

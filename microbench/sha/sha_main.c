@@ -95,13 +95,28 @@ static doca_error_t len_callback(void *param, void *config) {
 }
 
 /*
+ * ARGP Callback - Handle data to scan path parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t queuedepth_callback(void *param, void *config) {
+	struct regex_config *rgx_cfg = (struct regex_config *)config;
+	char *queue_depth = (char *)param;
+    char *ptr;
+	rgx_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
+	return DOCA_SUCCESS;
+}
+
+/*
  * Register the command line parameters for the sample.
  *
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t register_sha_params() {
 	doca_error_t result = DOCA_SUCCESS;
-	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param, *len_param;
+	struct doca_argp_param *pci_param, *rules_param, *data_param, *nr_core_param, *rate_param, *len_param, *queuedepth_param;
 
 	/* Create and register PCI address of SHA device param */
 	result = doca_argp_param_create(&pci_param);
@@ -188,6 +203,24 @@ static doca_error_t register_sha_params() {
 	doca_argp_param_set_callback(len_param, len_callback);
 	doca_argp_param_set_type(len_param, DOCA_ARGP_TYPE_STRING);
 	result = doca_argp_register_param(len_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and register rate param*/
+	result = doca_argp_param_create(&queuedepth_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(queuedepth_param, "q");
+	doca_argp_param_set_long_name(queuedepth_param, "queue");
+	doca_argp_param_set_arguments(queuedepth_param, "<queue depth>");
+	doca_argp_param_set_description(queuedepth_param, "Work queue depth");
+	doca_argp_param_set_callback(queuedepth_param, queuedepth_callback);
+	doca_argp_param_set_type(queuedepth_param, DOCA_ARGP_TYPE_STRING);
+	result = doca_argp_register_param(queuedepth_param);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
 		return result;
