@@ -266,7 +266,7 @@ void * regex_work_lcore(void * arg) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
-					index = (index + 1) % nr_rule;
+					// index = (index + 1) % nr_rule;
 					nb_enqueued++;
 					interval = ran_expo(mean);
 					worker[i].interval = (uint64_t)round(interval);

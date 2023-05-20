@@ -1,6 +1,7 @@
-queue_depth=(1 4 16 64 256)
-# data_size=(20 30 60 100 200 300 400)
-data_size=(20)
+# queue_depth=(1 4 16 64 256)
+queue_depth=64
+data_size=(20 30 60 100 200 300 400)
+# data_size=(20)
 
 # echo "Simple URL RegEx rule >>"
 
