@@ -32,7 +32,15 @@ struct dma_config {
 	char cpy_txt[MAX_TXT_SIZE];	     /* Text to copy between the two local buffers */
 	char export_desc_path[MAX_ARG_SIZE]; /* Path to save/read the exported descriptor file */
 	char buf_info_path[MAX_ARG_SIZE];    /* Path to save/read the buffer information file */
+	int nr_core;    /* Number of worker cores */
+    double rate;    /* Request generation rate */
+	int queue_depth;	/* Work queue depth */
+
+	struct doca_dev *dev;				/* DOCA device */
+	struct doca_dma *doca_dma;			/* DOCA DMA interface */
 };
+
+extern struct dma_config cfg;
 
 /*
  * Register the command line parameters for the DOCA DMA samples

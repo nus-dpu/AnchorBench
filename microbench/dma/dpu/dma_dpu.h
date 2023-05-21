@@ -57,20 +57,6 @@ struct dma_ctx {
 	struct doca_workq *workq;			/* DOCA work queue */
 };
 
-/* Configuration struct */
-struct dma_config {
-	char pci_address[MAX_ARG_SIZE];		/* DMA PCI address to use */
-	char data[MAX_FILE_NAME];		/* Data to scan file path */
-    int nr_core;    /* Number of worker cores */
-    double rate;    /* Request generation rate */
-	int queue_depth;	/* Work queue depth */
-
-	struct doca_dev *dev;				/* DOCA device */
-	struct doca_dma *doca_dma;			/* DOCA DMA interface */
-};
-
-extern struct dma_config cfg;
-
 struct worker {
 	uint64_t interval;
 	struct timespec last_enq_time;
