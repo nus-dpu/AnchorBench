@@ -22,13 +22,14 @@ machine_args = []
 default_cflags = machine_args
 cflags = default_cflags
 
-common_path = '../../' + 'common'
-common_src_path = '../../' + 'common/src'
+common_path = '../../../' + 'common'
+common_src_path = '../../../' + 'common/src'
 
 inc_dirs = [
 	include_directories(common_src_path),
 	include_directories(common_path),
-	include_directories('../..'),
+	include_directories('..'),
+	include_directories('../../..'),
 ]
 
 sources = files(
