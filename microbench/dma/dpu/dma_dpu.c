@@ -1,4 +1,4 @@
-#include "dma.h"
+#include "dma_dpu.h"
 
 #include <assert.h>
 #include <rte_cycles.h>
@@ -73,21 +73,25 @@ static int dma_enq_job(struct dma_ctx * ctx, char * data, int data_len) {
 		memcpy(src_data_buf, data, data_len);
 
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_buf->buf);
+		result = doca_buf_inventory_buf_by_addr(ctx->src_buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_buf->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
 		}
 
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, dst_data_buf, BUF_SIZE, &dst_buf->buf);
+		result = doca_buf_inventory_buf_by_addr(ctx->dst_buf_inv, ctx->remote_mmap, dst_data_buf, BUF_SIZE, &dst_buf->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
 		}
 
-		doca_buf_get_data(src_buf->buf, &mbuf_data);
-		doca_buf_set_data(src_buf->buf, mbuf_data, data_len);
+		/* Set data position in src_buff */
+		result = doca_buf_set_data(src_buf->buf, ctx->remote_addr, ctx->remote_addr_len);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to set data for DOCA buffer: %s", doca_get_error_string(result));
+			return result;
+		}
 
 		src_buf->response = dst_buf;
 
@@ -134,9 +138,8 @@ static void dma_report_results(struct doca_buf *buf) {
 	size_t data_len;
 	doca_buf_get_head(buf, (void **)&resp_head);
 	doca_buf_get_data_len(buf, &data_len);
-	for (int i = 0; i < data_len; i++) {
-		fprintf(stderr, "%u", resp_head + i);
-	}
+	resp_head[dst_buffer_size - 1] = '\0';
+	DOCA_LOG_INFO("Memory content: %s", resp_head);
 }
 
 /*
@@ -174,8 +177,8 @@ static int dma_deq_job(struct dma_ctx *ctx) {
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
 			/* Put the element back into the mempool */
-			mempool_put(ctx->buf_mempool, src_doca_buf);
-			mempool_put(ctx->buf_mempool, dst_doca_buf);
+			mempool_put(ctx->src_buf_mempool, src_doca_buf);
+			mempool_put(ctx->dst_buf_mempool, dst_doca_buf);
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;

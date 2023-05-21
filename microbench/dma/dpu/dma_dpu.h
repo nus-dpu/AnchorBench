@@ -41,11 +41,18 @@
 
 struct dma_ctx {
 	struct doca_pci_bdf *pci_address;		/* DMA PCI address to use */
-	struct mempool *buf_mempool;
-	// struct doca_buf *buf[NB_BUF];			/* active job buffer */
-	struct doca_buf_inventory *buf_inv;		/* Pool of doca_buf objects */
-	struct doca_dev *dev;				/* DOCA device */
+
+	struct mempool *src_buf_mempool;
+	struct doca_buf_inventory *src_buf_inv;		/* Pool of doca_buf objects */
+	struct doca_mmap *remote_mmap;
+	char *remote_addr;
+	size_t remote_addr_len;
+
+	struct mempool *dst_buf_mempool;
+	struct doca_buf_inventory *dst_buf_inv;		/* Pool of doca_buf objects */
 	struct doca_mmap *mmap;				/* DOCA Memory orchestration */
+
+	struct doca_dev *dev;				/* DOCA device */
 	struct doca_dma *doca_dma;			/* DOCA DMA interface */
 	struct doca_workq *workq;			/* DOCA work queue */
 };

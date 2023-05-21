@@ -1,4 +1,4 @@
-#include "dma.h"
+#include "dma_dpu.h"
 
 DOCA_LOG_REGISTER(DMA::MAIN);
 
@@ -53,10 +53,100 @@ static doca_error_t dma_init(struct dma_config *dma_cfg) {
 	return result;
 }
 
+
+/*
+ * Saves export descriptor and buffer information content into memory buffers
+ *
+ * @export_desc_file_path [in]: Export descriptor file path
+ * @buffer_info_file_path [in]: Buffer information file path
+ * @export_desc [in]: Export descriptor buffer
+ * @export_desc_len [in]: Export descriptor buffer length
+ * @remote_addr [in]: Remote buffer address
+ * @remote_addr_len [in]: Remote buffer total length
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+save_config_info_to_buffers(const char *export_desc_file_path, const char *buffer_info_file_path, char *export_desc,
+			    size_t *export_desc_len, char **remote_addr, size_t *remote_addr_len)
+{
+	FILE *fp;
+	long file_size;
+	char buffer[RECV_BUF_SIZE];
+
+	fp = fopen(export_desc_file_path, "r");
+	if (fp == NULL) {
+		DOCA_LOG_ERR("Failed to open %s", export_desc_file_path);
+		return DOCA_ERROR_IO_FAILED;
+	}
+
+	if (fseek(fp, 0, SEEK_END) != 0) {
+		DOCA_LOG_ERR("Failed to calculate file size");
+		fclose(fp);
+		return DOCA_ERROR_IO_FAILED;
+	}
+
+	file_size = ftell(fp);
+	if (file_size == -1) {
+		DOCA_LOG_ERR("Failed to calculate file size");
+		fclose(fp);
+		return DOCA_ERROR_IO_FAILED;
+	}
+
+	if (file_size > MAX_DMA_BUF_SIZE)
+		file_size = MAX_DMA_BUF_SIZE;
+
+	*export_desc_len = file_size;
+
+	if (fseek(fp, 0L, SEEK_SET) != 0) {
+		DOCA_LOG_ERR("Failed to calculate file size");
+		fclose(fp);
+		return DOCA_ERROR_IO_FAILED;
+	}
+
+	if (fread(export_desc, 1, file_size, fp) != file_size) {
+		DOCA_LOG_ERR("Failed to allocate memory for source buffer");
+		fclose(fp);
+		return DOCA_ERROR_IO_FAILED;
+	}
+
+	fclose(fp);
+
+	/* Read source buffer information from file */
+	fp = fopen(buffer_info_file_path, "r");
+	if (fp == NULL) {
+		DOCA_LOG_ERR("Failed to open %s", buffer_info_file_path);
+		return DOCA_ERROR_IO_FAILED;
+	}
+
+	/* Get source buffer address */
+	if (fgets(buffer, RECV_BUF_SIZE, fp) == NULL) {
+		DOCA_LOG_ERR("Failed to read the source (host) buffer address");
+		fclose(fp);
+		return DOCA_ERROR_IO_FAILED;
+	}
+	*remote_addr = (char *)strtoull(buffer, NULL, 0);
+
+	memset(buffer, 0, RECV_BUF_SIZE);
+
+	/* Get source buffer length */
+	if (fgets(buffer, RECV_BUF_SIZE, fp) == NULL) {
+		DOCA_LOG_ERR("Failed to read the source (host) buffer length");
+		fclose(fp);
+		return DOCA_ERROR_IO_FAILED;
+	}
+	*remote_addr_len = strtoull(buffer, NULL, 0);
+
+	fclose(fp);
+
+	return DOCA_SUCCESS;
+}
+
 static doca_error_t dma_init_lcore(struct dma_ctx * ctx) {
     doca_error_t result;
     uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
+	char export_desc[1024] = {0};
+	size_t export_desc_len = 0;
 
     result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
@@ -71,13 +161,13 @@ static doca_error_t dma_init_lcore(struct dma_ctx * ctx) {
 	}
 
     /* Create and start buffer inventory */
-	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->buf_inv);
+	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->src_buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
-	result = doca_buf_inventory_start(ctx->buf_inv);
+	result = doca_buf_inventory_start(ctx->src_buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -102,20 +192,29 @@ static doca_error_t dma_init_lcore(struct dma_ctx * ctx) {
 		return result;
 	}
 
-	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+	ctx->src_buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
 
-	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
+	result = doca_mmap_populate(ctx->mmap, ctx->src_buf_mempool->addr, ctx->src_buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
-	printf(" >> total number of element: %d, free element: %d\n", 
-		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
+	/* Copy all relevant information into local buffers */
+	save_config_info_to_buffers(export_desc_file_path, buffer_info_file_path, export_desc, &export_desc_len,
+				    &ctx.remote_addr, &ctx.remote_addr_len);
 
-	struct mempool_elt *elt;
-    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
-		elt->response = (void *)calloc(1, SHA_DATA_LEN);
+	ctx->dst_buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+
+	result = doca_mmap_populate(ctx->mmap, ctx->src_buf_mempool->addr, ctx->src_buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
+	if (result != DOCA_SUCCESS) {
+		return result;
+	}
+
+	/* Create a local DOCA mmap from exported data */
+	result = doca_mmap_create_from_export(NULL, (const void *)export_desc, export_desc_len, ctx->dev, &ctx->remote_mmap);
+	if (result != DOCA_SUCCESS) {
+		return result;
 	}
 
 	return result;
