@@ -35,6 +35,7 @@ inc_dirs = [
 sources = files(
     project_name + '.c',
     project_name + '_main.c',
+    '../dma_common.c',
 	common_src_path + '/utils.c',
 	common_path + '/common.c',
 	common_path + '/src/mempool.c',
