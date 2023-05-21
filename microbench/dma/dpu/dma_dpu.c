@@ -46,31 +46,32 @@ double ran_expo(double mean) {
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int dma_enq_job(struct dma_ctx * ctx, char * data, int data_len) {
+static int dma_enq_job(struct dma_ctx * ctx, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
-	uint32_t nb_total = 0;
-	uint32_t nb_free = 0;
+	uint32_t nb_src_total = 0;
+	uint32_t nb_src_free = 0;
+	uint32_t nb_dst_total = 0;
+	uint32_t nb_dst_free = 0;
 
-	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+	doca_buf_inventory_get_num_elements(ctx->src_buf_inv, &nb_src_total);
+	doca_buf_inventory_get_num_free_elements(ctx->src_buf_inv, &nb_src_free);
+	doca_buf_inventory_get_num_elements(ctx->dst_buf_inv, &nb_dst_total);
+	doca_buf_inventory_get_num_free_elements(ctx->dst_buf_inv, &nb_dst_free);
 
-	if (nb_free != 0) {
+	if (nb_src_free != 0 && nb_dst_free!= 0) {
 		struct mempool_elt * src_buf, * dst_buf;
 		char * src_data_buf, * dst_data_buf;
 		void *mbuf_data;
 
 		/* Get one free element from the mempool */
-		mempool_get(ctx->buf_mempool, &src_buf);
+		mempool_get(ctx->src_buf_mempool, &src_buf);
 		assert(src_buf != NULL);
-		mempool_get(ctx->buf_mempool, &dst_buf);
+		mempool_get(ctx->dst_buf_mempool, &dst_buf);
 		assert(dst_buf != NULL);
 		/* Get the memory segment */
 		src_data_buf = src_buf->addr;
 		dst_data_buf = dst_buf->addr;
-
-		memset(src_data_buf, 0, BUF_SIZE);
-		memcpy(src_data_buf, data, data_len);
 
 		/* Create a DOCA buffer for this memory region */
 		result = doca_buf_inventory_buf_by_addr(ctx->src_buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_buf->buf);
@@ -121,7 +122,8 @@ static int dma_enq_job(struct dma_ctx * ctx, char * data, int data_len) {
 		}
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
-		--nb_free;
+		--nb_src_free;
+		--nb_dst_free;
 	}
 
 	return nb_enqueued;
@@ -271,10 +273,7 @@ void * dma_work_lcore(void * arg) {
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				if (cur_ptr * data_len >= M_1) {
-					cur_ptr = 0;
-				}
-				ret = dma_enq_job(dma_ctx, input + cur_ptr * data_len, data_len);
+				ret = dma_enq_job(dma_ctx, data_len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
