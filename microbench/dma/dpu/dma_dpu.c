@@ -1,3 +1,4 @@
+#include "dma_common.h"
 #include "dma_dpu.h"
 
 #include <assert.h>

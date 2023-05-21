@@ -1,3 +1,4 @@
+#include "dma_common.h"
 #include "dma_dpu.h"
 
 DOCA_LOG_REGISTER(DMA::MAIN);
