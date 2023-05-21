@@ -2,6 +2,8 @@
 
 DOCA_LOG_REGISTER(DMA::MAIN);
 
+#define MAX_DMA_BUF_SIZE (1024 * 1024)	/* DMA buffer maximum size */
+
 struct dma_config cfg;
 pthread_barrier_t barrier;
 
@@ -201,8 +203,8 @@ static doca_error_t dma_init_lcore(struct dma_ctx * ctx) {
 	}
 
 	/* Copy all relevant information into local buffers */
-	save_config_info_to_buffers(export_desc_file_path, buffer_info_file_path, export_desc, &export_desc_len,
-				    &ctx.remote_addr, &ctx.remote_addr_len);
+	save_config_info_to_buffers(cfg.export_desc_file_path, cfg.buffer_info_file_path, export_desc, &export_desc_len,
+				    &ctx->remote_addr, &ctx->remote_addr_len);
 
 	ctx->dst_buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
 
