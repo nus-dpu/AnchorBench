@@ -3,6 +3,7 @@
 DOCA_LOG_REGISTER(DMA::MAIN);
 
 #define MAX_DMA_BUF_SIZE (1024 * 1024)	/* DMA buffer maximum size */
+#define RECV_BUF_SIZE 256		/* Buffer which contains config information */
 
 struct dma_config cfg;
 pthread_barrier_t barrier;
@@ -73,6 +74,7 @@ save_config_info_to_buffers(const char *export_desc_file_path, const char *buffe
 {
 	FILE *fp;
 	long file_size;
+	char buffer[RECV_BUF_SIZE];
 
 	fp = fopen(export_desc_file_path, "r");
 	if (fp == NULL) {
