@@ -46,7 +46,7 @@ double ran_expo(double mean) {
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int dma_enq_job(struct dma_ctx * ctx, int data_len) {
+static int dma_enq_job(struct dma_ctx * ctx) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_src_total = 0;
@@ -136,12 +136,7 @@ static int dma_enq_job(struct dma_ctx * ctx, int data_len) {
  * @event [in]: DOCA event structure
  */
 static void dma_report_results(struct doca_buf *buf) {
-	uint8_t *resp_head;
-	size_t data_len;
-	doca_buf_get_head(buf, (void **)&resp_head);
-	doca_buf_get_data_len(buf, &data_len);
-	resp_head[dst_buffer_size - 1] = '\0';
-	DOCA_LOG_INFO("Memory content: %s", resp_head);
+	
 }
 
 /*
@@ -175,6 +170,13 @@ static int dma_deq_job(struct dma_ctx *ctx) {
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			// dma_report_results(dst_doca_buf);
+			uint8_t *resp_head;
+			size_t data_len;
+			doca_buf_get_head(dst_doca_buf, (void **)&resp_head);
+			doca_buf_get_data_len(dst_doca_buf, &data_len);
+			resp_head[data_len - 1] = '\0';
+			DOCA_LOG_INFO("Memory content: %s", resp_head);
+			
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
 			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
@@ -200,13 +202,10 @@ void * dma_work_lcore(void * arg) {
 	struct dma_ctx * dma_ctx = (struct dma_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	int cur_ptr = 0;
-    FILE * fp;
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
 	int nr_rule = 0;
-	char * input;
-	int input_size;
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 
@@ -223,21 +222,6 @@ void * dma_work_lcore(void * arg) {
 		worker[i].interval = 0;
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
-
-	input = (char *)calloc(M_1, sizeof(char));
-
-    fp = fopen(cfg.data, "rb");
-    if (fp == NULL) {
-        return -1;
-	}
-
-	/* Seek to the beginning of the file */
-	fseek(fp, 0, SEEK_SET);
-
-	/* Read and display data */
-	input_size = fread((char **)input, sizeof(char), M_1, fp);
-
-	fclose(fp);
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -273,7 +257,7 @@ void * dma_work_lcore(void * arg) {
 
 		for (int i = 0; i < WORKQ_DEPTH; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				ret = dma_enq_job(dma_ctx, data_len);
+				ret = dma_enq_job(dma_ctx);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
