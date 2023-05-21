@@ -73,7 +73,6 @@ save_config_info_to_buffers(const char *export_desc_file_path, const char *buffe
 {
 	FILE *fp;
 	long file_size;
-	char buffer[RECV_BUF_SIZE];
 
 	fp = fopen(export_desc_file_path, "r");
 	if (fp == NULL) {
@@ -203,7 +202,7 @@ static doca_error_t dma_init_lcore(struct dma_ctx * ctx) {
 	}
 
 	/* Copy all relevant information into local buffers */
-	save_config_info_to_buffers(cfg.export_desc_file_path, cfg.buffer_info_file_path, export_desc, &export_desc_len,
+	save_config_info_to_buffers(cfg.export_desc_path, cfg.buf_info_path, export_desc, &export_desc_len,
 				    &ctx->remote_addr, &ctx->remote_addr_len);
 
 	ctx->dst_buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
