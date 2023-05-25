@@ -258,7 +258,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
 
-		buf_element->packet = (char *)malloc(len);
 		memcpy(buf_element->packet, pkt, len);
 		buf_element->packet_size = len;
 
@@ -339,7 +338,6 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(buf_element->buf, NULL);
-			free(buf_element->packet);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
