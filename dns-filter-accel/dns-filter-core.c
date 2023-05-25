@@ -22,6 +22,7 @@
 
 #include "dns-filter-constants.h"
 #include "dns-filter-core.h"
+#include "dns-filter.h"
 
 #include "mempool.h"
 
