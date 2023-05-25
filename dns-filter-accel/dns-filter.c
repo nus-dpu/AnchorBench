@@ -56,7 +56,7 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
     int total_pkt, pkt_cnt;
     total_pkt = pkt_cnt = tx_mbufs[pid].len;
 
-    struct rte_mbuf ** pkts = tx_mbufs[pid].mtable;
+    struct rte_mbuf ** pkts = tx_mbufs[pid].m_table;
 
     if (pkt_cnt > 0) {
         int ret;
@@ -70,8 +70,8 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
         /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
         for (int i = 0; i < tx_mbufs[pid].len; i++) {
             /* Allocate new buffer for sended packets */
-            tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-            if (unlikely(tx_mbufs[pid].mtable[i] == NULL)) {
+            tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+            if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
                 rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
             }
         }
@@ -88,8 +88,8 @@ int dpdk_tx_mbuf_init(void) {
     RTE_ETH_FOREACH_DEV(port_id) {
         for (int i = 0; i < DEFAULT_PKT_BURST; i++) {
             /* Allocate TX packet buffer in DPDK context memory pool */
-            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-            assert(tx_mbufs[port_id].mtable[i] != NULL);
+            tx_mbufs[port_id].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+            assert(tx_mbufs[port_id].m_table[i] != NULL);
         }
 
         tx_mbufs[port_id].len = 0;
@@ -265,7 +265,7 @@ struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
     }
 
     int next_pkt = tx_mbufs[port_id].len;
-    struct rte_mbuf * tx_pkt = tx_mbufs[port_id].mtable[next_pkt];
+    struct rte_mbuf * tx_pkt = tx_mbufs[port_id].m_table[next_pkt];
 
     tx_pkt->pkt_len = tx_pkt->data_len = pkt_size;
     tx_pkt->nb_segs = 1;
@@ -389,7 +389,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		return result;
 	}
 
-	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->app_cfg->doca_regex), ctx->workq);
+	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->app_cfg->doca_reg), ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
@@ -397,7 +397,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	}
 
     /* Create and start buffer inventory */
-	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->buf_inv);
+	result = doca_buf_inventory_create(NULL, MEMPOOL_NR_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -473,7 +473,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");
 			result = DOCA_ERROR_DRIVER;
-			goto queries_cleanup;
+			goto worker_cleanup;
 		}
 
 		worker_ctx++;
@@ -481,15 +481,13 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 	}
 	return DOCA_SUCCESS;
 
-queries_cleanup:
-	rte_free(worker_ctx->queries);
 worker_cleanup:
 	doca_ctx_workq_rm(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
 destroy_workq:
 	doca_workq_destroy(worker_ctx->workq);
 destroy_buf_inventory:
-	doca_buf_inventory_stop(worker_ctx->buf_inventory);
-	doca_buf_inventory_destroy(worker_ctx->buf_inventory);
+	doca_buf_inventory_stop(worker_ctx->buf_inv);
+	doca_buf_inventory_destroy(worker_ctx->buf_inv);
 	rte_free(worker_ctx);
 	return result;
 }
