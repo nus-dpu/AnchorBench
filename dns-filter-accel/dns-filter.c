@@ -346,11 +346,11 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 	while ((opt = getopt_long(argc, argv, "l:q:m:r:d:h", lgopts, &option_index)) != EOF)
 		switch (opt) {
 		case 'l':
-			app_cfg->nr_core = strtol(optarg, NULL, 10);
+			app_cfg.nr_core = strtol(optarg, NULL, 10);
 			break;
 
 		case 'q':
-			app_cfg->queue_depth = strtol(optarg, NULL, 10);
+			app_cfg.queue_depth = strtol(optarg, NULL, 10);
 			break;
 
 		case 'm':	/* Matrix for port mapping. */
