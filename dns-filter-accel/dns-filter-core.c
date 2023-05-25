@@ -288,7 +288,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 		if (result == DOCA_ERROR_NO_MEMORY) {
-			doca_buf_refcount_rm(buf_element->buf, NULL);
+			mempool_put(ctx->buf_mempool, buf_element);
+			// doca_buf_refcount_rm(buf_element->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
 		if (result != DOCA_SUCCESS) {
@@ -336,7 +337,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Report the scan result of RegEx engine */
 			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
-			doca_buf_refcount_rm(buf_element->buf, NULL);
+			// doca_buf_refcount_rm(buf_element->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
