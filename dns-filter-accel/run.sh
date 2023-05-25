@@ -2,7 +2,7 @@ mkdir result/
 
 for nr_core in $(seq 1 1 7); do 
     echo ">> Test with $nr_core cores >>"
-    for rate in $(seq 1 20 480); do
+    for rate in $(seq 10 20 490); do
         rm thp-*.txt
         mkdir result/thp-$nr_core/
         sudo build/dns-filter -l 0-${nr_core} -n 4 -a 03:00.0 -a 03:00.1 -- -m "[0-1:-].0,[-:0-1].1" -q 128 -- -l 50 -r /tmp/dns_baseline.rof2.binary -p 03:00.0
