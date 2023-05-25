@@ -258,7 +258,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
 
-		buf_element->packet = (char *)malloc(len);
 		memcpy(buf_element->packet, pkt, len);
 		buf_element->packet_size = len;
 
