@@ -86,7 +86,7 @@ int dpdk_tx_mbuf_init(void) {
 	uint16_t port_id = 0;
 
     RTE_ETH_FOREACH_DEV(port_id) {
-        for (int i = 0; i < DEFAULT_PKT_BURST; i++) {
+        for (int i = 0; i < TX_PKT_BURST; i++) {
             /* Allocate TX packet buffer in DPDK context memory pool */
             tx_mbufs[port_id].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
             assert(tx_mbufs[port_id].m_table[i] != NULL);
@@ -260,7 +260,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 }
 
 struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
-    if (unlikely(tx_mbufs[port_id].len == DEFAULT_PKT_BURST)) {
+    if (unlikely(tx_mbufs[port_id].len == TX_PKT_BURST)) {
         return NULL;
     }
 
