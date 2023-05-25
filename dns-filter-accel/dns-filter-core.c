@@ -362,7 +362,6 @@ static int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 static int
 dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
 {
-	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	for (int i = 0; i < packets_received; i++) {
 		struct rte_mbuf * mbuf = packets[i];
 		char * pkt = rte_pktmbuf_mtod(mbuf, char *);
@@ -379,8 +378,6 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 		extract_dns_query(mbuf, &query);
 
 		regex_scan_enq_job(worker_ctx, pkt, len, query, strlen(query));
-
-		nb_enqueued++;
 	}
 }
 

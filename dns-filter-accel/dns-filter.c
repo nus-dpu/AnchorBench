@@ -325,7 +325,7 @@ int dns_filter_worker(void *arg) {
 		for (idx = 0; idx < rxcnt; idx++) {
             pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
         }
-		nb_dequeued += regex_scan_deq_job(pid  ^ 1, worker_ctx);
+		regex_scan_deq_job(pid  ^ 1, worker_ctx);
 		nr_send += dpdk_send_pkts(pid ^ 1, qid);
 	}
 
