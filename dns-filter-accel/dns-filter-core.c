@@ -254,6 +254,13 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 	/* Get the memory segment */
 	data_buf = buf_element->addr;
 
+	/* Create a DOCA buffer  for this memory region */
+	result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, MEMPOOL_BUF_SIZE, &buf_element->buf);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		exit(1);
+	}
+
 	memcpy(buf_element->packet, pkt, len);
 	buf_element->packet_size = len;
 
@@ -277,6 +284,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 	if (result == DOCA_ERROR_NO_MEMORY) {
+		doca_buf_refcount_rm(buf_element->buf, NULL);
 		mempool_put(ctx->buf_mempool, buf_element);
 		return nb_enqueued; /* qp is full, try to dequeue. */
 	}
@@ -324,7 +332,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Report the scan result of RegEx engine */
 			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
-			// doca_buf_refcount_rm(buf_element->buf, NULL);
+			doca_buf_refcount_rm(buf_element->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
