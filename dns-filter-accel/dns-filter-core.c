@@ -244,60 +244,55 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
 
-	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+	struct mempool_elt * buf_element;
+	char * data_buf;
+	void *mbuf_data;
 
-	if (nb_free != 0) {
-		struct mempool_elt * buf_element;
-		char * data_buf;
-		void *mbuf_data;
+	/* Get one free element from the mempool */
+	mempool_get(ctx->buf_mempool, &buf_element);
+	/* Get the memory segment */
+	data_buf = buf_element->addr;
 
-		/* Get one free element from the mempool */
-		mempool_get(ctx->buf_mempool, &buf_element);
-		/* Get the memory segment */
-		data_buf = buf_element->addr;
+	memcpy(buf_element->packet, pkt, len);
+	buf_element->packet_size = len;
 
-		memcpy(buf_element->packet, pkt, len);
-		buf_element->packet_size = len;
+	memcpy(data_buf, data, data_len);
 
-		memcpy(data_buf, data, data_len);
-
-		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, MEMPOOL_BUF_SIZE, &buf_element->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-			return nb_enqueued;
-		}
-
-		doca_buf_get_data(buf_element->buf, &mbuf_data);
-		doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
-
-		struct doca_regex_job_search const job_request = {
-				.base = {
-					.type = DOCA_REGEX_JOB_SEARCH,
-					.ctx = doca_regex_as_ctx(ctx->app_cfg->doca_reg),
-					.user_data = { .ptr = buf_element },
-				},
-				.rule_group_ids = {1, 0, 0, 0},
-				.buffer = buf_element->buf,
-				.result = (struct doca_regex_search_result *)buf_element->response,
-				// .allow_batching = false,
-				// .allow_batching = ((nb_enqueued + 1) % cfg.queue_depth == 0)? true : false,
-		};
-
-		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
-		if (result == DOCA_ERROR_NO_MEMORY) {
-			mempool_put(ctx->buf_mempool, buf_element);
-			return nb_enqueued; /* qp is full, try to dequeue. */
-		}
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
-			return -1;
-		}
-		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
-		nb_enqueued++;
-		--nb_free;
+	/* Create a DOCA buffer  for this memory region */
+	result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, MEMPOOL_BUF_SIZE, &buf_element->buf);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		return nb_enqueued;
 	}
+
+	doca_buf_get_data(buf_element->buf, &mbuf_data);
+	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
+
+	struct doca_regex_job_search const job_request = {
+			.base = {
+				.type = DOCA_REGEX_JOB_SEARCH,
+				.ctx = doca_regex_as_ctx(ctx->app_cfg->doca_reg),
+				.user_data = { .ptr = buf_element },
+			},
+			.rule_group_ids = {1, 0, 0, 0},
+			.buffer = buf_element->buf,
+			.result = (struct doca_regex_search_result *)buf_element->response,
+			// .allow_batching = false,
+			// .allow_batching = ((nb_enqueued + 1) % cfg.queue_depth == 0)? true : false,
+	};
+
+	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
+	if (result == DOCA_ERROR_NO_MEMORY) {
+		mempool_put(ctx->buf_mempool, buf_element);
+		return nb_enqueued; /* qp is full, try to dequeue. */
+	}
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
+		return -1;
+	}
+	// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
+	nb_enqueued++;
+	--nb_free;
 
 	return nb_enqueued;
 }
