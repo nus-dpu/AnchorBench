@@ -382,8 +382,6 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 
 		nb_enqueued++;
 	}
-
-	nb_dequeued += regex_scan_deq_job(pid  ^ 1, worker_ctx);
 }
 
 /*

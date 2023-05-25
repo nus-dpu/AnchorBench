@@ -6,11 +6,9 @@
 
 #include "dns-filter-constants.h"
 
-#define TX_PKT_BURST	256
-
 struct mbuf_table {
 	uint16_t len;
-	struct rte_mbuf *m_table[TX_PKT_BURST];
+	struct rte_mbuf *m_table[DEFAULT_PKT_BURST];
 };
 
 typedef struct port_info_s {
