@@ -345,12 +345,8 @@ static int dns_filter_parse_args(int argc, char ** argv) {
 		{NULL, 0, 0, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "l:q:m:r:d:h", lgopts, &option_index)) != EOF)
+	while ((opt = getopt_long(argc, argv, "q:m:r:d:h", lgopts, &option_index)) != EOF)
 		switch (opt) {
-		case 'l':
-			app_cfg.nr_core = strtol(optarg, NULL, 10);
-			break;
-
 		case 'q':
 			app_cfg.queue_depth = strtol(optarg, NULL, 10);
 			break;
@@ -606,7 +602,7 @@ register_dns_filter_params(void)
 
 int dpdk_mempool_init(struct dns_filter_config * app_cfg) {
 	char name[RTE_MEMPOOL_NAMESIZE];
-	for (int i = 0; i < app_cfg->nr_core; i++) {
+	for (int i = 0; i < NR_CPUS; i++) {
         sprintf(name, "pkt_mempool_%d", i);
         pkt_mempools[i] = rte_mempool_create(name, N_MBUF,
                             MBUF_SIZE, MEMPOOL_CACHE_SIZE,
