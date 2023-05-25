@@ -371,7 +371,7 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 		struct udphdr * u;
 		char * query;
 
-		u = (struct udphdr *)(p + ETH_HEADER_SIZE + IP_HEADER_SIZE);
+		u = (struct udphdr *)(pkt + ETH_HEADER_SIZE + IP_HEADER_SIZE);
 		if (ntohs(u->dest) != DNS_PORT) {
 			continue;
 		}
