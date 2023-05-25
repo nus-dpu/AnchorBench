@@ -298,6 +298,8 @@ int dns_filter_worker(void *arg) {
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
+	dpdk_tx_mbuf_init();
+
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
 
