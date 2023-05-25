@@ -397,7 +397,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-			return nb_enqueued;
+			exit(1);
 		}
 	}
 
