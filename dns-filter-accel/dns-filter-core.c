@@ -367,7 +367,14 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 		struct rte_mbuf * mbuf = packets[i];
 		char * pkt = rte_pktmbuf_mtod(mbuf, char *);
 		int len = rte_pktmbuf_data_len(mbuf);
+
+		struct udphdr * u;
 		char * query;
+
+		u = (struct udphdr *)(p + ETH_HEADER_SIZE + IP_HEADER_SIZE);
+		if (ntohs(u->dest) != DNS_PORT) {
+			continue;
+		}
 	
 		extract_dns_query(mbuf, &query);
 
@@ -394,10 +401,10 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 	// uint8_t egress_port;
 
 	/* Check packets marking */
-	check_packets_marking(packets, &packets_received);
-	if (packets_received == 0) {
-		return packets_received;
-	}
+	// check_packets_marking(packets, &packets_received);
+	// if (packets_received == 0) {
+	// 	return packets_received;
+	// }
 
 	if (!start_flag) {
 		start_flag = 1;
