@@ -23,6 +23,8 @@
 #include "dns-filter-constants.h"
 #include "dns-filter-core.h"
 
+#include "mempool.h"
+
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
 #define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
@@ -235,7 +237,7 @@ doca_buf_cleanup:
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int regex_scan_enq_job(struct regex_ctx * ctx, char * pkt, int len, char * data, int data_len) {
+static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -262,7 +264,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * pkt, int len, char 
 		memcpy(data_buf, data, data_len);
 
 		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &buf_element->buf);
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, MEMPOOL_BUF_SIZE, &buf_element->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			return nb_enqueued;
@@ -283,7 +285,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * pkt, int len, char 
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
 				// .allow_batching = false,
-				.allow_batching = ((nb_enqueued + 1) % cfg.queue_depth == 0)? true : false,
+				// .allow_batching = ((nb_enqueued + 1) % cfg.queue_depth == 0)? true : false,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -310,7 +312,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * pkt, int len, char 
  * @chunk_len [in]: job chunk size
  * @return: number of the dequeue jobs or a negative posix status code.
  */
-static int regex_scan_deq_job(int pid, struct regex_ctx *ctx) {
+static int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	doca_error_t result;
 	int finished = 0;
 	struct doca_event event = {0};
@@ -371,7 +373,7 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 		nb_enqueued++;
 	}
 
-	ret = regex_scan_deq_job(pid, rgx_ctx);
+	ret = regex_scan_deq_job(pid, worker_ctx);
 	if (ret < 0) {
 		DOCA_LOG_ERR("Failed to dequeue jobs responses");
 		continue;

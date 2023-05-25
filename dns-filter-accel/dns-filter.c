@@ -18,6 +18,8 @@
 #include "dns-filter-constants.h"
 #include "dns-filter-port-cfg.h"
 
+#include "mempool.h"
+
 DOCA_LOG_REGISTER(DNS_FILTER);
 
 #define NR_CPUS	8
@@ -38,6 +40,9 @@ __thread uint64_t nr_send;
 
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
+
+#define MEMPOOL_NR_BUF		1024
+#define MEMPOOL_BUF_SIZE	1024
 
 #define MEMPOOL_CACHE_SIZE  256
 #define N_MBUF              8192
@@ -432,7 +437,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		return result;
 	}
 
-	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+	ctx->buf_mempool = mempool_create(MEMPOOL_NR_BUF, MEMPOOL_BUF_SIZE);
 
 	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
