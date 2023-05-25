@@ -72,7 +72,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		doca_buf_get_data(buf_element->buf, &mbuf_data);
 		doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
-	    // clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
 		struct doca_regex_job_search const job_request = {
 				.base = {
@@ -148,7 +148,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	struct mempool_elt * buf_element;
 	struct timespec now;
 
-	// clock_gettime(CLOCK_MONOTONIC, &now);
+	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
