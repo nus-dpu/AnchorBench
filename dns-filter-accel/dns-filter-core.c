@@ -278,7 +278,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		struct doca_regex_job_search const job_request = {
 				.base = {
 					.type = DOCA_REGEX_JOB_SEARCH,
-					.ctx = doca_regex_as_ctx(ctx->doca_regex),
+					.ctx = doca_regex_as_ctx(ctx->app_cfx->doca_regex),
 					.user_data = { .ptr = buf_element },
 				},
 				.rule_group_ids = {1, 0, 0, 0},

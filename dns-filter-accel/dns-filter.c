@@ -38,6 +38,8 @@ __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
 
+struct dns_filter_config app_cfg;
+
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
@@ -68,9 +70,9 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
         /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
         for (int i = 0; i < tx_mbufs[pid].len; i++) {
             /* Allocate new buffer for sended packets */
-            tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[qid]);
+            tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
             if (unlikely(tx_mbufs[pid].mtable[i] == NULL)) {
-                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", qid, i, pid);
+                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
             }
         }
 
@@ -84,9 +86,9 @@ int dpdk_tx_mbuf_init(void) {
 	uint16_t port_id = 0;
 
     RTE_ETH_FOREACH_DEV(port_id) {
-        for (int i = 0; i < MAX_PKT_BURST; i++) {
+        for (int i = 0; i < DEFAULT_PKT_BURST; i++) {
             /* Allocate TX packet buffer in DPDK context memory pool */
-            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[cpu_id]);
+            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
             assert(tx_mbufs[port_id].mtable[i] != NULL);
         }
 
@@ -258,7 +260,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 }
 
 struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
-    if (unlikely(tx_mbufs[port_id].len == MAX_PKT_BURST)) {
+    if (unlikely(tx_mbufs[port_id].len == DEFAULT_PKT_BURST)) {
         return NULL;
     }
 
@@ -380,14 +382,14 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
     uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
 
-    result = doca_workq_create(cfg.queue_depth, &ctx->workq);
+    result = doca_workq_create(app_cfg.queue_depth, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
 		return result;
 	}
 
-	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->doca_regex), ctx->workq);
+	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->app_cfg->doca_regex), ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
@@ -420,7 +422,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		return result;
 	}
 
-	result = doca_mmap_dev_add(ctx->mmap, ctx->dev);
+	result = doca_mmap_dev_add(ctx->mmap, ctx->app_cfg->dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add device to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -612,7 +614,6 @@ int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
 	doca_error_t result;
-	struct dns_filter_config app_cfg = {0};
 
 	/* initialize EAL */
 	ret = rte_eal_init(argc, argv);

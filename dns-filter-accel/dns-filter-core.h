@@ -48,13 +48,14 @@ struct dns_worker_ctx {
 	struct mempool *buf_mempool;
 	struct doca_buf_inventory *buf_inv;				/* DOCA buffer inventory */
 	struct doca_mmap *mmap;
-	struct doca_regex *doca_regex;			/* DOCA RegEx interface */
 	struct doca_workq *workq;						/* DOCA work queue */
 };
 
 extern __thread int start_flag;
 extern __thread int done_flag;
 extern __thread struct timeval start;
+
+extern struct dns_filter_config app_cfg;
 
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 
