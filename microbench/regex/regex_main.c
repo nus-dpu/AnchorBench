@@ -393,6 +393,12 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+			return nb_enqueued;
+		}
 	}
 
 	// ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
