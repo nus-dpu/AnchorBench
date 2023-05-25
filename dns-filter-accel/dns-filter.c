@@ -305,7 +305,7 @@ int dns_filter_worker(void *arg) {
 
     while (true) {
 		gettimeofday(&curr, NULL);
-		if (curr.tv_sec - last_log.tv_sec > 1) {
+		if (curr.tv_sec - last_log.tv_sec >= 1) {
 			sec_recv = (float)nr_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
 			sec_send = (float)nr_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
 			printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS) / Max RX: %8.2f (KPS), Max TX: %8.2f (KPS)\n", 
@@ -332,7 +332,19 @@ int dns_filter_worker(void *arg) {
 	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 	tot_send_rate = (float)tot_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 
-	printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", lid, tot_recv_rate , tot_send_rate);
+	FILE * output_fp;
+	char name[32];
+
+	sprintf(name, "thp-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening throughput output file!\n");
+		return;
+	}
+
+	fprintf(output_fp, "%6.2lf\t%6.2lf\n", tot_recv_rate, tot_send_rate);
+
+	fclose(output_fp);
 	
 	return 0;
 }
