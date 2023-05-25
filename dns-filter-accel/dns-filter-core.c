@@ -244,6 +244,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
 
+
 	struct mempool_elt * buf_element;
 	char * data_buf;
 	void *mbuf_data;
@@ -257,13 +258,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 	buf_element->packet_size = len;
 
 	memcpy(data_buf, data, data_len);
-
-	/* Create a DOCA buffer  for this memory region */
-	result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, MEMPOOL_BUF_SIZE, &buf_element->buf);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to allocate DOCA buf");
-		return nb_enqueued;
-	}
 
 	doca_buf_get_data(buf_element->buf, &mbuf_data);
 	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
