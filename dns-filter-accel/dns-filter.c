@@ -324,9 +324,9 @@ int dns_filter_worker(void *arg) {
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
             pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
+			regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
+			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
-		regex_scan_deq_job(pid  ^ 1, worker_ctx);
-		nr_send += dpdk_send_pkts(pid ^ 1, qid);
 	}
 
 	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
