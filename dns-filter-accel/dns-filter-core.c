@@ -313,7 +313,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
  * @chunk_len [in]: job chunk size
  * @return: number of the dequeue jobs or a negative posix status code.
  */
-static int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
+int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	doca_error_t result;
 	int finished = 0;
 	struct doca_event event = {0};
