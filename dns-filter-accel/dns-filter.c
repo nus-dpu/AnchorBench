@@ -41,22 +41,58 @@ __thread uint64_t nr_send;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
-#define MEMPOOL_NR_BUF		1024
-#define MEMPOOL_BUF_SIZE	1024
-
 #define MEMPOOL_CACHE_SIZE  256
 #define N_MBUF              8192
 #define BUF_SIZE            2048
 #define MBUF_SIZE           (BUF_SIZE + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 
-struct mbuf_table {
-    int len;
-    struct rte_mbuf * mtable[MAX_PKT_BURST];
-} __rte_cache_aligned;
-
-__thread struct mbuf_table *tx_mbufs[RTE_MAX_ETHPORTS];
+__thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
 
 struct rte_mempool * pkt_mempools[NR_CPUS];
+
+uint32_t dpdk_send_pkts(int pid, int qid) {
+    int total_pkt, pkt_cnt;
+    total_pkt = pkt_cnt = tx_mbufs[pid].len;
+
+    struct rte_mbuf ** pkts = tx_mbufs[pid].mtable;
+
+    if (pkt_cnt > 0) {
+        int ret;
+        do {
+            /* Send packets until there is none in TX queue */
+            ret = rte_eth_tx_burst(pid, qid, pkts, pkt_cnt);
+            pkts += ret;
+            pkt_cnt -= ret;
+        } while (pkt_cnt > 0);
+
+        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        for (int i = 0; i < tx_mbufs[pid].len; i++) {
+            /* Allocate new buffer for sended packets */
+            tx_mbufs[pid].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[qid]);
+            if (unlikely(tx_mbufs[pid].mtable[i] == NULL)) {
+                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", qid, i, pid);
+            }
+        }
+
+        tx_mbufs[pid].len = 0;
+    }
+
+    return total_pkt;
+}
+
+int dpdk_tx_mbuf_init(void) {
+	uint16_t port_id = 0;
+
+    RTE_ETH_FOREACH_DEV(port_id) {
+        for (int i = 0; i < MAX_PKT_BURST; i++) {
+            /* Allocate TX packet buffer in DPDK context memory pool */
+            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[cpu_id]);
+            assert(tx_mbufs[port_id].mtable[i] != NULL);
+        }
+
+        tx_mbufs[port_id].len = 0;
+    }
+}
 
 /*
  * RegEx context initialization
@@ -65,7 +101,7 @@ struct rte_mempool * pkt_mempools[NR_CPUS];
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t
-regex_init(struct dns_filter_config *app_cfg)
+dns_filter_init(struct dns_filter_config *app_cfg)
 {
 	doca_error_t result;
 	char *rules_file_data;
@@ -146,7 +182,7 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	to_send = handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
-	dpdk_send_pkts(pid);
+	dpdk_send_pkts(pid, qid);
 
 	for (int i = 0; i < nb_rx; i++) {
         rte_pktmbuf_free(pkts_burst[i]);
@@ -234,55 +270,8 @@ struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
     tx_pkt->next = NULL;
     
     tx_mbufs[port_id].len++;
-    stats.sec_send_bytes += pkt_size;
 
     return tx_pkt;
-}
-
-uint32_t dpdk_send_pkts(int port_id) {
-    int total_pkt, pkt_cnt;
-    total_pkt = pkt_cnt = tx_mbufs[port_id].len;
-
-    struct rte_mbuf ** pkts = tx_mbufs[port_id].mtable;
-
-    if (pkt_cnt > 0) {
-        int ret;
-        do {
-            /* Send packets until there is none in TX queue */
-            ret = rte_eth_tx_burst(port_id, cpu_id, pkts, pkt_cnt);
-            pkts += ret;
-            pkt_cnt -= ret;
-        } while (pkt_cnt > 0);
-
-        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        for (int i = 0; i < tx_mbufs[port_id].len; i++) {
-            /* Allocate new buffer for sended packets */
-            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[cpu_id]);
-            if (unlikely(tx_mbufs[port_id].mtable[i] == NULL)) {
-                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", cpu_id, i, port_id);
-            }
-        }
-
-        tx_mbufs[port_id].len = 0;
-    }
-
-    stats.sec_send_pkts += total_pkt;
-
-    return total_pkt;
-}
-
-int dpdk_tx_mbuf_init(void) {
-	uint16_t port_id = 0;
-
-    RTE_ETH_FOREACH_DEV(port_id) {
-        for (int i = 0; i < MAX_PKT_BURST; i++) {
-            /* Allocate TX packet buffer in DPDK context memory pool */
-            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[cpu_id]);
-            assert(tx_mbufs[port_id].mtable[i] != NULL);
-        }
-
-        tx_mbufs[port_id].len = 0;
-    }
 }
 
 int dns_filter_worker(void *arg) {
@@ -606,6 +595,7 @@ register_dns_filter_params(void)
 }
 
 int dpdk_mempool_init(struct dns_filter_config * app_cfg) {
+	char name[RTE_MEMPOOL_NAMESIZE];
 	for (int i = 0; i < app_cfg->nr_core; i++) {
         sprintf(name, "pkt_mempool_%d", i);
         pkt_mempools[i] = rte_mempool_create(name, N_MBUF,
@@ -669,7 +659,7 @@ int main(int argc, char **argv) {
 	}
 
 	/* DOCA RegEx initialization */
-	result = regex_init(&app_cfg);
+	result = dns_filter_init(&app_cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_INFO("Failed to init DOCA RegEx");
 		return result;

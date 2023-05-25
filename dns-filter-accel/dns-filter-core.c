@@ -330,7 +330,7 @@ static int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
 			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		if (mbuf != NULL) {
-				char * data = rte_pktmbuf_mtod(rte_mbuf, uint8_t *);
+				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
 				memcpy(data, buf_element->packet, buf_element->packet_size);
 			}
 
@@ -350,7 +350,8 @@ static int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			break;
 		} else {
 			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
-			return -1;
+			// return -1;
+			break;
 		}
 	} while (result == DOCA_SUCCESS);
 
@@ -360,6 +361,7 @@ static int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 static int
 dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
 {
+	uint32_t nb_dequeued = 0, nb_enqueued = 0;
 	for (int i = 0; i < packets_received; i++) {
 		struct rte_mbuf * mbuf = packets[i];
 		char * pkt = rte_pktmbuf_mtod(mbuf, char *);
@@ -373,13 +375,7 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 		nb_enqueued++;
 	}
 
-	ret = regex_scan_deq_job(pid, worker_ctx);
-	if (ret < 0) {
-		DOCA_LOG_ERR("Failed to dequeue jobs responses");
-		continue;
-	} else {
-		nb_dequeued += ret;
-	}
+	nb_dequeued += regex_scan_deq_job(pid, worker_ctx);
 }
 
 /*
