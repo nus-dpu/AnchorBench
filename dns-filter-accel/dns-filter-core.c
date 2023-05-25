@@ -257,10 +257,10 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		mempool_get(ctx->buf_mempool, &buf_element);
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
-
+/*
 		memcpy(buf_element->packet, pkt, len);
 		buf_element->packet_size = len;
-
+*/
 		memcpy(data_buf, data, data_len);
 
 		/* Create a DOCA buffer  for this memory region */
@@ -272,8 +272,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 
 		doca_buf_get_data(buf_element->buf, &mbuf_data);
 		doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
-
-	    clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
 		struct doca_regex_job_search const job_request = {
 				.base = {
@@ -328,12 +326,13 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
+/*
 			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		if (mbuf != NULL) {
 				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
 				memcpy(data, buf_element->packet, buf_element->packet_size);
 			}
-
+*/
 			/* Report the scan result of RegEx engine */
 			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
@@ -341,10 +340,11 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
-
+/*
 			if (!mbuf) {
 				break;
 			}
+*/
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
 		} else {
