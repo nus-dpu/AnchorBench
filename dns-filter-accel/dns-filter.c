@@ -62,7 +62,7 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
         int ret;
         do {
             /* Send packets until there is none in TX queue */
-            ret = rte_eth_tx_burst(pid, qid, pkts, pkt_cnt);
+            ret = rte_eth_tx_burst(pid ^ 1, qid, pkts, pkt_cnt);
             pkts += ret;
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
@@ -90,7 +90,6 @@ int dpdk_tx_mbuf_init(void) {
             /* Allocate TX packet buffer in DPDK context memory pool */
             tx_mbufs[port_id].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
             assert(tx_mbufs[port_id].m_table[i] != NULL);
-			printf("mtable[%d]: %p\n", i, tx_mbufs[port_id].m_table[i]);
         }
 
         tx_mbufs[port_id].len = 0;
@@ -267,7 +266,6 @@ struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
 
     int next_pkt = tx_mbufs[port_id].len;
     struct rte_mbuf * tx_pkt = tx_mbufs[port_id].m_table[next_pkt];
-	printf("mtable[%d]: %p\n", next_pkt, tx_mbufs[port_id].m_table[next_pkt]);
 
     tx_pkt->pkt_len = tx_pkt->data_len = pkt_size;
     tx_pkt->nb_segs = 1;
