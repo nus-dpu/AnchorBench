@@ -338,7 +338,6 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
 			doca_buf_refcount_rm(buf_element->buf, NULL);
-			free(buf_element->packet);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
