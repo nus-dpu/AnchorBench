@@ -461,7 +461,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, eld->addr, MEMPOOL_BUF_SIZE, &elt->buf);
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			exit(1);
