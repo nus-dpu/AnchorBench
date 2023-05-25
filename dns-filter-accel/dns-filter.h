@@ -36,4 +36,6 @@ extern __thread int remain;
 extern __thread int index0;
 extern __thread uint64_t exec_time[128 * 1024];
 
+struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size);
+
 #endif  /* _DNS_FILTER_H_*/
