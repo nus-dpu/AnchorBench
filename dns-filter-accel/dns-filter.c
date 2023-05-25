@@ -184,7 +184,7 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	to_send = handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
-	dpdk_send_pkts(pid ^ 1, qid);
+	nr_send += dpdk_send_pkts(pid ^ 1, qid);
 
 	for (int i = 0; i < nb_rx; i++) {
         rte_pktmbuf_free(pkts_burst[i]);
