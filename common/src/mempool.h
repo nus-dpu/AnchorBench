@@ -50,6 +50,8 @@ struct mempool_elt {
     /* Element address */
     char                * addr;
     void                * response;
+    char                * packet;
+    int                 packet_size;
 };
 
 /* Mempool structure */

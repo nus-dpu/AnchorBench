@@ -20,6 +20,8 @@
 
 DOCA_LOG_REGISTER(DNS_FILTER);
 
+#define NR_CPUS	8
+
 #define BURST_TX_RETRIES 	16
 
 #define MSEC_PER_SEC    1000L
@@ -36,6 +38,20 @@ __thread uint64_t nr_send;
 
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
+
+#define MEMPOOL_CACHE_SIZE  256
+#define N_MBUF              8192
+#define BUF_SIZE            2048
+#define MBUF_SIZE           (BUF_SIZE + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+
+struct mbuf_table {
+    int len;
+    struct rte_mbuf * mtable[MAX_PKT_BURST];
+} __rte_cache_aligned;
+
+__thread struct mbuf_table *tx_mbufs[RTE_MAX_ETHPORTS];
+
+struct rte_mempool * pkt_mempools[NR_CPUS];
 
 /*
  * RegEx context initialization
@@ -124,22 +140,29 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 	nr_recv += nb_rx;
 
 	to_send = handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
-	if (to_send > 0) {
-		nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, to_send);
-		if (unlikely(nb_tx < nb_rx)) {
-			retry = 0;
-			while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
-				nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
-			}
-		}
-		nr_send += nb_tx;
-	}
 
-	if (unlikely(nb_tx < nb_rx)) {
-		do {
-			rte_pktmbuf_free(pkts_burst[nb_tx]);
-		} while (++nb_tx < nb_rx);
-	}
+	dpdk_send_pkts(pid);
+
+	for (int i = 0; i < nb_rx; i++) {
+        rte_pktmbuf_free(pkts_burst[i]);
+        RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
+    }
+
+	// if (to_send > 0) {
+	// 	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, to_send);
+	// 	if (unlikely(nb_tx < nb_rx)) {
+	// 		retry = 0;
+	// 		while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
+	// 			nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
+	// 		}
+	// 	}
+	// 	nr_send += nb_tx;
+	// // }
+	// if (unlikely(nb_tx < nb_rx)) {
+	// 	do {
+	// 		rte_pktmbuf_free(pkts_burst[nb_tx]);
+	// 	} while (++nb_tx < nb_rx);
+	// }
 
 	return;
 }
@@ -191,6 +214,70 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
     }
 
     printf("%s\n", buf);
+}
+
+struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
+    if (unlikely(tx_mbufs[port_id].len == MAX_PKT_BURST)) {
+        return NULL;
+    }
+
+    int next_pkt = tx_mbufs[port_id].len;
+    struct rte_mbuf * tx_pkt = tx_mbufs[port_id].mtable[next_pkt];
+
+    tx_pkt->pkt_len = tx_pkt->data_len = pkt_size;
+    tx_pkt->nb_segs = 1;
+    tx_pkt->next = NULL;
+    
+    tx_mbufs[port_id].len++;
+    stats.sec_send_bytes += pkt_size;
+
+    return tx_pkt;
+}
+
+uint32_t dpdk_send_pkts(int port_id) {
+    int total_pkt, pkt_cnt;
+    total_pkt = pkt_cnt = tx_mbufs[port_id].len;
+
+    struct rte_mbuf ** pkts = tx_mbufs[port_id].mtable;
+
+    if (pkt_cnt > 0) {
+        int ret;
+        do {
+            /* Send packets until there is none in TX queue */
+            ret = rte_eth_tx_burst(port_id, cpu_id, pkts, pkt_cnt);
+            pkts += ret;
+            pkt_cnt -= ret;
+        } while (pkt_cnt > 0);
+
+        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        for (int i = 0; i < tx_mbufs[port_id].len; i++) {
+            /* Allocate new buffer for sended packets */
+            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[cpu_id]);
+            if (unlikely(tx_mbufs[port_id].mtable[i] == NULL)) {
+                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", cpu_id, i, port_id);
+            }
+        }
+
+        tx_mbufs[port_id].len = 0;
+    }
+
+    stats.sec_send_pkts += total_pkt;
+
+    return total_pkt;
+}
+
+int dpdk_tx_mbuf_init(void) {
+	uint16_t port_id = 0;
+
+    RTE_ETH_FOREACH_DEV(port_id) {
+        for (int i = 0; i < MAX_PKT_BURST; i++) {
+            /* Allocate TX packet buffer in DPDK context memory pool */
+            tx_mbufs[port_id].mtable[i] = rte_pktmbuf_alloc(pkt_mempools[cpu_id]);
+            assert(tx_mbufs[port_id].mtable[i] != NULL);
+        }
+
+        tx_mbufs[port_id].len = 0;
+    }
 }
 
 int dns_filter_worker(void *arg) {
@@ -248,21 +335,6 @@ int dns_filter_worker(void *arg) {
 	tot_send_rate = (float)tot_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 
 	printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", lid, tot_recv_rate , tot_send_rate);
-
-	FILE * fp;
-	sprintf(name, "latency-%d.txt", rte_lcore_id());
-	fp = fopen(name, "w");
-	if (!fp) {
-		printf("Error!\n");
-		exit(EXIT_FAILURE);
-	}
-
-	int start = (int)(0.15 * index);
-	for (int i = start; i < index; i++) {
-		fprintf(fp, "%lu\n", exec_time[i]);
-	}
-
-	fclose(fp);
 	
 	return 0;
 }
@@ -309,6 +381,77 @@ static int dns_filter_parse_args(int argc, char ** argv) {
     return offset;
 }
 
+static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
+    doca_error_t result;
+    uint32_t nb_free, nb_total;
+	nb_free = nb_total = 0;
+
+    result = doca_workq_create(cfg.queue_depth, &ctx->workq);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create work queue. Reason: %s", doca_get_error_string(result));
+		// regex_scan_destroy(&rgx_cfg);
+		return result;
+	}
+
+	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->doca_regex), ctx->workq);
+	if (result != DOCA_SUCCESS) {
+		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
+		// regex_scan_destroy(&rgx_cfg);
+		return result;
+	}
+
+    /* Create and start buffer inventory */
+	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &ctx->buf_inv);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	result = doca_buf_inventory_start(ctx->buf_inv);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to start buffer inventory. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	/* Create and start mmap */
+	result = doca_mmap_create(NULL, &ctx->mmap);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	result = doca_mmap_start(ctx->mmap);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to start memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	result = doca_mmap_dev_add(ctx->mmap, ctx->dev);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add device to memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
+
+	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	printf(" >> total number of element: %d, free element: %d\n", 
+		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
+
+	/* Segment the region into pieces */
+	struct mempool_elt *elt;
+    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
+		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
+	}
+
+	return result;
+}
+
 doca_error_t
 dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 {
@@ -328,98 +471,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		worker_ctx->app_cfg = app_cfg;
 		worker_ctx->queue_id = lcore_index;
 
-		/* initialise doca_buf_inventory */
-		result = doca_buf_inventory_create(NULL, MAX_REGEX_RESPONSE_SIZE, DOCA_BUF_EXTENSION_NONE, &worker_ctx->buf_inventory);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to allocate buffer inventory: %s", doca_get_error_string(result));
-			rte_free(worker_ctx);
-			return result;
-		}
-		result = doca_buf_inventory_start(worker_ctx->buf_inventory);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to start buffer inventory: %s", doca_get_error_string(result));
-			doca_buf_inventory_destroy(worker_ctx->buf_inventory);
-			rte_free(worker_ctx);
-			return result;
-		}
-
-		/* initialise doca_buf_inventory */
-		result = doca_workq_create(PACKET_BURST, &worker_ctx->workq);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to create work queue: %s", doca_get_error_string(result));
-			goto destroy_buf_inventory;
-		}
-		result = doca_ctx_workq_add(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to attach workq to regex: %s", doca_get_error_string(result));
-			goto destroy_workq;
-		}
-
-		/* Create array of pointers (char*) to hold the queries */
-		worker_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
-		if (worker_ctx->queries == NULL) {
-			DOCA_LOG_ERR("Dynamic allocation failed");
-			result = DOCA_ERROR_NO_MEMORY;
-			goto worker_cleanup;
-		}
-
-		/* Setup memory map
-		*
-		* Really what we want is the DOCA DPDK packet pool bridge which will make mkey management for packets buffers
-		* very efficient. Right now we do not have this so we have to create a map each burst of packets and then tear
-		* it down at the end of the burst
-		*/
-		result = doca_mmap_create(NULL, &worker_ctx->mmap);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to create mmap");
-			return -1;
-		}
-
-		result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
-			doca_mmap_destroy(worker_ctx->mmap);
-			return -1;
-		}
-
-		result = doca_mmap_start(worker_ctx->mmap);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(result));
-			doca_mmap_destroy(worker_ctx->mmap);
-			return -1;
-		}
-
-		result = doca_mmap_dev_add(worker_ctx->mmap, worker_ctx->app_cfg->dev);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(result));
-			doca_mmap_stop(worker_ctx->mmap);
-			doca_mmap_destroy(worker_ctx->mmap);
-			return -1;
-		}
-
-		for (int i = 0; i < PACKET_BURST; i++) {
-			/* Create array of pointers (char*) to hold the queries */
-			worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
-			if (worker_ctx->query_buf[i] == NULL) {
-				DOCA_LOG_ERR("Dynamic allocation failed");
-				result = DOCA_ERROR_NO_MEMORY;
-				goto worker_cleanup;
-			}
-
-			/* register packet in mmap */
-			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-				goto queries_cleanup;
-			}
-
-			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
-			if (result != DOCA_SUCCESS) {
-				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-				goto queries_cleanup;
-			}
-		}
+		dns_filter_init_lcore(worker_ctx);
 
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
@@ -548,6 +600,19 @@ register_dns_filter_params(void)
 	return result;
 }
 
+int dpdk_mempool_init(struct dns_filter_config * app_cfg) {
+	for (int i = 0; i < app_cfg->nr_core; i++) {
+        sprintf(name, "pkt_mempool_%d", i);
+        pkt_mempools[i] = rte_mempool_create(name, N_MBUF,
+                            MBUF_SIZE, MEMPOOL_CACHE_SIZE,
+                            sizeof(struct rte_pktmbuf_pool_private),
+                            rte_pktmbuf_pool_init, NULL,
+                            rte_pktmbuf_init, NULL,
+                            rte_socket_id(), MEMPOOL_F_SP_PUT | MEMPOOL_F_SC_GET);
+        assert(pkt_mempools[i] != NULL);
+    }
+}
+
 int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
@@ -604,6 +669,8 @@ int main(int argc, char **argv) {
 		DOCA_LOG_INFO("Failed to init DOCA RegEx");
 		return result;
 	}
+
+	dpdk_mempool_init(&app_cfg);
 
 	result = dns_worker_lcores_run(&app_cfg);
 
