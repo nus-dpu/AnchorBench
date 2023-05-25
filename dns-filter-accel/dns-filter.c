@@ -62,7 +62,7 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
         int ret;
         do {
             /* Send packets until there is none in TX queue */
-            ret = rte_eth_tx_burst(pid ^ 1, qid, pkts, pkt_cnt);
+            ret = rte_eth_tx_burst(pid, qid, pkts, pkt_cnt);
             pkts += ret;
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
