@@ -141,6 +141,7 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
  * @packets [in]: mbufs array
  * @return: 0 on success and negative value otherwise
  */
+#if 0
 static int
 regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
 {
@@ -224,6 +225,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 doca_buf_cleanup:
 	return ret;
 }
+#endif
 
 /*
  * Enqueue job to DOCA RegEx qp
