@@ -325,7 +325,7 @@ int dns_filter_worker(void *arg) {
 		for (idx = 0; idx < rxcnt; idx++) {
             pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
 			regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
-			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
+			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qid);
         }
 	}
 
@@ -460,6 +460,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	/* Segment the region into pieces */
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
+		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 		elt->packet = (char *)calloc(256, sizeof(char));
 	}
 
