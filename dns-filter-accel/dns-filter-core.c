@@ -248,7 +248,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
 	if (nb_free != 0) {
-		// struct doca_buf *buf;
 		struct mempool_elt * buf_element;
 		char * data_buf;
 		void *mbuf_data;
@@ -257,10 +256,10 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		mempool_get(ctx->buf_mempool, &buf_element);
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
-/*
+
 		memcpy(buf_element->packet, pkt, len);
 		buf_element->packet_size = len;
-*/
+
 		memcpy(data_buf, data, data_len);
 
 		/* Create a DOCA buffer  for this memory region */
@@ -289,7 +288,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 		if (result == DOCA_ERROR_NO_MEMORY) {
 			mempool_put(ctx->buf_mempool, buf_element);
-			// doca_buf_refcount_rm(buf_element->buf, NULL);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
 		if (result != DOCA_SUCCESS) {
@@ -327,13 +325,13 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-/*
+
 			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		if (mbuf != NULL) {
 				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
 				memcpy(data, buf_element->packet, buf_element->packet_size);
 			}
-*/
+
 			/* Report the scan result of RegEx engine */
 			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
@@ -341,11 +339,11 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
-/*
+
 			if (!mbuf) {
 				break;
 			}
-*/
+
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
 		} else {
