@@ -392,14 +392,15 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	/* Segment the region into pieces */
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, 128, &elt->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+			exit(1);
+		}
+
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 	}
-
-	// ctx->results = (struct doca_regex_search_result *)calloc(WORKQ_DEPTH, sizeof(struct doca_regex_search_result));
-	// if (ctx->results == NULL) {
-	// 	DOCA_LOG_ERR("Unable to add allocate results storage");
-	// 	return DOCA_ERROR_NO_MEMORY;
-	// }
 
 	return result;
 }
