@@ -1,6 +1,6 @@
 # queue_depth=(1 4 16 64 256)
 queue_depth=128
-data_size=(20 30 60 100 200 300 400)
+data_size=(20 30 60 100 200 400)
 # data_size=(20)
 
 for size in "${data_size[@]}"; do
