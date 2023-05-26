@@ -58,7 +58,7 @@ extern __thread struct timeval start;
 extern struct dns_filter_config app_cfg;
 
 #define MAX_NR_LATENCY	(128 * 1024)
-extern __thread int nr_latency = 0;
+extern __thread int nr_latency;
 extern __thread uint64_t latency[MAX_NR_LATENCY];
 
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
