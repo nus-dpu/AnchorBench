@@ -238,7 +238,6 @@ void * regex_work_lcore(void * arg) {
     list_for_each_entry(elt, &rgx_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inv, rgx_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
-		printf("addr: %p, buf: %p\n", elt->addr, elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
