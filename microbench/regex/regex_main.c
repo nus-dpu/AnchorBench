@@ -386,9 +386,6 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
-	printf(" >> total number of element: %d, free element: %d\n", 
-		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
-
 	/* Segment the region into pieces */
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
@@ -402,6 +399,9 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 	}
+
+	printf(" >> total number of element: %d, free element: %d\n", 
+		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
 
 	return result;
 }
