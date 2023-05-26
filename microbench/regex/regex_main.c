@@ -329,8 +329,6 @@ static doca_error_t regex_init(struct regex_config *regex_cfg) {
 
 static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     doca_error_t result;
-    uint32_t nb_free, nb_total;
-	nb_free = nb_total = 0;
 
     result = doca_workq_create(cfg.queue_depth, &ctx->workq);
 	if (result != DOCA_SUCCESS) {

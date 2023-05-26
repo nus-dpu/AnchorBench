@@ -229,6 +229,9 @@ void * regex_work_lcore(void * arg) {
 		nr_rule++;
 	}
 
+	uint32_t nb_free, nb_total;
+	nb_free = nb_total = 0;
+
 	/* Segment the region into pieces */
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
