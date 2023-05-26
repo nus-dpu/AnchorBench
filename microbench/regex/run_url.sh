@@ -16,15 +16,15 @@ for size in "${data_size[@]}"; do
 	for nr_core in $(seq 1 1 8); do 
 		echo ">> Test with $nr_core cores >>"
 
-		mkdir ${size}B-partial-result/thp-$nr_core/
-		mkdir ${size}B-partial-result/lat-$nr_core/
+		mkdir ${dir}/thp-$nr_core/
+		mkdir ${dir}/lat-$nr_core/
 
-		for rate in $(seq 10 100 4600); do
+		for rate in $(seq 10 120 4600); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops) with data size $size Bytes"
 			./build/regex -l 50 -p 03:00.0 -r /tmp/partial_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth}
-			cat thp-*.txt > ${dir}/thp-$nr_core/thp-rate-$rate.txt
-			cat latency-*.txt > ${size}/lat-$nr_core/lat-rate-$rate.txt
+			cat thp-*.txt 		> ${dir}/thp-$nr_core/thp-rate-$rate.txt
+			cat latency-*.txt 	> ${dir}/lat-$nr_core/lat-rate-$rate.txt
 			echo "  >> Test done!"
 			sleep 2
 		done
@@ -39,15 +39,15 @@ for size in "${data_size[@]}"; do
 	for nr_core in $(seq 1 1 8); do 
 		echo ">> Test with $nr_core cores >>"
 
-		mkdir ${size}B-full-result/thp-$nr_core/
-		mkdir ${size}B-full-result/lat-$nr_core/
+		mkdir ${dir}/thp-$nr_core/
+		mkdir ${dir}/lat-$nr_core/
 
-		for rate in $(seq 10 100 4600); do
+		for rate in $(seq 10 120 4600); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops) with data size $size Bytes"
 			./build/regex -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth}
-			cat thp-*.txt > ${dir}/thp-$nr_core/thp-rate-$rate.txt
-			cat latency-*.txt > ${dir}/lat-$nr_core/lat-rate-$rate.txt
+			cat thp-*.txt 		> ${dir}/thp-$nr_core/thp-rate-$rate.txt
+			cat latency-*.txt 	> ${dir}/lat-$nr_core/lat-rate-$rate.txt
 			echo "  >> Test done!"
 			sleep 2
 		done
