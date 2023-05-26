@@ -20,6 +20,7 @@
 #include <doca_mmap.h>
 #include <doca_regex_mempool.h>
 
+#include "dns-filter-port-cfg.h"
 #include "dns-filter-constants.h"
 #include "dns-filter-core.h"
 #include "dns-filter.h"
