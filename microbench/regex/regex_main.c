@@ -400,8 +400,10 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 	}
 
-	printf(" >> total number of element: %d, free element: %d\n", 
-		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
+	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+
+	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
 	return result;
 }
