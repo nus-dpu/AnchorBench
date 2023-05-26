@@ -65,7 +65,7 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
 
     return total_pkt;
 }
-
+#if 0
 int dpdk_tx_mbuf_init(void) {
 	uint16_t port_id = 0;
 
