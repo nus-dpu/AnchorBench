@@ -36,6 +36,22 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
 __thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
 
+#define NSEC_PER_SEC    1000000000L
+
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
+__thread int nr_latency = 0;
+__thread uint64_t latency[MAX_NR_LATENCY];
+
+uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
+	if (diff.tv_nsec < 0) {
+		diff.tv_nsec += NSEC_PER_SEC;
+		diff.tv_sec--;
+	}
+	return TIMESPEC_TO_NSEC(diff);
+}
+
 uint32_t dpdk_send_pkts(int pid, int qid) {
     int total_pkt, pkt_cnt;
     total_pkt = pkt_cnt = tx_mbufs[pid].len;
@@ -319,6 +335,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	doca_buf_get_data(buf_element->buf, &mbuf_data);
 	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
+	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+
 	struct doca_regex_job_search const job_request = {
 			.base = {
 				.type = DOCA_REGEX_JOB_SEARCH,
@@ -372,7 +390,9 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		// if (mbuf != NULL) {
 			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
