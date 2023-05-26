@@ -261,7 +261,9 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 		exit(1);
 	}
 
-	memcpy(buf_element->packet, pkt, len);
+	// memcpy(buf_element->packet, pkt, len);
+	// buf_element->packet_size = len;
+	buf_element->packet = pkt;
 	buf_element->packet_size = len;
 
 	memcpy(data_buf, data, data_len);
@@ -323,10 +325,21 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
 
-			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
-    		if (mbuf != NULL) {
-				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
-				memcpy(data, buf_element->packet, buf_element->packet_size);
+			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
+    		// if (mbuf != NULL) {
+			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
+			// 	memcpy(data, buf_element->packet, buf_element->packet_size);
+			// }
+
+			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
+				int next_pkt = tx_mbufs[pid].len;
+				tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
+
+				tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
+				tx_pkt->nb_segs = 1;
+				tx_pkt->next = NULL;
+
+				tx_mbufs[pid].len++;
 			}
 
 			/* Report the scan result of RegEx engine */
@@ -336,10 +349,6 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
-
-			if (!mbuf) {
-				break;
-			}
 
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;

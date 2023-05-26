@@ -67,14 +67,14 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
 
-        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        for (int i = 0; i < tx_mbufs[pid].len; i++) {
-            /* Allocate new buffer for sended packets */
-            tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-            if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
-                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
-            }
-        }
+        // /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        // for (int i = 0; i < tx_mbufs[pid].len; i++) {
+        //     /* Allocate new buffer for sended packets */
+        //     tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+        //     if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
+        //         rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
+        //     }
+        // }
 
         tx_mbufs[pid].len = 0;
     }
@@ -184,10 +184,10 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
-	for (int i = 0; i < nb_rx; i++) {
-        rte_pktmbuf_free(pkts_burst[i]);
-        RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
-    }
+	// for (int i = 0; i < nb_rx; i++) {
+    //     rte_pktmbuf_free(pkts_burst[i]);
+    //     RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
+    // }
 
 	// if (to_send > 0) {
 	// 	nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, to_send);
