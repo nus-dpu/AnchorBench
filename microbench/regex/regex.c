@@ -233,6 +233,7 @@ void * regex_work_lcore(void * arg) {
 	nb_free = nb_total = 0;
 
 	/* Segment the region into pieces */
+	doca_error_t result;
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &rgx_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer  for this memory region */
@@ -243,8 +244,8 @@ void * regex_work_lcore(void * arg) {
 		}
 	}
 
-	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+	doca_buf_inventory_get_num_elements(rgx_ctx->buf_inv, &nb_total);
+	doca_buf_inventory_get_num_free_elements(rgx_ctx->buf_inv, &nb_free);
 
 	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
