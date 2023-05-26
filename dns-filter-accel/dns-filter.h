@@ -38,4 +38,6 @@ extern __thread uint64_t exec_time[128 * 1024];
 
 struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size);
 
+extern __thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
+
 #endif  /* _DNS_FILTER_H_*/
