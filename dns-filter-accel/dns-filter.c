@@ -48,10 +48,10 @@ struct dns_filter_config app_cfg;
 #define BUF_SIZE            2048
 #define MBUF_SIZE           (BUF_SIZE + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 
-__thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
+// __thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
 
 struct rte_mempool * pkt_mempools[NR_CPUS];
-
+#if 0
 uint32_t dpdk_send_pkts(int pid, int qid) {
     int total_pkt, pkt_cnt;
     total_pkt = pkt_cnt = tx_mbufs[pid].len;
@@ -95,7 +95,7 @@ int dpdk_tx_mbuf_init(void) {
         tx_mbufs[port_id].len = 0;
     }
 }
-
+#endif
 /*
  * RegEx context initialization
  *
@@ -256,7 +256,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 
     printf("%s\n", buf);
 }
-
+#if 0
 struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
     if (unlikely(tx_mbufs[port_id].len == DEFAULT_PKT_BURST)) {
         return NULL;
@@ -273,7 +273,7 @@ struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
 
     return tx_pkt;
 }
-
+#endif
 int dns_filter_worker(void *arg) {
 	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)arg;
     uint8_t lid = rte_lcore_id();
@@ -296,7 +296,7 @@ int dns_filter_worker(void *arg) {
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
-	dpdk_tx_mbuf_init();
+	// dpdk_tx_mbuf_init();
 
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);

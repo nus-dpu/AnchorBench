@@ -33,6 +33,8 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
 #define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
 
+__thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
+
 static void
 check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 {

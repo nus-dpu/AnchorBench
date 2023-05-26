@@ -24,8 +24,6 @@ typedef struct port_info_s {
 	struct rte_eth_dev_info dev_info;	/**< PCI info + driver name */
 } port_info_t;
 
-extern port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
-
 void dns_filter_config_ports(void);
 
 #endif  /* _DNS_FILTER_PORT_CFG_H_ */
