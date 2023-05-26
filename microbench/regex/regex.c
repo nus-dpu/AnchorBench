@@ -67,8 +67,6 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
 
-		printf("enq> addr: %p, buf: %p\n", buf_element->addr, buf_element->buf);
-
 		/* Create a DOCA buffer  for this memory region */
 		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &buf_element->buf);
 		// if (result != DOCA_SUCCESS) {
