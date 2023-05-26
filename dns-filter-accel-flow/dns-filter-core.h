@@ -54,5 +54,6 @@ extern __thread struct timeval start;
 
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx);
+uint32_t dpdk_send_pkts(int pid, int qid);
 
 #endif  /* _DNS_FILTER_CORE_H_ */
