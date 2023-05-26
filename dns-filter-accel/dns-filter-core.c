@@ -333,7 +333,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
 				int next_pkt = tx_mbufs[pid].len;
-				tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
+				struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
 
 				tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
 				tx_pkt->nb_segs = 1;
