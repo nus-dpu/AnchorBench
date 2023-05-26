@@ -303,8 +303,6 @@ int dns_filter_worker(void *arg) {
 	fclose(output_fp);
 
 	int lat_start = (int)(0.15 * nr_latency);
-	FILE * output_fp;
-	char name[32];
 
 	sprintf(name, "latency-%d.txt", sched_getcpu());
 	output_fp = fopen(name, "w");
