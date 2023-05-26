@@ -56,7 +56,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
-	if (nb_free != 0) {
+	// if (nb_free != 0) {
 		// struct doca_buf *buf;
 		struct mempool_elt * buf_element;
 		char * data_buf;
@@ -66,6 +66,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		mempool_get(ctx->buf_mempool, &buf_element);
 		/* Get the memory segment */
 		data_buf = buf_element->addr;
+
+		printf("enq> ddr: %p, buf: %p\n", buf_element->addr, buf_element->buf);
 
 		/* Create a DOCA buffer  for this memory region */
 		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &buf_element->buf);
@@ -107,7 +109,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 		nb_enqueued++;
 		--nb_free;
-	}
+	// }
 
 	return nb_enqueued;
 }

@@ -394,6 +394,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, 128, &elt->buf);
+		printf("addr: %p, buf: %p\n", elt->addr, elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			exit(1);
