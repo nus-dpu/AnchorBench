@@ -286,7 +286,7 @@ doca_buf_cleanup:
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, char * data, int data_len) {
+static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbuf, char * pkt, int len, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -311,7 +311,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, char * pkt, int len, 
 
 	// memcpy(buf_element->packet, pkt, len);
 	// buf_element->packet_size = len;
-	buf_element->packet = pkt;
+	buf_element->packet = mbuf;
 	buf_element->packet_size = len;
 
 	memcpy(data_buf, data, data_len);
@@ -383,7 +383,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 				int next_pkt = tx_mbufs[pid].len;
 				struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
 
-				tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
+				// tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
 				tx_pkt->nb_segs = 1;
 				tx_pkt->next = NULL;
 
@@ -428,7 +428,7 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	
 		extract_dns_query(mbuf, &query);
 
-		regex_scan_enq_job(worker_ctx, pkt, len, query, strlen(query));
+		regex_scan_enq_job(worker_ctx, mbuf, pkt, len, query, strlen(query));
 	}
 }
 
