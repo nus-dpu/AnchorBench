@@ -384,15 +384,15 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	struct mempool_elt * buf_element;
 	struct timespec now;
 
-	clock_gettime(CLOCK_MONOTONIC, &now);
+	// clock_gettime(CLOCK_MONOTONIC, &now);
 
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			// }
 			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		// if (mbuf != NULL) {
 			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
@@ -417,6 +417,10 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
+			if (nr_latency < MAX_NR_LATENCY) {
+				clock_gettime(CLOCK_MONOTONIC, &now);
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
