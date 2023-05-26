@@ -70,10 +70,10 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 		printf("enq> addr: %p, buf: %p\n", buf_element->addr, buf_element->buf);
 
 		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &buf_element->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-		}
+		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, data_buf, BUF_SIZE, &buf_element->buf);
+		// if (result != DOCA_SUCCESS) {
+		// 	DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		// }
 
 		memcpy(data_buf, data, data_len);
 
@@ -228,6 +228,23 @@ void * regex_work_lcore(void * arg) {
 		input[nr_rule].len = read;
 		nr_rule++;
 	}
+
+	/* Segment the region into pieces */
+	struct mempool_elt *elt;
+    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, 128, &elt->buf);
+		printf("addr: %p, buf: %p\n", elt->addr, elt->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+			exit(1);
+		}
+	}
+
+	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+
+	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 

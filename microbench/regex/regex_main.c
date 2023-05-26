@@ -389,21 +389,8 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	/* Segment the region into pieces */
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
-		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, elt->addr, 128, &elt->buf);
-		printf("addr: %p, buf: %p\n", elt->addr, elt->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-			exit(1);
-		}
-
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 	}
-
-	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
-
-	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
 	return result;
 }
