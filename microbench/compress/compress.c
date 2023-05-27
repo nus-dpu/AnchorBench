@@ -49,13 +49,13 @@ double ran_expo(double mean) {
 static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
-	uint32_t nb_total = 0;
-	uint32_t nb_free = 0;
+	// uint32_t nb_total = 0;
+	// uint32_t nb_free = 0;
 
-	doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+	// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+	// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
-	if (nb_free != 0) {
+	// if (nb_free != 0) {
 		struct mempool_elt * src_buf, * dst_buf;
 		char * src_data_buf, * dst_data_buf;
 		void *mbuf_data;
@@ -72,19 +72,19 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 		memset(src_data_buf, 0, BUF_SIZE);
 		memcpy(src_data_buf, data, data_len);
 
-		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_buf->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-			return nb_enqueued;
-		}
+		// /* Create a DOCA buffer for this memory region */
+		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_buf->buf);
+		// if (result != DOCA_SUCCESS) {
+		// 	DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		// 	return nb_enqueued;
+		// }
 
-		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, dst_data_buf, BUF_SIZE, &dst_buf->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-			return nb_enqueued;
-		}
+		// /* Create a DOCA buffer for this memory region */
+		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, dst_data_buf, BUF_SIZE, &dst_buf->buf);
+		// if (result != DOCA_SUCCESS) {
+		// 	DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		// 	return nb_enqueued;
+		// }
 
 		doca_buf_get_data(src_buf->buf, &mbuf_data);
 		doca_buf_set_data(src_buf->buf, mbuf_data, data_len);
@@ -106,8 +106,10 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&compress_job);
 		if (result == DOCA_ERROR_NO_MEMORY) {
-			doca_buf_refcount_rm(src_buf->buf, NULL);
-			doca_buf_refcount_rm(dst_buf->buf, NULL);
+			// doca_buf_refcount_rm(src_buf->buf, NULL);
+			// doca_buf_refcount_rm(dst_buf->buf, NULL);
+			mempool_put(ctx->buf_mempool, src_buf);
+			mempool_put(ctx->buf_mempool, dst_buf);
 			return nb_enqueued; /* qp is full, try to dequeue. */
 		}
 		if (result != DOCA_SUCCESS) {
@@ -116,9 +118,9 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 			return -1;
 		}
 		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
-		nb_enqueued++;
-		--nb_free;
-	}
+	// 	nb_enqueued++;
+	// 	--nb_free;
+	// }
 
 	return nb_enqueued;
 }
@@ -171,8 +173,8 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			// compress_report_results(dst_doca_buf);
 			/* release the buffer back into the pool so it can be re-used */
-			doca_buf_refcount_rm(src_doca_buf->buf, NULL);
-			doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
+			// doca_buf_refcount_rm(src_doca_buf->buf, NULL);
+			// doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, src_doca_buf);
 			mempool_put(ctx->buf_mempool, dst_doca_buf);
@@ -233,6 +235,16 @@ void * compress_work_lcore(void * arg) {
 	input_size = fread((char **)input, sizeof(char), M_1, fp);
 
 	fclose(fp);
+
+	doca_error_t result;
+	struct mempool_elt *elt;
+    list_for_each_entry(elt, &compress_ctx->buf_mempool->elt_free_list, list) {
+	/* Create a DOCA buffer for this memory region */
+		result = doca_buf_inventory_buf_by_addr(compress_ctx->buf_inv, compress_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		}
+	}
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 

@@ -254,6 +254,16 @@ int dns_filter_worker(void *arg) {
 
 	// dpdk_tx_mbuf_init();
 
+	doca_error_t result;
+	struct mempool_elt *elt;
+    list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
+		/* Create a DOCA buffer  for this memory region */
+		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		}
+	}
+
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
 
