@@ -70,6 +70,7 @@ struct mempool {
     struct list_head    elt_used_list;
 };
 
+extern int is_mempool_empty(struct mempool * mp);
 extern struct mempool * mempool_create(int num_elt, size_t elt_size);
 extern void mempool_free(struct mempool * mp);
 extern int mempool_get(struct mempool * mp, struct mempool_elt ** obj);

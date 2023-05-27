@@ -313,6 +313,10 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	char * data_buf;
 	void *mbuf_data;
 
+	if (is_mempool_empty(ctx->buf_mempool)) {
+		return 0;
+	}
+
 	/* Get one free element from the mempool */
 	mempool_get(ctx->buf_mempool, &buf_element);
 	/* Get the memory segment */

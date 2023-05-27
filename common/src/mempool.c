@@ -1,5 +1,13 @@
 #include "mempool.h"
 
+int is_mempool_empty(struct mempool * mp) {
+    if (list_empty(&mp->elt_free_list)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 struct mempool * mempool_create(int num_elt, size_t elt_size) {
     size_t total_size = num_elt * elt_size;
