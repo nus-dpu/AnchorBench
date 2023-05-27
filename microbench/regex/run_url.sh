@@ -42,7 +42,7 @@ for size in "${data_size[@]}"; do
 		mkdir ${dir}/thp-$nr_core/
 		mkdir ${dir}/lat-$nr_core/
 
-		for rate in $(seq 10 150 4800); do
+		for rate in $(seq 10 150 5000); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops) with data size $size Bytes"
 			./build/regex -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth}
