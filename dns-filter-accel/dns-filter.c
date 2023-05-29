@@ -28,6 +28,7 @@ DOCA_LOG_REGISTER(DNS_FILTER);
 
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_MSEC   1000L
+#define USEC_PER_SEC   	1000000L
 #define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
