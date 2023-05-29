@@ -399,8 +399,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 
 	// fprintf(stderr, "input: %s, ts: %lu\n", data, extract_dns_ts(mbuf));
 
-	struct doca_buf * buf = ctx->buf[i];
-	char * query_begin = ctx->query_buf[i];
+	struct doca_buf * buf = ctx->buf[index];
+	char * query_begin = ctx->query_buf[index];
 	size_t query_len = strlen(query_begin);
 	memcpy(ctx->query_buf[i], query_begin, query_len);
 
@@ -413,7 +413,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 			.base = {
 				.type = DOCA_REGEX_JOB_SEARCH,
 				.ctx = doca_regex_as_ctx(ctx->app_cfg->doca_reg),
-				.user_data = { .u64 = i },
+				.user_data = { .u64 = index },
 			},
 			.rule_group_ids = {1, 0, 0, 0},
 			.buffer = buf,
