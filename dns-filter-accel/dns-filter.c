@@ -125,7 +125,7 @@ regex_cleanup:
 	return result;
 }
 
-static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
+static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx, nb_tx = 0, to_send = 0;
 	uint32_t retry;
@@ -135,7 +135,7 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 	 */
 	nb_rx = rte_eth_rx_burst(pid, qid, pkts_burst, DEFAULT_PKT_BURST);
 	if (unlikely(nb_rx == 0)) {
-		return;
+		return nb_rx;
 	}
 
 	nr_recv += nb_rx;
@@ -167,7 +167,7 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 	// 	} while (++nb_tx < nb_rx);
 	// }
 
-	return;
+	return nb_rx;
 }
 
 static void pg_lcore_get_rxbuf(uint8_t lid, port_info_t ** infos, uint8_t rxcnt) {
@@ -278,7 +278,13 @@ int dns_filter_worker(void *arg) {
 			break;
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
-            pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
+			struct timeval start, end;
+			gettimeofday(&start, NULL);
+            int nr_rx = pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
+			gettimeofday(&end, NULL);
+			if (nb_rx > 0) {
+				fprintf(stderr, "%lu\n", TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(start));
+			}
 			// regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
 			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
