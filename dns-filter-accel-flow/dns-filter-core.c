@@ -224,7 +224,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 		}
 
 		clock_gettime(CLOCK_MONOTONIC, &deq_end);
-		fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(&enq_start, &enq_end), diff_timespec(&enq_end, &deq_end));
+		fprintf(stderr, "%u\t%lu\t%lu\n", packets_received, diff_timespec(&enq_start, &enq_end), diff_timespec(&enq_end, &deq_end));
 	}
 	
 doca_buf_cleanup:
