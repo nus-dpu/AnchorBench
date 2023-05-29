@@ -134,6 +134,19 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
 	return 0;
 }
 
+#define NSEC_PER_SEC    1000000000L
+
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
+static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
+	if (diff.tv_nsec < 0) {
+		diff.tv_nsec += NSEC_PER_SEC;
+		diff.tv_sec--;
+	}
+	return TIMESPEC_TO_NSEC(diff);
+}
+
 /*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
  * The inspection includes extracting DNS query and set it to RegEx engine to check a match
