@@ -233,7 +233,6 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 }
 
 int dns_filter_worker(void *arg) {
-	doca_error_t result;
 	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)arg;
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
