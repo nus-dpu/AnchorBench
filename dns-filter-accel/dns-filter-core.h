@@ -46,6 +46,7 @@ struct dns_worker_ctx {
 
 	char *query_buf[PACKET_BURST];
 	struct doca_buf *buf[PACKET_BURST];
+	struct doca_regex_search_result responses[MAX_REGEX_RESPONSE_SIZE];	/* DOCA RegEx jobs responses */
 
 	struct doca_pci_bdf *pci_address;		/* RegEx PCI address to use */
 	struct mempool *buf_mempool;
