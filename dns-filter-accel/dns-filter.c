@@ -148,7 +148,7 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
     // }
 
 	// if (to_send > 0) {
-		nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, to_send);
+		nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
 		if (unlikely(nb_tx < nb_rx)) {
 			retry = 0;
 			while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
