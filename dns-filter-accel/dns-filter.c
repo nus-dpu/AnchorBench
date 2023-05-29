@@ -255,31 +255,8 @@ int dns_filter_worker(void *arg) {
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
-	for (int i = 0; i < PACKET_BURST; i++) {
-		/* Create array of pointers (char*) to hold the queries */
-		worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
-		if (worker_ctx->query_buf[i] == NULL) {
-			DOCA_LOG_ERR("Dynamic allocation failed");
-			exit(1);
-		}
-
-		/* register packet in mmap */
-		result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-			exit(1);
-		}
-
-		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-			exit(1);
-		}
-	}
-
 	// dpdk_tx_mbuf_init();
-#if 0
+
 	doca_error_t result;
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
@@ -289,7 +266,7 @@ int dns_filter_worker(void *arg) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
 	}
-#endif
+
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
 
