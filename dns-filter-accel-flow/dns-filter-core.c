@@ -159,9 +159,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 
 	while (tx_count < packets_received) {
-		struct timeval enq_start, enq_end, deq_end;
-
-		gettimeofday(&enq_start, NULL);
+		uint64_t ts1, ts2, ts3;
+		ts1 = rte_rdtsc();	
 
 		for (; tx_count != packets_received;) {
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
@@ -172,6 +171,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
+
+			ts2 = rte_rdtsc();
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
@@ -191,6 +192,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				break;
 			}
 
+			ts3 = rte_rdtsc();
+
 			if (result == DOCA_SUCCESS) {
 				worker_ctx->buffers[tx_count] = buf;
 				++tx_count;
@@ -199,15 +202,14 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
+			fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", ts2 - ts1, ts3 - ts2, ts3 - ts1);
 		}
-
-		gettimeofday(&enq_end, NULL);
 
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
 			struct timespec ts;
 			struct doca_event event = {0};
-
+			
 			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 			if (result == DOCA_SUCCESS) {
 				/* Handle the completed jobs */
@@ -224,10 +226,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				goto doca_buf_cleanup;
 			}
 		}
-
-		gettimeofday(&deq_end, NULL);
-
-		fprintf(stderr, "%u\t%lu\t%lu\n", tx_count, TIMEVAL_TO_USEC(enq_end) - TIMEVAL_TO_USEC(enq_start), TIMEVAL_TO_USEC(deq_end) - TIMEVAL_TO_USEC(enq_end));
 	}
 
 doca_buf_cleanup:
