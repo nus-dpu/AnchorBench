@@ -109,6 +109,7 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	/* Ignore the timestamp field*/
 	if (ns_initparse(data, len - sizeof(uint64_t), &handle) < 0) {
 		DOCA_LOG_ERR("Fail to parse domain DNS packet");
+		printf("Wrong input: %s\n", data);
 		return -1;
 	}
 
