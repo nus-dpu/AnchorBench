@@ -434,7 +434,7 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		DOCA_LOG_ERR("Unable to add device to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
-#if 0
+
 	ctx->buf_mempool = mempool_create(MEMPOOL_NR_BUF, MEMPOOL_BUF_SIZE);
 
 	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
@@ -452,7 +452,6 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 		elt->packet = (char *)calloc(256, sizeof(char));
 	}
-#endif
 
 	return result;
 }
