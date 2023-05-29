@@ -156,6 +156,10 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 
 	while (tx_count < packets_received) {
+		struct timeval enq_start, enq_end, deq_end;
+
+		gettimeofday(&enq_start, NULL);
+
 		for (; tx_count != packets_received;) {
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
 			void *mbuf_data;
@@ -194,6 +198,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			}
 		}
 
+		gettimeofday(&enq_end, NULL);
+
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
 			struct timespec ts;
@@ -215,6 +221,10 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				goto doca_buf_cleanup;
 			}
 		}
+
+		gettimeofday(&deq_end, NULL);
+
+		fprintf(stderr, "%u\t%lu\t%lu\n", tx_count, TIMEVAL_TO_USEC(enq_end) - TIMEVAL_TO_USEC(enq_start), TIMEVAL_TO_USEC(deq_end) - TIMEVAL_TO_USEC(enq_end));
 	}
 
 doca_buf_cleanup:
