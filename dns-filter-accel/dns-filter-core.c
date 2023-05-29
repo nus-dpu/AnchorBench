@@ -400,12 +400,12 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	// fprintf(stderr, "input: %s, ts: %lu\n", data, extract_dns_ts(mbuf));
 
 	struct doca_buf * buf = ctx->buf[i];
-	char * data_begin = =ctx->queries[i];
-	size_t len = strlen(data_begin);
-	memcpy(ctx->query_buf[i], data_begin, len);
+	char * query_begin = ctx->queries[i];
+	size_t query_len = strlen(query_begin);
+	memcpy(ctx->query_buf[i], query_begin, query_len);
 
 	doca_buf_get_data(buf, &mbuf_data);
-	doca_buf_set_data(buf, mbuf_data, data_len);
+	doca_buf_set_data(buf, mbuf_data, query_len);
 
 	// clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
