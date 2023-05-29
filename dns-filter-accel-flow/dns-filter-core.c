@@ -29,6 +29,9 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
 #define DNS_HEADER_SIZE 12			/* DNS header size = 12 bytes (72 bits) */
 
+#define USEC_PER_SEC   	1000000L
+#define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
+
 static void
 check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 {
