@@ -388,7 +388,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 
 	ts2 = rte_rdtsc();
 
-	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+	// clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
 	struct doca_regex_job_search const job_request = {
 			.base = {
@@ -479,10 +479,10 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			/* Put the element back into the mempool */
 			mempool_put(ctx->buf_mempool, buf_element);
 			++finished;
-			if (nr_latency < MAX_NR_LATENCY) {
-				clock_gettime(CLOCK_MONOTONIC, &now);
-				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	clock_gettime(CLOCK_MONOTONIC, &now);
+			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			// }
 
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
