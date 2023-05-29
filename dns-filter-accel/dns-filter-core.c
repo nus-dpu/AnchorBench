@@ -353,7 +353,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	struct mempool_elt * buf_element;
 	char * data_buf;
 	void *mbuf_data;
-#if 0
+
 	if (is_mempool_empty(ctx->buf_mempool)) {
 		return 0;
 	}
@@ -395,36 +395,6 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 		return -1;
 	}
 	nb_enqueued++;
-#endif
-
-	// fprintf(stderr, "input: %s, ts: %lu\n", data, extract_dns_ts(mbuf));
-
-	struct doca_buf * buf = ctx->buf[index];
-	memcpy(ctx->query_buf[index], data, data_len);
-
-	doca_buf_get_data(buf, &mbuf_data);
-	doca_buf_set_data(buf, mbuf_data, data_len);
-
-	// clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
-
-	struct doca_regex_job_search const job_request = {
-			.base = {
-				.type = DOCA_REGEX_JOB_SEARCH,
-				.ctx = doca_regex_as_ctx(ctx->app_cfg->doca_reg),
-				.user_data = { .u64 = index },
-			},
-			.rule_group_ids = {1, 0, 0, 0},
-			.buffer = buf,
-			.result = ctx->responses + index,
-			.allow_batching = false,
-	};
-
-	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
-		return -1;
-	}
-	nb_enqueued++;
 
 	return nb_enqueued;
 }
@@ -448,7 +418,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	char * query;
 
 	// clock_gettime(CLOCK_MONOTONIC, &now);
-#if 0
+
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
@@ -496,18 +466,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			break;
 		}
 	} while (result == DOCA_SUCCESS);
-#endif
-	do {
-		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
-		if (result == DOCA_SUCCESS) {
-			++finished;
-		} else if (result == DOCA_ERROR_AGAIN) {
-			break;
-		} else {
-			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
-			break;
-		}
-	} while (result == DOCA_SUCCESS);
+
 	return finished;
 }
 
@@ -532,11 +491,9 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 			}
 		}
 	
-		// extract_dns_query(mbuf, &query);
-		extract_dns_query(mbuf, &worker_ctx->query_buf[i]);
+		extract_dns_query(mbuf, &query);
 
-		// regex_scan_enq_job(worker_ctx, i, mbuf, pkt, len, query, strlen(query));
-		regex_scan_enq_job(worker_ctx, i, mbuf, pkt, len, worker_ctx->query_buf[i], strlen(worker_ctx->query_buf[i]));
+		regex_scan_enq_job(worker_ctx, i, mbuf, pkt, len, query, strlen(query));
 	}
 }
 
