@@ -142,6 +142,10 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
+	for (int nb_tx = 0; nb_tx != nb_rx;) {
+		nb_tx += regex_scan_deq_job(pid ^ 1, worker_ctx);
+	}
+
 	// for (int i = 0; i < nb_rx; i++) {
     //     rte_pktmbuf_free(pkts_burst[i]);
     //     RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
@@ -275,7 +279,7 @@ int dns_filter_worker(void *arg) {
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
             pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
-			regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
+			// regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
 			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
 	}
