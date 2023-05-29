@@ -402,7 +402,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	struct doca_buf * buf = ctx->buf[index];
 	char * query_begin = ctx->query_buf[index];
 	size_t query_len = strlen(query_begin);
-	memcpy(ctx->query_buf[i], query_begin, query_len);
+	memcpy(ctx->query_buf[index], query_begin, query_len);
 
 	doca_buf_get_data(buf, &mbuf_data);
 	doca_buf_set_data(buf, mbuf_data, query_len);
