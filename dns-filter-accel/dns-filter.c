@@ -296,7 +296,7 @@ int dns_filter_worker(void *arg) {
 			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
 		gettimeofday(&end, NULL);
-		fprintf(stderr, "%lu\n", TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(curr));
+		fprintf(stderr, "recv: %lu, send: %lu, %lu\n", nr_recv, nr_send, TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(curr));
 	}
 
 	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
