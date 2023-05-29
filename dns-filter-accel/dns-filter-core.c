@@ -180,6 +180,42 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	return 0;
 }
 
+static uint64_t
+extract_dns_ts(struct rte_mbuf *pkt)
+{
+	int len, result;
+	struct rte_mbuf mbuf = *pkt;
+	struct rte_sft_error error;
+	struct rte_sft_mbuf_info mbuf_info;
+	uint32_t payload_offset = 0;
+	const unsigned char *data;
+
+	/* Parse mbuf, and extract the query */
+	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
+	if (result) {
+		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
+		return result;
+	}
+
+	/* Calculate the offset of UDP header start */
+	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
+
+	/* Skip UDP header to get DNS (query) start */
+	payload_offset += UDP_HEADER_SIZE;
+
+	/* Get a pointer to start of packet payload */
+	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
+	if (data == NULL) {
+		DOCA_LOG_ERR("Error in pkt mbuf adj");
+		return -1;
+	}
+	len = rte_pktmbuf_data_len(&mbuf);
+
+	data += (len - sizeof(uint64_t));
+
+	return *((uint64_t *)data);
+}
+
 /*
  * The main function for CPU workload, iterate on array of packets to extract the DNS queries
  *
@@ -341,6 +377,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	doca_buf_get_data(buf_element->buf, &mbuf_data);
 	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
+	fprintf("Scan: %.*s, ts: %lu\n", data_len, (char *)mbuf_data, extract_dns_ts(mbuf));
+
 	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
 	struct doca_regex_job_search const job_request = {
@@ -389,6 +427,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	uint32_t nb_total = 0;
 	struct mempool_elt * buf_element;
 	struct timespec now;
+	char *mbuf_data;
 
 	// clock_gettime(CLOCK_MONOTONIC, &now);
 
@@ -404,6 +443,10 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
 			// 	memcpy(data, buf_element->packet, buf_element->packet_size);
 			// }
+
+			doca_buf_get_data(buf_element->buf, &mbuf_data);
+
+			fprintf("Result: %.*s \n", data_len, mbuf_data, extract_dns_ts(buf_element->packet));
 
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
 				int next_pkt = tx_mbufs[pid].len;
