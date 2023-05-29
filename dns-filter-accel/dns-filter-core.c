@@ -318,12 +318,12 @@ doca_buf_cleanup:
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbuf, char * pkt, int len, char * data, int data_len) {
+static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbuf, char * pkt, int len, char * data, int data_len, bool batch) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
-
+	size_t tx_count = 0;
 
 	struct mempool_elt * buf_element;
 	char * data_buf;
@@ -367,7 +367,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 			.buffer = buf_element->buf,
 			.result = (struct doca_regex_search_result *)buf_element->response,
 			// .allow_batching = false,
-			.allow_batching = ((nb_enqueued + 1) % ctx->app_cfg->queue_depth == 0)? true : false,
+			.allow_batching = batch,
 	};
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -413,11 +413,11 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// if (nr_latency < MAX_NR_LATENCY) {
 			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			// }
-			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
-    		if (mbuf != NULL) {
-				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
-				memcpy(data, buf_element->packet, buf_element->packet_size);
-			}
+			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
+    		// if (mbuf != NULL) {
+			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
+			// 	memcpy(data, buf_element->packet, buf_element->packet_size);
+			// }
 
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
 				int next_pkt = tx_mbufs[pid].len;
@@ -441,6 +441,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 				clock_gettime(CLOCK_MONOTONIC, &now);
 				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			}
+
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
 		} else {
@@ -476,7 +477,7 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	
 		extract_dns_query(mbuf, &query);
 
-		regex_scan_enq_job(worker_ctx, mbuf, pkt, len, query, strlen(query));
+		regex_scan_enq_job(worker_ctx, mbuf, pkt, len, query, strlen(query), i != packets_received - 1);
 	}
 }
 
