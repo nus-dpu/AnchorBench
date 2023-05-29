@@ -40,6 +40,9 @@ __thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
+#define USEC_PER_SEC   	1000000L
+#define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
+
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
