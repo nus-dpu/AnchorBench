@@ -49,6 +49,11 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 		u = (struct udphdr *)p;
 
 		if (ntohs(u->dest) == DNS_PORT) {
+			if (!start_flag) {
+				start_flag = 1;
+				gettimeofday(&start, NULL);
+			}
+
 			/* Packet matched by one of pipe entries(rules) */
 			packets[index] = packets[current_packet];
 			index++;
@@ -257,11 +262,6 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 	check_packets_marking(packets, &packets_received);
 	if (packets_received == 0) {
 		return packets_received;
-	}
-
-	if (!start_flag) {
-		start_flag = 1;
-		gettimeofday(&start, NULL);
 	}
 
 	/* Start RegEx jobs */
