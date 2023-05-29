@@ -286,7 +286,7 @@ int dns_filter_worker(void *arg) {
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
-
+#if 0
 	for (idx = 0; idx < rxcnt; idx++) {
 		for (int i = 17; i < 29; i++) {
 			if (i % 6 + 1 == lid) {
@@ -296,13 +296,13 @@ int dns_filter_worker(void *arg) {
 			}
 		}
 	}
-
+#endif
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
 
     while (true) {
 		gettimeofday(&curr, NULL);
-		if (curr.tv_sec - last_log.tv_sec > 1) {
+		if (curr.tv_sec - last_log.tv_sec >= 1) {
 			sec_recv = (float)nr_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
 			sec_send = (float)nr_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(last_log));
 			printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS) / Max RX: %8.2f (KPS), Max TX: %8.2f (KPS)\n", 
