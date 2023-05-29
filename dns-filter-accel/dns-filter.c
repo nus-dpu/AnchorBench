@@ -250,6 +250,8 @@ int dns_filter_worker(void *arg) {
 	memset(infos, '\0', sizeof(infos));
     memset(qids, '\0', sizeof(qids));
 
+	dns_filter_init_lcore(worker_ctx);
+
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
@@ -474,8 +476,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		}
 		worker_ctx->app_cfg = app_cfg;
 		worker_ctx->queue_id = lcore_index;
-
-		dns_filter_init_lcore(worker_ctx);
 
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
