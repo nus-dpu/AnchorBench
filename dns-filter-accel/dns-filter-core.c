@@ -445,7 +445,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// }
 
 			extract_dns_query(buf_element->packet, &query);
-			fprintf("Result: %s, ts: %lu\n", mbuf_data, extract_dns_ts(buf_element->packet));
+			fprintf("Result: %s, ts: %lu\n", strlen(query), query, extract_dns_ts(buf_element->packet));
 
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
 				int next_pkt = tx_mbufs[pid].len;
