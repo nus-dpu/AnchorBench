@@ -250,8 +250,6 @@ int dns_filter_worker(void *arg) {
 	memset(infos, '\0', sizeof(infos));
     memset(qids, '\0', sizeof(qids));
 
-	dns_filter_init_lcore(worker_ctx);
-
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
@@ -444,17 +442,14 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
-
-	printf(" >> total number of element: %d, free element: %d\n", 
-		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
-
+#if 0
 	/* Segment the region into pieces */
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 		elt->packet = (char *)calloc(256, sizeof(char));
 	}
-
+#endif
 	return result;
 }
 
@@ -476,6 +471,8 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		}
 		worker_ctx->app_cfg = app_cfg;
 		worker_ctx->queue_id = lcore_index;
+
+		dns_filter_init_lcore(worker_ctx);
 
 		/* Launch the worker to start process packets */
 		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
