@@ -99,20 +99,6 @@ struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
     return tx_pkt;
 }
 
-int dpdk_tx_mbuf_init(void) {
-	uint16_t port_id = 0;
-
-    RTE_ETH_FOREACH_DEV(port_id) {
-        for (int i = 0; i < DEFAULT_PKT_BURST; i++) {
-            /* Allocate TX packet buffer in DPDK context memory pool */
-            tx_mbufs[port_id].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-            assert(tx_mbufs[port_id].m_table[i] != NULL);
-        }
-
-        tx_mbufs[port_id].len = 0;
-    }
-}
-
 static void
 check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 {
