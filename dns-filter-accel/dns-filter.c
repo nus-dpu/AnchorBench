@@ -171,7 +171,7 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 	// gettimeofday(&deq_end, NULL);
 	clock_gettime(CLOCK_MONOTONIC, &deq_end);
 
-	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(&enq_end, &enq_start), diff_timespec(&deq_end, &enq_end));
+	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(&enq_start, &enq_end), diff_timespec(&enq_end, &deq_end));
 
 	// for (int i = 0; i < nb_rx; i++) {
     //     rte_pktmbuf_free(pkts_burst[i]);
