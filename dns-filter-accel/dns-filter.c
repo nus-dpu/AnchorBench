@@ -441,11 +441,10 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 		return result;
 	}
 
-	result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+	result = doca_mmap_set_max_num_chunks(ctx->mmap, PACKET_BURST);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
-		doca_mmap_destroy(worker_ctx->mmap);
-		return -1;
+		return result;
 	}
 
 	result = doca_mmap_start(ctx->mmap);
