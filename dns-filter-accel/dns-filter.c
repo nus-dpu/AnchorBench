@@ -280,7 +280,7 @@ int dns_filter_worker(void *arg) {
 		for (idx = 0; idx < rxcnt; idx++) {
 			struct timeval start, end;
 			gettimeofday(&start, NULL);
-            int nr_rx = pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
+            int nb_rx = pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
 			gettimeofday(&end, NULL);
 			if (nb_rx > 0) {
 				fprintf(stderr, "%lu\n", TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(start));
