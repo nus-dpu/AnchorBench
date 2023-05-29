@@ -125,6 +125,10 @@ regex_cleanup:
 	return result;
 }
 
+#define NSEC_PER_SEC    1000000000L
+
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
 static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
@@ -167,7 +171,7 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 	// gettimeofday(&deq_end, NULL);
 	clock_gettime(CLOCK_MONOTONIC, &deq_end);
 
-	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(enq_end, enq_start), diff_timespec(deq_end, enq_end));
+	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(&enq_end, &enq_start), diff_timespec(&deq_end, &enq_end));
 
 	// for (int i = 0; i < nb_rx; i++) {
     //     rte_pktmbuf_free(pkts_burst[i]);
