@@ -403,7 +403,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	memcpy(ctx->query_buf[index], data, data_len);
 
 	doca_buf_get_data(buf, &mbuf_data);
-	doca_buf_set_data(buf, mbuf_data, query_len);
+	doca_buf_set_data(buf, mbuf_data, data_len);
 
 	// clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
