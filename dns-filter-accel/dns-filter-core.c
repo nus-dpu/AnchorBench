@@ -67,14 +67,14 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
 
-        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        for (int i = 0; i < tx_mbufs[pid].len; i++) {
-            /* Allocate new buffer for sended packets */
-            tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-            if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
-                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
-            }
-        }
+        // /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        // for (int i = 0; i < tx_mbufs[pid].len; i++) {
+        //     /* Allocate new buffer for sended packets */
+        //     tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+        //     if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
+        //         rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
+        //     }
+        // }
 
         tx_mbufs[pid].len = 0;
     }
