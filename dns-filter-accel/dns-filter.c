@@ -469,6 +469,30 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		worker_ctx->app_cfg = app_cfg;
 		worker_ctx->queue_id = lcore_index;
 
+		for (int i = 0; i < PACKET_BURST; i++) {
+			/* Create array of pointers (char*) to hold the queries */
+			worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
+			if (worker_ctx->query_buf[i] == NULL) {
+				DOCA_LOG_ERR("Dynamic allocation failed");
+				result = DOCA_ERROR_NO_MEMORY;
+				goto worker_cleanup;
+			}
+
+			/* register packet in mmap */
+			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+				goto queries_cleanup;
+			}
+
+			/* build doca_buf */
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
+				goto queries_cleanup;
+			}
+		}
+
 		dns_filter_init_lcore(worker_ctx);
 
 		/* Launch the worker to start process packets */

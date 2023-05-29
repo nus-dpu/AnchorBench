@@ -399,10 +399,10 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 
 	// fprintf(stderr, "input: %s, ts: %lu\n", data, extract_dns_ts(mbuf));
 
-	struct doca_buf * buf = worker_ctx->buf[i];
-	char * data_begin = =worker_ctx->queries[i];
+	struct doca_buf * buf = ctx->buf[i];
+	char * data_begin = =ctx->queries[i];
 	size_t len = strlen(data_begin);
-	memcpy(worker_ctx->query_buf[i], data_begin, len);
+	memcpy(ctx->query_buf[i], data_begin, len);
 
 	doca_buf_get_data(buf, &mbuf_data);
 	doca_buf_set_data(buf, mbuf_data, data_len);
@@ -500,7 +500,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	} while (result == DOCA_SUCCESS);
 #endif
 	do {
-		result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
@@ -534,7 +534,8 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 			}
 		}
 	
-		extract_dns_query(mbuf, &query);
+		// extract_dns_query(mbuf, &query);
+		extract_dns_query(mbuf, &worker_ctx->queries[i]);
 
 		regex_scan_enq_job(worker_ctx, i, mbuf, pkt, len, query, strlen(query));
 	}

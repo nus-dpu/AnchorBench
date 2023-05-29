@@ -44,6 +44,9 @@ struct dns_worker_ctx {
 	int queue_id;								/* Queue ID */
 	struct dns_filter_config *app_cfg;					/* App config struct */
 
+	char *query_buf[PACKET_BURST];
+	struct doca_buf *buf[PACKET_BURST];
+
 	struct doca_pci_bdf *pci_address;		/* RegEx PCI address to use */
 	struct mempool *buf_mempool;
 	struct doca_buf_inventory *buf_inv;				/* DOCA buffer inventory */
