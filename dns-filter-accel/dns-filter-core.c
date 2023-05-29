@@ -351,9 +351,13 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	char * data_buf;
 	void *mbuf_data;
 
+	struct timeval ts1, ts2, ts3;
+
 	if (is_mempool_empty(ctx->buf_mempool)) {
 		return 0;
 	}
+
+	gettimeofday(&ts1, NULL);
 
 	/* Get one free element from the mempool */
 	mempool_get(ctx->buf_mempool, &buf_element);
@@ -379,6 +383,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 
 	// fprintf(stderr, "input: %s, ts: %lu\n", data, extract_dns_ts(mbuf));
 
+	gettimeofday(&ts2, NULL);
+
 	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
 	struct doca_regex_job_search const job_request = {
@@ -395,6 +401,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	};
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
+	gettimeofday(&ts3, NULL);
 	if (result == DOCA_ERROR_NO_MEMORY) {
 		// doca_buf_refcount_rm(buf_element->buf, NULL);
 		mempool_put(ctx->buf_mempool, buf_element);
@@ -407,6 +414,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 	nb_enqueued++;
 	// --nb_free;
+
+	fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", TIMEVAL_TO_USEC(ts2) - TIMEVAL_TO_USEC(ts1), TIMEVAL_TO_USEC(ts3) - TIMEVAL_TO_USEC(ts2), TIMEVAL_TO_USEC(ts3) - TIMEVAL_TO_USEC(ts1))
 
 	return nb_enqueued;
 }
