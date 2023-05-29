@@ -415,7 +415,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	nb_enqueued++;
 	// --nb_free;
 
-	fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", TIMEVAL_TO_USEC(ts2) - TIMEVAL_TO_USEC(ts1), TIMEVAL_TO_USEC(ts3) - TIMEVAL_TO_USEC(ts2), TIMEVAL_TO_USEC(ts3) - TIMEVAL_TO_USEC(ts1))
+	fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", TIMEVAL_TO_USEC(ts2) - TIMEVAL_TO_USEC(ts1), TIMEVAL_TO_USEC(ts3) - TIMEVAL_TO_USEC(ts2), TIMEVAL_TO_USEC(ts3) - TIMEVAL_TO_USEC(ts1));
 
 	return nb_enqueued;
 }
