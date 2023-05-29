@@ -351,7 +351,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 			.buffer = buf_element->buf,
 			.result = (struct doca_regex_search_result *)buf_element->response,
 			// .allow_batching = false,
-			.allow_batching = ((nb_enqueued + 1) % ctx->app_cfg.queue_depth == 0)? true : false,
+			.allow_batching = ((nb_enqueued + 1) % ctx->app_cfg->queue_depth == 0)? true : false,
 	};
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
