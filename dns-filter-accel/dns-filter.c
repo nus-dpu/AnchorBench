@@ -278,13 +278,7 @@ int dns_filter_worker(void *arg) {
 			break;
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
-			struct timeval start, end;
-			gettimeofday(&start, NULL);
-            int nb_rx = pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
-			gettimeofday(&end, NULL);
-			if (nb_rx > 0) {
-				fprintf(stderr, "%lu\n", TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(start));
-			}
+			pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
 			// regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
 			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
