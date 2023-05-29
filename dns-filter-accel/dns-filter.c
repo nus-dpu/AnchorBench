@@ -28,6 +28,7 @@ DOCA_LOG_REGISTER(DNS_FILTER);
 
 #define MSEC_PER_SEC    1000L
 #define USEC_PER_MSEC   1000L
+#define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
 int delay_cycles = 0;
@@ -236,7 +237,7 @@ int dns_filter_worker(void *arg) {
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
     uint8_t idx, txcnt, rxcnt;
-	struct timeval curr;
+	struct timeval curr, end;
 	float tot_recv_rate, tot_send_rate;
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
@@ -293,6 +294,8 @@ int dns_filter_worker(void *arg) {
 			regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
 			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
+		gettimeofday(&end, NULL);
+		fprintf(stderr, "%lu\n", TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(curr));
 	}
 
 	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
