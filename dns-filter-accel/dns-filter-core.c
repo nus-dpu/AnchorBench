@@ -67,21 +67,38 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
 
-        // /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        // for (int i = 0; i < tx_mbufs[pid].len; i++) {
-        //     /* Allocate new buffer for sended packets */
-        //     tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-        //     if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
-        //         rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
-        //     }
-        // }
+        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        for (int i = 0; i < tx_mbufs[pid].len; i++) {
+            /* Allocate new buffer for sended packets */
+            tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+            if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
+                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
+            }
+        }
 
         tx_mbufs[pid].len = 0;
     }
 
     return total_pkt;
 }
-#if 0
+
+struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
+    if (unlikely(tx_mbufs[port_id].len == DEFAULT_PKT_BURST)) {
+        return NULL;
+    }
+
+    int next_pkt = tx_mbufs[port_id].len;
+    struct rte_mbuf * tx_pkt = tx_mbufs[port_id].m_table[next_pkt];
+
+    tx_pkt->pkt_len = tx_pkt->data_len = pkt_size;
+    tx_pkt->nb_segs = 1;
+    tx_pkt->next = NULL;
+    
+    tx_mbufs[port_id].len++;
+
+    return tx_pkt;
+}
+
 int dpdk_tx_mbuf_init(void) {
 	uint16_t port_id = 0;
 
@@ -95,7 +112,6 @@ int dpdk_tx_mbuf_init(void) {
         tx_mbufs[port_id].len = 0;
     }
 }
-#endif
 
 static void
 check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
@@ -397,11 +413,11 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// if (nr_latency < MAX_NR_LATENCY) {
 			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			// }
-			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
-    		// if (mbuf != NULL) {
-			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
-			// 	memcpy(data, buf_element->packet, buf_element->packet_size);
-			// }
+			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
+    		if (mbuf != NULL) {
+				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
+				memcpy(data, buf_element->packet, buf_element->packet_size);
+			}
 
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
 				int next_pkt = tx_mbufs[pid].len;
@@ -425,7 +441,6 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 				clock_gettime(CLOCK_MONOTONIC, &now);
 				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			}
-
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
 		} else {

@@ -142,10 +142,10 @@ static void pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qi
 
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
-	// for (int i = 0; i < nb_rx; i++) {
-    //     rte_pktmbuf_free(pkts_burst[i]);
-    //     RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
-    // }
+	for (int i = 0; i < nb_rx; i++) {
+        rte_pktmbuf_free(pkts_burst[i]);
+        RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
+    }
 
 	// if (to_send > 0) {
 		// nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
@@ -214,24 +214,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 
     printf("%s\n", buf);
 }
-#if 0
-struct rte_mbuf * dpdk_get_txpkt(int port_id, int pkt_size) {
-    if (unlikely(tx_mbufs[port_id].len == DEFAULT_PKT_BURST)) {
-        return NULL;
-    }
 
-    int next_pkt = tx_mbufs[port_id].len;
-    struct rte_mbuf * tx_pkt = tx_mbufs[port_id].m_table[next_pkt];
-
-    tx_pkt->pkt_len = tx_pkt->data_len = pkt_size;
-    tx_pkt->nb_segs = 1;
-    tx_pkt->next = NULL;
-    
-    tx_mbufs[port_id].len++;
-
-    return tx_pkt;
-}
-#endif
 int dns_filter_worker(void *arg) {
 	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)arg;
     uint8_t lid = rte_lcore_id();
@@ -254,7 +237,7 @@ int dns_filter_worker(void *arg) {
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
-	// dpdk_tx_mbuf_init();
+	dpdk_tx_mbuf_init();
 
 	doca_error_t result;
 	struct mempool_elt *elt;
