@@ -366,7 +366,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	}
 	// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
 	nb_enqueued++;
-	--nb_free;
+	// --nb_free;
 
 	return nb_enqueued;
 }
@@ -452,6 +452,11 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 		u = (struct udphdr *)(pkt + ETH_HEADER_SIZE + IP_HEADER_SIZE);
 		if (ntohs(u->dest) != DNS_PORT) {
 			continue;
+		} else {
+			if (!start_flag) {
+				start_flag = 1;
+				gettimeofday(&start, NULL);
+			}
 		}
 	
 		extract_dns_query(mbuf, &query);
@@ -479,11 +484,6 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 	// if (packets_received == 0) {
 	// 	return packets_received;
 	// }
-
-	if (!start_flag) {
-		start_flag = 1;
-		gettimeofday(&start, NULL);
-	}
 
 	/* Start RegEx jobs */
 	// ret = regex_processing(worker_ctx, packets_received, packets);
