@@ -1,8 +1,8 @@
-nr_cores=1
-step=20
-max_rate=600
+nr_core=$1
+step=$2
+max_rate=$3
 
-mkdir thp-$nr_cores/
+mkdir thp-$nr_core/
 
 echo ">> Test with $nr_core cores >>"
 mkdir result/thp-$nr_core/
