@@ -377,7 +377,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	doca_buf_get_data(buf_element->buf, &mbuf_data);
 	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
-	fprintf("Scan: %.*s, ts: %lu\n", data_len, (char *)mbuf_data, extract_dns_ts(mbuf));
+	fprintf("input: %.*s\n", data_len, (char *)mbuf_data);
+	fprintf("ts: %lu\n", extract_dns_ts(mbuf));
 
 	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
