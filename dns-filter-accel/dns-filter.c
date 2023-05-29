@@ -255,7 +255,7 @@ int dns_filter_worker(void *arg) {
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
 	// dpdk_tx_mbuf_init();
-
+#if 0
 	doca_error_t result;
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
@@ -265,7 +265,7 @@ int dns_filter_worker(void *arg) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
 	}
-
+#endif
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
 
