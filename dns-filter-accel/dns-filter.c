@@ -238,7 +238,7 @@ int dns_filter_worker(void *arg) {
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
     uint8_t idx, txcnt, rxcnt;
-	struct timeval curr, end;
+	struct timeval curr, enq_end, deq_end;
 	float tot_recv_rate, tot_send_rate;
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
@@ -292,11 +292,14 @@ int dns_filter_worker(void *arg) {
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
             pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
+			gettimeofday(&enq_end, NULL);
 			regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
 			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
+			gettimeofday(&deq_end, NULL);
+			fprintf(stderr, "recv: %lu, enq: %lu, send: %lu, deq: %lu\n", 
+					nr_recv, TIMEVAL_TO_USEC(enq_end) - TIMEVAL_TO_USEC(curr), 
+					nr_send, TIMEVAL_TO_USEC(deq_end) - TIMEVAL_TO_USEC(enq_end));
         }
-		gettimeofday(&end, NULL);
-		fprintf(stderr, "recv: %lu, send: %lu, %lu\n", nr_recv, nr_send, TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(curr));
 	}
 
 	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
