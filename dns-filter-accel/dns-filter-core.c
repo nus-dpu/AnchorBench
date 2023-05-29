@@ -377,8 +377,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	doca_buf_get_data(buf_element->buf, &mbuf_data);
 	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
-	fprintf("input: %.*s\n", data_len, (char *)mbuf_data);
-	fprintf("ts: %lu\n", extract_dns_ts(mbuf));
+	fprintf("input: %.*s, ts: %lu\n", data_len, data, extract_dns_ts(mbuf));
 
 	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
@@ -428,7 +427,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	uint32_t nb_total = 0;
 	struct mempool_elt * buf_element;
 	struct timespec now;
-	char *mbuf_data;
+	char * query;
 
 	// clock_gettime(CLOCK_MONOTONIC, &now);
 
@@ -445,8 +444,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// 	memcpy(data, buf_element->packet, buf_element->packet_size);
 			// }
 
-			doca_buf_get_data(buf_element->buf, &mbuf_data);
-
+			extract_dns_query(buf_element->packet, &query);
 			fprintf("Result: %s, ts: %lu\n", mbuf_data, extract_dns_ts(buf_element->packet));
 
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
