@@ -153,25 +153,11 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 
 	nr_recv += nb_rx;
 
-	// struct timeval enq_start, enq_end, deq_end;
-	struct timespec enq_start, enq_end, deq_end;
-
-	// gettimeofday(&enq_start, NULL);
-	clock_gettime(CLOCK_MONOTONIC, &enq_start);
-
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
-
-	// gettimeofday(&enq_end, NULL);
-	clock_gettime(CLOCK_MONOTONIC, &enq_end);
 
 	for (int nb_tx = 0; nb_tx != nb_rx;) {
 		nb_tx += regex_scan_deq_job(pid ^ 1, worker_ctx);
 	}
-
-	// gettimeofday(&deq_end, NULL);
-	clock_gettime(CLOCK_MONOTONIC, &deq_end);
-
-	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(&enq_start, &enq_end), diff_timespec(&enq_end, &deq_end));
 
 	// for (int i = 0; i < nb_rx; i++) {
     //     rte_pktmbuf_free(pkts_burst[i]);
