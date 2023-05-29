@@ -255,15 +255,23 @@ int dns_filter_worker(void *arg) {
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
 
-	/* register packet in mmap */
-	result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf, PACKET_BURST * 256, sysconf(_SC_PAGESIZE), NULL, NULL);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-	}
-
 	for (int i = 0; i < PACKET_BURST; i++) {
+		/* Create array of pointers (char*) to hold the queries */
+		worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
+		if (worker_ctx->query_buf[i] == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+			exit(1);
+		}
+
+		/* register packet in mmap */
+		result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+			exit(1);
+		}
+
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, worker_ctx->query_buf + i * 256, 256, &worker_ctx->buf[i]);
+		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 			exit(1);
@@ -431,6 +439,13 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create memory map. Reason: %s", doca_get_error_string(result));
 		return result;
+	}
+
+	result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
+		doca_mmap_destroy(worker_ctx->mmap);
+		return -1;
 	}
 
 	result = doca_mmap_start(ctx->mmap);
