@@ -471,12 +471,6 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	}
 #endif
 
-	/* Launch the worker to start process packets */
-	if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
-		DOCA_LOG_ERR("Remote launch failed");
-		result = DOCA_ERROR_DRIVER;
-		goto worker_cleanup;
-	}
 	return result;
 }
 
@@ -500,6 +494,13 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		worker_ctx->queue_id = lcore_index;
 
 		dns_filter_init_lcore(worker_ctx);
+
+		/* Launch the worker to start process packets */
+		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
+			DOCA_LOG_ERR("Remote launch failed");
+			result = DOCA_ERROR_DRIVER;
+			goto worker_cleanup;
+		}
 
 		worker_ctx++;
 		lcore_index++;
