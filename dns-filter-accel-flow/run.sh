@@ -1,6 +1,6 @@
-nr_cores=$1
-step=$2
-max_rate=$3
+nr_cores=1
+step=20
+max_rate=600
 
 mkdir thp-$nr_cores/
 
