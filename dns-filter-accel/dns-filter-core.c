@@ -46,7 +46,7 @@ __thread struct mbuf_table tx_mbufs[RTE_MAX_ETHPORTS];
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
 
-uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
 		diff.tv_nsec += NSEC_PER_SEC;
@@ -360,7 +360,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 		return 0;
 	}
 
-	ts1 = rte_rdtsc();
+	// ts1 = rte_rdtsc();
 
 	/* Get one free element from the mempool */
 	mempool_get(ctx->buf_mempool, &buf_element);
@@ -386,7 +386,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 
 	// fprintf(stderr, "input: %s, ts: %lu\n", data, extract_dns_ts(mbuf));
 
-	ts2 = rte_rdtsc();
+	// ts2 = rte_rdtsc();
 
 	// clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
@@ -405,7 +405,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 
-	ts3 = rte_rdtsc();
+	// ts3 = rte_rdtsc();
 	
 	if (result == DOCA_ERROR_NO_MEMORY) {
 		// doca_buf_refcount_rm(buf_element->buf, NULL);
@@ -420,7 +420,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, struct rte_mbuf * mbu
 	nb_enqueued++;
 	// --nb_free;
 
-	fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", ts2 - ts1, ts3 - ts2, ts3 - ts1);
+	// fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", ts2 - ts1, ts3 - ts2, ts3 - ts1);
 
 	return nb_enqueued;
 }

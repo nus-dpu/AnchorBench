@@ -125,6 +125,15 @@ regex_cleanup:
 	return result;
 }
 
+static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
+	if (diff.tv_nsec < 0) {
+		diff.tv_nsec += NSEC_PER_SEC;
+		diff.tv_sec--;
+	}
+	return TIMESPEC_TO_NSEC(diff);
+}
+
 static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx, nb_tx = 0, to_send = 0;
@@ -140,21 +149,25 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 
 	nr_recv += nb_rx;
 
-	struct timeval enq_start, enq_end, deq_end;
+	// struct timeval enq_start, enq_end, deq_end;
+	struct timespec enq_start, enq_end, deq_end;
 
-	gettimeofday(&enq_start, NULL);
+	// gettimeofday(&enq_start, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &enq_start);
 
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
-	gettimeofday(&enq_end, NULL);
+	// gettimeofday(&enq_end, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &enq_end);
 
 	for (int nb_tx = 0; nb_tx != nb_rx;) {
 		nb_tx += regex_scan_deq_job(pid ^ 1, worker_ctx);
 	}
 
-	gettimeofday(&deq_end, NULL);
+	// gettimeofday(&deq_end, NULL);
+	clock_gettime(CLOCK_MONOTONIC, &deq_end);
 
-	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, TIMEVAL_TO_USEC(enq_end) - TIMEVAL_TO_USEC(enq_start), TIMEVAL_TO_USEC(deq_end) - TIMEVAL_TO_USEC(enq_end));
+	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(enq_end, enq_start), diff_timespec(deq_end, enq_end));
 
 	// for (int i = 0; i < nb_rx; i++) {
     //     rte_pktmbuf_free(pkts_burst[i]);
