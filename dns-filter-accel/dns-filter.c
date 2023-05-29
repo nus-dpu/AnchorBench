@@ -233,6 +233,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 }
 
 int dns_filter_worker(void *arg) {
+	doca_error_t result;
 	struct dns_worker_ctx *worker_ctx = (struct dns_worker_ctx *)arg;
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
@@ -256,21 +257,21 @@ int dns_filter_worker(void *arg) {
 
 	for (int i = 0; i < PACKET_BURST; i++) {
 		/* Create array of pointers (char*) to hold the queries */
-		ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
-		if (ctx->query_buf[i] == NULL) {
+		worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
+		if (worker_ctx->query_buf[i] == NULL) {
 			DOCA_LOG_ERR("Dynamic allocation failed");
 			exit(1);
 		}
 
 		/* register packet in mmap */
-		result = doca_mmap_populate(ctx->mmap, ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+		result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
 			exit(1);
 		}
 
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, ctx->query_buf[i], 256, &ctx->buf[i]);
+		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 			exit(1);
