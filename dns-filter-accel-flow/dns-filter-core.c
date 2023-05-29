@@ -159,9 +159,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	rx_count = tx_count = 0;
 
 	while (tx_count < packets_received) {
-		uint64_t ts1, ts2, ts3;
-		ts1 = rte_rdtsc();	
-
+		struct timespec enq_start, enq_end, deq_end;
+		clock_gettime(CLOCK_MONOTONIC, &enq_start);
 		for (; tx_count != packets_received;) {
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
 			void *mbuf_data;
@@ -171,8 +170,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
-
-			ts2 = rte_rdtsc();
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
@@ -192,8 +189,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				break;
 			}
 
-			ts3 = rte_rdtsc();
-
 			if (result == DOCA_SUCCESS) {
 				worker_ctx->buffers[tx_count] = buf;
 				++tx_count;
@@ -202,8 +197,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-			fprintf(stderr, "1-2: %lu, 2-3: %lu, total: %lu\n", ts2 - ts1, ts3 - ts2, ts3 - ts1);
 		}
+
+	clock_gettime(CLOCK_MONOTONIC, &enq_end);
 
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
@@ -227,6 +223,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			}
 		}
 	}
+	clock_gettime(CLOCK_MONOTONIC, &deq_end);
+	fprintf(stderr, "%u\t%lu\t%lu\n", nb_rx, diff_timespec(&enq_start, &enq_end), diff_timespec(&enq_end, &deq_end));
 
 doca_buf_cleanup:
 	return ret;
