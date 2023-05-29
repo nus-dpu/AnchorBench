@@ -417,7 +417,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 			},
 			.rule_group_ids = {1, 0, 0, 0},
 			.buffer = buf,
-			.result = ctx->responses + tx_count,
+			.result = ctx->responses + index,
 			.allow_batching = false,
 	};
 
