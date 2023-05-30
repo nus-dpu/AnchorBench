@@ -33,7 +33,7 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 #define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
 
 static void
-check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
+check_packets_marking(struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t *packets_received)
 {
 	char * p;
 	struct udphdr * u;
@@ -265,7 +265,7 @@ handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_m
 	// uint8_t egress_port;
 
 	/* Check packets marking */
-	check_packets_marking(packets, &packets_received);
+	check_packets_marking(worker_ctx, packets, &packets_received);
 	if (packets_received == 0) {
 		return packets_received;
 	}
