@@ -54,6 +54,10 @@ check_packets_marking(struct rte_mbuf **packets, uint16_t *packets_received)
 				gettimeofday(&start, NULL);
 			}
 
+			if (extract_dns_query(packets[current_packet], &worker_ctx->queries[index]) < 0) {
+				continue;
+			}
+
 			/* Packet matched by one of pipe entries(rules) */
 			packets[index] = packets[current_packet];
 			index++;
@@ -109,7 +113,6 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	/* Ignore the timestamp field*/
 	if (ns_initparse(data, len - sizeof(uint64_t), &handle) < 0) {
 		DOCA_LOG_ERR("Fail to parse domain DNS packet");
-		printf("Wrong input: %s\n", data);
 		return -1;
 	}
 
@@ -134,7 +137,9 @@ cpu_workload_run(struct rte_mbuf **packets, int nb_packets, char **queries)
 
 	for (i = 0; i < nb_packets; i++) {
 		result = extract_dns_query(packets[i], &queries[i]);
-		if (result < 0)
+		if (result < 0) {
+			
+		}
 			return result;
 	}
 	return 0;
@@ -170,9 +175,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 	int ret = 0;
 
 	/* Start DNS workload */
-	ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
-	if (ret < 0)
-		return ret;
+	// ret = cpu_workload_run(packets, packets_received, worker_ctx->queries);
+	// if (ret < 0)
+	// 	return ret;
 
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
