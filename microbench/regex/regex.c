@@ -111,7 +111,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 
 	return nb_enqueued;
 }
-
+#if 0
 /*
  * Printing the RegEx results
  *
@@ -137,7 +137,7 @@ static void regex_scan_report_results(struct regex_ctx *ctx, struct doca_event *
 		doca_regex_mempool_put_obj(result->matches_mempool, to_release_match);
 	}
 }
-
+#endif
 /*
  * Dequeue jobs responses
  *
@@ -168,7 +168,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 			/* Report the scan result of RegEx engine */
-			regex_scan_report_results(ctx, &event);
+			// regex_scan_report_results(ctx, &event);
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_refcount_rm(buf_element->buf, NULL);
 			/* Put the element back into the mempool */
