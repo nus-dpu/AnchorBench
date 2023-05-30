@@ -32,44 +32,6 @@ DOCA_LOG_REGISTER(DNS_FILTER::Core);
 #define USEC_PER_SEC   	1000000L
 #define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
 
-static void
-check_packets_marking(struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t *packets_received)
-{
-	char * p;
-	struct udphdr * u;
-	struct rte_mbuf *packet;
-	uint32_t current_packet, index = 0;
-
-	for (current_packet = 0; current_packet < *packets_received; current_packet++) {
-		packet = packets[current_packet];
-		p = rte_pktmbuf_mtod(packet, char *);
-		/* Skip UDP and DNS header to get DNS (query) start */
-		p += ETH_HEADER_SIZE;
-		p += IP_HEADER_SIZE;
-		u = (struct udphdr *)p;
-
-		if (ntohs(u->dest) == DNS_PORT) {
-			if (!start_flag) {
-				start_flag = 1;
-				gettimeofday(&start, NULL);
-			}
-
-			if (extract_dns_query(packets[current_packet], &worker_ctx->queries[index]) < 0) {
-				continue;
-			}
-
-			/* Packet matched by one of pipe entries(rules) */
-			packets[index] = packets[current_packet];
-			index++;
-			continue;
-		}
-		/* Packet didn't match by one of pipe entries(rules), packet received before rules offload */
-		DOCA_DLOG_WARN("Packet received before rules offload");
-	}
-	/* Packets array will contain marked packets in places < index */
-	*packets_received = index;
-}
-
 /*
  * Helper function to extract DNS query per packet
  *
@@ -120,6 +82,44 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	*query = (char *)handle._sections[ns_s_qd];
 
 	return 0;
+}
+
+static void
+check_packets_marking(struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t *packets_received)
+{
+	char * p;
+	struct udphdr * u;
+	struct rte_mbuf *packet;
+	uint32_t current_packet, index = 0;
+
+	for (current_packet = 0; current_packet < *packets_received; current_packet++) {
+		packet = packets[current_packet];
+		p = rte_pktmbuf_mtod(packet, char *);
+		/* Skip UDP and DNS header to get DNS (query) start */
+		p += ETH_HEADER_SIZE;
+		p += IP_HEADER_SIZE;
+		u = (struct udphdr *)p;
+
+		if (ntohs(u->dest) == DNS_PORT) {
+			if (!start_flag) {
+				start_flag = 1;
+				gettimeofday(&start, NULL);
+			}
+
+			if (extract_dns_query(packets[current_packet], &worker_ctx->queries[index]) < 0) {
+				continue;
+			}
+
+			/* Packet matched by one of pipe entries(rules) */
+			packets[index] = packets[current_packet];
+			index++;
+			continue;
+		}
+		/* Packet didn't match by one of pipe entries(rules), packet received before rules offload */
+		DOCA_DLOG_WARN("Packet received before rules offload");
+	}
+	/* Packets array will contain marked packets in places < index */
+	*packets_received = index;
 }
 
 /*
