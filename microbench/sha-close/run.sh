@@ -10,7 +10,7 @@ for size in "${data_size[@]}"; do
 		mkdir ${size}B-result/thp-$nr_core/
 		mkdir ${size}B-result/lat-$nr_core/
 
-		for round in $(seq 1 1 10) do
+		for round in $(seq 1 1 10); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test round $round..."
 			./build/sha -l 50 -p 03:00.0 -d $(pwd)/input.dat -c $nr_core -s $rate -q 128 -b $size
