@@ -314,7 +314,7 @@ static doca_error_t sha_init_lcore(struct sha_ctx * ctx) {
 		return result;
 	}
 
-	result = doca_mmap_set_max_num_chunks(ctx->mmap, PACKET_BURST);
+	result = doca_mmap_set_max_num_chunks(ctx->mmap, 2 * PACKET_BURST);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
 		return result;
