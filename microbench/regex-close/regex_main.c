@@ -376,32 +376,6 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
-	/* Create array of pointers (char*) to hold the queries */
-	ctx->queries = (char **)calloc(PACKET_BURST, sizeof(char *));
-	if (ctx->queries == NULL) {
-		DOCA_LOG_ERR("Dynamic allocation failed");
-	}
-
-	for (int i = 0; i < PACKET_BURST; i++) {
-		/* Create array of pointers (char*) to hold the queries */
-		ctx->query_buf[i] = (char *)calloc(256, sizeof(char));
-		if (ctx->query_buf[i] == NULL) {
-			DOCA_LOG_ERR("Dynamic allocation failed");
-		}
-
-		/* register packet in mmap */
-		result = doca_mmap_populate(ctx->mmap, ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-		}
-
-		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, ctx->query_buf[i], 256, &ctx->buf[i]);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-		}
-	}
-
 	return result;
 }
 

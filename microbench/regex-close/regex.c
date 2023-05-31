@@ -195,11 +195,12 @@ void * regex_work_lcore(void * arg) {
 		input[nr_rule].len = read;
 		nr_rule++;
 	}
-#if 0
+
 	/* Create array of pointers (char*) to hold the queries */
 	rgx_ctx->queries = (char **)calloc(PACKET_BURST, sizeof(char *));
 	if (rgx_ctx->queries == NULL) {
 		DOCA_LOG_ERR("Dynamic allocation failed");
+		exit(1);
 	}
 
 	for (int i = 0; i < PACKET_BURST; i++) {
@@ -207,21 +208,24 @@ void * regex_work_lcore(void * arg) {
 		rgx_ctx->query_buf[i] = (char *)calloc(256, sizeof(char));
 		if (rgx_ctx->query_buf[i] == NULL) {
 			DOCA_LOG_ERR("Dynamic allocation failed");
+			exit(1);
 		}
 
 		/* register packet in mmap */
 		result = doca_mmap_populate(rgx_ctx->mmap, rgx_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+			exit(1);
 		}
 
 		/* build doca_buf */
 		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inv, rgx_ctx->mmap, rgx_ctx->query_buf[i], 256, &rgx_ctx->buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
+			exit(1);
 		}
 	}
-#endif
+
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
     pthread_barrier_wait(&barrier);
