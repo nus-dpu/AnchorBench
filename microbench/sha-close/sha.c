@@ -205,10 +205,6 @@ int local_sha_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued, 
 
 	while (tx_count < PACKET_BURST) {
 		for (; tx_count != PACKET_BURST;) {
-			if (cur_ptr * data_len >= M_1) {
-				cur_ptr = 0;
-			}
-
 			struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
 			struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
 			void *mbuf_data;
@@ -241,9 +237,10 @@ int local_sha_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued, 
 			}
 
 			if (result == DOCA_SUCCESS) {
-				worker_ctx->buffers[tx_count] = buf;
 				++tx_count;
-				rule_index = (rule_index + 1) % nr_rule;
+				if (cur_ptr * data_len >= M_1) {
+					cur_ptr = 0;
+				}
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
 				ret = -1;
