@@ -105,7 +105,7 @@ static doca_error_t queuedepth_callback(void *param, void *config) {
 	struct sha_config *sha_cfg = (struct sha_config *)config;
 	char *queue_depth = (char *)param;
     char *ptr;
-	rgx_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
+	sha_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
 	return DOCA_SUCCESS;
 }
 
