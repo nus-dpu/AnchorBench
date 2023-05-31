@@ -223,7 +223,7 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 					.type = DOCA_SHA_JOB_SHA256,
 					.flags = DOCA_JOB_FLAGS_NONE,
 					.ctx = doca_sha_as_ctx(worker_ctx->doca_sha),
-					.user_data = { .ptr = src_buf },
+					.user_data = { .u64 = tx_count },
 				},
 				.resp_buf = dst_buf,
 				.req_buf = src_buf,
