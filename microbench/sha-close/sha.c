@@ -11,7 +11,7 @@ DOCA_LOG_REGISTER(SHA::CORE);
 
 #define MAX_NR_LATENCY	(128 * 1024)
 
-__thread struct input_info input[MAX_NR_RULE];
+__thread char * input;
 __thread int cur_ptr = 0;
 
 __thread int nr_latency = 0;
@@ -103,8 +103,8 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 				.ctx = doca_sha_as_ctx(ctx->doca_sha),
 				.user_data = { .ptr = src_buf },
 			},
-			.resp_buf = dst_buf,
-			.req_buf = src_buf,
+			.resp_buf = dst_buf->buf,
+			.req_buf = src_buf->buf,
 			.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
 		};
 
@@ -225,8 +225,8 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 					.ctx = doca_sha_as_ctx(worker_ctx->doca_sha),
 					.user_data = { .ptr = src_buf },
 				},
-				.resp_buf = dst_buf->buf,
-				.req_buf = src_buf->buf,
+				.resp_buf = dst_buf,
+				.req_buf = src_buf,
 				.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
 			};
 
@@ -287,7 +287,6 @@ void * sha_work_lcore(void * arg) {
     size_t len = 0;
     ssize_t read;
 	int nr_rule = 0;
-	char * input;
 	int input_size;
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
