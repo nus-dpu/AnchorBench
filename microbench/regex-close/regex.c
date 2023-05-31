@@ -74,7 +74,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, int i, char * data, int da
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 	if (result == DOCA_ERROR_NO_MEMORY) {
-		doca_buf_refcount_rm(buf_element->buf, NULL);
+		// doca_buf_refcount_rm(buf_element->buf, NULL);
 		return nb_enqueued; /* qp is full, try to dequeue. */
 	}
 	if (result != DOCA_SUCCESS) {
