@@ -213,8 +213,8 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 
 			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
 
-			doca_buf_get_data(buf, &mbuf_data);
-			doca_buf_set_data(buf, mbuf_data, data_len);
+			doca_buf_get_data(src_buf, &mbuf_data);
+			doca_buf_set_data(src_buf, mbuf_data, data_len);
 
 			clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
 
@@ -222,15 +222,15 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 				.base = (struct doca_job) {
 					.type = DOCA_SHA_JOB_SHA256,
 					.flags = DOCA_JOB_FLAGS_NONE,
-					.ctx = doca_sha_as_ctx(ctx->doca_sha),
+					.ctx = doca_sha_as_ctx(worker_ctx->doca_sha),
 					.user_data = { .ptr = src_buf },
 				},
 				.resp_buf = dst_buf->buf,
 				.req_buf = src_buf->buf,
-				.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
+				.flags = DOCA_SHA_JOB_FLAGS_SHA,
 			};
 
-			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&job_request);
+			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&sha_job);
 			if (result == DOCA_ERROR_NO_MEMORY) {
 				doca_buf_refcount_rm(buf, NULL);
 				break;
