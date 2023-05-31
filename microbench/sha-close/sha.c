@@ -216,7 +216,7 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 			doca_buf_get_data(src_buf, &mbuf_data);
 			doca_buf_set_data(src_buf, mbuf_data, data_len);
 
-			clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
+			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
 			struct doca_sha_job const sha_job = {
 				.base = (struct doca_job) {
@@ -260,7 +260,7 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
 				}
 				char * data;
-				doca_buf_get_data(buf, &data);
+				doca_buf_get_data(worker_ctx->src_buf[index], &data);
 				printf("%.*s\n", data_len, data);
 				sha_report_results(worker_ctx->dst_buf[index]);
 				++rx_count;

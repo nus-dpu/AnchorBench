@@ -102,7 +102,7 @@ static doca_error_t len_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t queuedepth_callback(void *param, void *config) {
-	struct regex_config *rgx_cfg = (struct regex_config *)config;
+	struct sha_config *sha_cfg = (struct sha_config *)config;
 	char *queue_depth = (char *)param;
     char *ptr;
 	sha_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
