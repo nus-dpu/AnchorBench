@@ -40,6 +40,8 @@
 #define SHA_DATA_LEN	1024
 #define M_1				1048576
 
+#define PACKET_BURST	32
+
 struct compress_ctx {
 	struct doca_pci_bdf *pci_address;		/* Compression PCI address to use */
 	struct mempool *buf_mempool;
