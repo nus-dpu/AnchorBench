@@ -195,7 +195,7 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 
 #define NUM_WORKER	32
 
-int local_compress_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, uint32_t * nb_dequeued) {
+int local_compress_processing(struct compress_ctx * worker_ctx, uint32_t * nb_enqueued, uint32_t * nb_dequeued) {
 	size_t tx_count, rx_count;
 	doca_error_t result;
 	int ret;
@@ -319,8 +319,8 @@ void * compress_work_lcore(void * arg) {
 	doca_error_t result;
 	
 	/* Create array of pointers (char*) to hold the queries */
-	sha_ctx->queries = (char **)calloc(PACKET_BURST, sizeof(char *));
-	if (sha_ctx->queries == NULL) {
+	compress_ctx->queries = (char **)calloc(PACKET_BURST, sizeof(char *));
+	if (compress_ctx->queries == NULL) {
 		DOCA_LOG_ERR("Dynamic allocation failed");
 		exit(1);
 	}
@@ -341,7 +341,7 @@ void * compress_work_lcore(void * arg) {
 		}
 
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(compress_ctx->buf_inv, compress_ctx->mmap, sha_ctx->query_buf[i], 1024, &sha_ctx->src_buf[i]);
+		result = doca_buf_inventory_buf_by_addr(compress_ctx->buf_inv, compress_ctx->mmap, compress_ctx->query_buf[i], 1024, &compress_ctx->src_buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 			exit(1);
