@@ -196,7 +196,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 
 #define NUM_WORKER	32
 
-int local_sha_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued, uint32_t * nb_dequeued) {
+int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, uint32_t * nb_dequeued) {
 	size_t tx_count, rx_count;
 	doca_error_t result;
 	int ret;
