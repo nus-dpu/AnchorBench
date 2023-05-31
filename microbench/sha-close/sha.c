@@ -253,6 +253,8 @@ int local_sha_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued, 
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
 			struct doca_event event = {0};
+			struct timespec now;
+			int index;
 			
 			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 			if (result == DOCA_SUCCESS) {
@@ -348,7 +350,7 @@ void * sha_work_lcore(void * arg) {
 		}
 
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, rgx_ctx->query_buf[i], 1024, &rgx_ctx->src_buf[i]);
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, sha_ctx->query_buf[i], 1024, &sha_ctx->src_buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 			exit(1);
