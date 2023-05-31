@@ -216,7 +216,7 @@ int local_regex_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued
 				index = event.user_data.u64;
 				clock_gettime(CLOCK_MONOTONIC, &now);
 				if (nr_latency < MAX_NR_LATENCY) {
-					latency[nr_latency++] = diff_timespec(&ctx->ts[index], &now);
+					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
 				}
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
