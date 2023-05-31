@@ -174,7 +174,7 @@ int local_regex_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
 
-			clock_gettime(CLOCK_MONOTONIC, &ctx->ts[tx_count]);
+			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
