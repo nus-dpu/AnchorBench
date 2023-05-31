@@ -142,7 +142,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 			}
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
-			break;
+			// break;
 		} else {
 			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
 			return -1;
