@@ -64,7 +64,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, int i, char * data, int da
 			.base = {
 				.type = DOCA_REGEX_JOB_SEARCH,
 				.ctx = doca_regex_as_ctx(ctx->doca_regex),
-				.user_data = { .ptr = buf_element },
+				.user_data = { .ptr = i },
 			},
 			.rule_group_ids = {1, 0, 0, 0},
 			.buffer = buf,
