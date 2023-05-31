@@ -208,7 +208,7 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 			struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
 			struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
 			void *mbuf_data;
-			char *data_begin = input + cur_ptr * data_len, data_len;
+			char *data_begin = input + cur_ptr * data_len;
 			cur_ptr++;
 
 			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
@@ -217,8 +217,6 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 			doca_buf_set_data(src_buf, mbuf_data, data_len);
 
 			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
-
-			printf("src: %p, dst: %p\n", src_buf, dst_buf);
 
 			struct doca_sha_job const sha_job = {
 				.base = (struct doca_job) {
