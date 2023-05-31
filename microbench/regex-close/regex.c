@@ -58,7 +58,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, int i, char * data, int da
 	doca_buf_get_data(buf, &mbuf_data);
 	doca_buf_set_data(buf, mbuf_data, data_len);
 
-	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+	clock_gettime(CLOCK_MONOTONIC, &ctx->ts[i]);
 
 	struct doca_regex_job_search const job_request = {
 			.base = {
@@ -129,18 +129,17 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	struct timespec ts;
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
-	struct mempool_elt * buf_element;
+	int index;
 	struct timespec now;
-
-	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	for (int i = 0; i < PACKET_BURST; i++) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
-			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			// if (nr_latency < MAX_NR_LATENCY) {
-			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			// }
+			index = event.user_data.u64;
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&ctx->ts[index], &now);
+			}
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			break;
@@ -165,6 +164,7 @@ void * regex_work_lcore(void * arg) {
     size_t len = 0;
     ssize_t read;
 	int nr_rule = 0;
+	doca_error_t result;
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 

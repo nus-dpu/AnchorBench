@@ -54,6 +54,7 @@ struct regex_ctx {
 	struct doca_workq *workq;			/* DOCA work queue */
 
 	char **queries;								/* Holds DNS queries */
+	struct timespec ts[PACKET_BURST];
 	char *query_buf[PACKET_BURST];
 	struct doca_buf *buf[PACKET_BURST];
 	struct doca_regex_search_result responses[MAX_REGEX_RESPONSE_SIZE];	/* DOCA RegEx jobs responses */
