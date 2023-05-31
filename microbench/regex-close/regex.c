@@ -137,9 +137,9 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			index = event.user_data.u64;
 			// clock_gettime(CLOCK_MONOTONIC, &now);
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&ctx->ts[index], &now);
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	latency[nr_latency++] = diff_timespec(&ctx->ts[index], &now);
+			// }
 			++finished;
 		} else if (result == DOCA_ERROR_AGAIN) {
 			// break;
@@ -258,7 +258,7 @@ void * regex_work_lcore(void * arg) {
 			break;
 		}
 
-		for (int i = 0; i < NUM_WORKER; i++) {
+		for (int i = 0; i < PACKET_BURST; i++) {
 			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				ret = regex_scan_enq_job(rgx_ctx, i, input[index].line, input[index].len);
 				if (ret < 0) {
@@ -281,6 +281,8 @@ void * regex_work_lcore(void * arg) {
 		} else {
 			nb_dequeued += ret;
 		}
+
+		printf("enqueue: %d, dequeue: %d\n", nb_enqueued, nb_dequeued);
 	}
 #if 0
     int lat_start = (int)(0.15 * nr_latency);
