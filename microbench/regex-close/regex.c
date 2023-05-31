@@ -11,7 +11,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 #define MAX_NR_LATENCY	(128 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
-__thread int index = 0;
+__thread int rule_index = 0;
 __thread int nr_rule = 0;
 
 __thread int nr_latency = 0;
@@ -167,8 +167,8 @@ int local_regex_processing(struct regex_ctx * worker_ctx) {
 		for (; tx_count != PACKET_BURST;) {
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
 			void *mbuf_data;
-			char *data_begin = input[index].line;
-			size_t data_len = input[index].len;
+			char *data_begin = input[rule_index].line;
+			size_t data_len = input[rule_index].len;
 			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
 
 			doca_buf_get_data(buf, &mbuf_data);
@@ -195,7 +195,7 @@ int local_regex_processing(struct regex_ctx * worker_ctx) {
 			if (result == DOCA_SUCCESS) {
 				worker_ctx->buffers[tx_count] = buf;
 				++tx_count;
-				index = (index + 1) % nr_rule;
+				rule_index = (rule_index + 1) % nr_rule;
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
 				ret = -1;
