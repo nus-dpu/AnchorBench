@@ -177,7 +177,7 @@ int local_regex_processing(struct regex_ctx * worker_ctx) {
 			struct doca_regex_job_search const job_request = {
 					.base = {
 						.type = DOCA_REGEX_JOB_SEARCH,
-						.ctx = doca_regex_as_ctx(worker_ctx->app_cfg->doca_reg),
+						.ctx = doca_regex_as_ctx(worker_ctx->doca_regex),
 						.user_data = {.u64 = tx_count },
 					},
 					.rule_group_ids = {1, 0, 0, 0},
@@ -248,10 +248,6 @@ void * regex_work_lcore(void * arg) {
 	}
 
     fp = fopen(cfg.data, "rb");
-    if (fp == NULL) {
-        return -1;
-	}
-
 	while ((read = getline(&line, &len, fp)) != -1) {
 		if (nr_rule >= MAX_NR_RULE) {
 			break;
