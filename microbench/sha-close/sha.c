@@ -218,6 +218,8 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 
 			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
+			printf("src: %p, dst: %p\n", src_buf, dst_buf);
+
 			struct doca_sha_job const sha_job = {
 				.base = (struct doca_job) {
 					.type = DOCA_SHA_JOB_SHA256,
@@ -243,6 +245,7 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
 				ret = -1;
+				exit(1);
 			}
 		}
 
