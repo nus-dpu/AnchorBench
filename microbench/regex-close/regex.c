@@ -216,13 +216,11 @@ void * regex_work_lcore(void * arg) {
 		}
 
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inventory, rgx_ctx->mmap, rgx_ctx->query_buf[i], 256, &rgx_ctx->buf[i]);
+		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inv, rgx_ctx->mmap, rgx_ctx->query_buf[i], 256, &rgx_ctx->buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 		}
 	}
-
-	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
