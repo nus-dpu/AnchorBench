@@ -197,14 +197,14 @@ void * regex_work_lcore(void * arg) {
 	}
 
 	/* Create array of pointers (char*) to hold the queries */
-	rgx_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
+	rgx_ctx->queries = malloc(PACKET_BURST * sizeof(char *));
 	if (rgx_ctx->queries == NULL) {
 		DOCA_LOG_ERR("Dynamic allocation failed");
 	}
 
 	for (int i = 0; i < PACKET_BURST; i++) {
 		/* Create array of pointers (char*) to hold the queries */
-		rgx_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
+		rgx_ctx->query_buf[i] = malloc(256);
 		if (rgx_ctx->query_buf[i] == NULL) {
 			DOCA_LOG_ERR("Dynamic allocation failed");
 		}
