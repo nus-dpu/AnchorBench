@@ -281,8 +281,6 @@ void * regex_work_lcore(void * arg) {
 		} else {
 			nb_dequeued += ret;
 		}
-
-		printf("enqueue: %d, dequeue: %d\n", nb_enqueued, nb_dequeued);
 	}
 #if 0
     int lat_start = (int)(0.15 * nr_latency);
