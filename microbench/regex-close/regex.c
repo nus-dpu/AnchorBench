@@ -58,7 +58,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, int i, char * data, int da
 	doca_buf_get_data(buf, &mbuf_data);
 	doca_buf_set_data(buf, mbuf_data, data_len);
 
-	clock_gettime(CLOCK_MONOTONIC, &ctx->ts[i]);
+	// clock_gettime(CLOCK_MONOTONIC, &ctx->ts[i]);
 
 	struct doca_regex_job_search const job_request = {
 			.base = {
@@ -136,7 +136,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			index = event.user_data.u64;
-			clock_gettime(CLOCK_MONOTONIC, &now);
+			// clock_gettime(CLOCK_MONOTONIC, &now);
 			if (nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&ctx->ts[index], &now);
 			}
@@ -282,7 +282,7 @@ void * regex_work_lcore(void * arg) {
 			nb_dequeued += ret;
 		}
 	}
-
+#if 0
     int lat_start = (int)(0.15 * nr_latency);
 	FILE * output_fp;
 	char name[32];
@@ -299,6 +299,6 @@ void * regex_work_lcore(void * arg) {
 	}
 
 	fclose(output_fp);
-
+#endif
     return NULL;
 }
