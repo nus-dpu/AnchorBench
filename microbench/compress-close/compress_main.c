@@ -332,22 +332,6 @@ static doca_error_t compress_init_lcore(struct compress_ctx * ctx) {
 		return result;
 	}
 
-	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
-
-	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	printf(" >> total number of element: %d, free element: %d\n", 
-		doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total), doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free));
-
-	struct mempool_elt *elt;
-    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
-		elt->response = (void *)calloc(1, SHA_DATA_LEN);
-	}
-
 	return result;
 }
 
