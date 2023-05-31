@@ -11,6 +11,8 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 #define MAX_NR_LATENCY	(128 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
+__thread int index = 0;
+__thread int nr_rule = 0;
 
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
@@ -154,16 +156,73 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 
 #define NUM_WORKER	32
 
+int local_regex_processing(struct dns_worker_ctx * worker_ctx) {
+	while (tx_count < PACKET_BURST) {
+		for (; tx_count != PACKET_BURST;) {
+			struct doca_buf *buf = worker_ctx->buf[tx_count];
+			void *mbuf_data;
+			char *data_begin = input[index].line;
+			size_t data_len = input[index].len;
+			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
+
+			doca_buf_get_data(buf, &mbuf_data);
+			doca_buf_set_data(buf, mbuf_data, data_len);
+
+			struct doca_regex_job_search const job_request = {
+					.base = {
+						.type = DOCA_REGEX_JOB_SEARCH,
+						.ctx = doca_regex_as_ctx(worker_ctx->app_cfg->doca_reg),
+						.user_data = {.u64 = tx_count },
+					},
+					.rule_group_ids = {1, 0, 0, 0},
+					.buffer = buf,
+					.result = worker_ctx->responses + tx_count,
+					.allow_batching = tx_count != (PACKET_BURST - 1),
+			};
+
+			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&job_request);
+			if (result == DOCA_ERROR_NO_MEMORY) {
+				doca_buf_refcount_rm(buf, NULL);
+				break;
+			}
+
+			if (result == DOCA_SUCCESS) {
+				worker_ctx->buffers[tx_count] = buf;
+				++tx_count;
+				index = (index + 1) % nr_rule;
+			} else {
+				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
+				ret = -1;
+				goto doca_buf_cleanup;
+			}
+		}
+
+		for (; rx_count != tx_count;) {
+			/* dequeue one */
+			struct doca_event event = {0};
+			
+			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+			if (result == DOCA_SUCCESS) {
+				/* Handle the completed jobs */
+				++rx_count;
+			} else if (result == DOCA_ERROR_AGAIN) {
+				/* Wait for the job to complete */
+			} else {
+				DOCA_LOG_ERR("Failed to dequeue RegEx job response");
+				ret = -1;
+			}
+		}
+	}
+}
+
 void * regex_work_lcore(void * arg) {
     int ret;
 	struct regex_ctx * rgx_ctx = (struct regex_ctx *)arg;
 	uint32_t nb_dequeued = 0, nb_enqueued = 0;
-	int index = 0;
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
-	int nr_rule = 0;
 	doca_error_t result;
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
@@ -257,7 +316,7 @@ void * regex_work_lcore(void * arg) {
 			fclose(output_fp);
 			break;
 		}
-
+#if 0
 		for (int i = 0; i < PACKET_BURST; i++) {
 			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				ret = regex_scan_enq_job(rgx_ctx, i, input[index].line, input[index].len);
@@ -282,6 +341,8 @@ void * regex_work_lcore(void * arg) {
 			nb_dequeued += ret;
 		}
 	}
+#endif
+	local_regex_processing(rgx_ctx);
 #if 0
     int lat_start = (int)(0.15 * nr_latency);
 	FILE * output_fp;
