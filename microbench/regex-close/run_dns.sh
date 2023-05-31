@@ -14,7 +14,7 @@ for nr_core in $(seq 1 1 8); do
     mkdir dns-local-result/lat-$nr_core/
 
     rm thp-*.txt latency-*.txt
-    echo "  >> Test input $rate (Kops) with data size $size Bytes"
+    echo "  >> Test start..."
     ./build/regex -l 50 -p 03:00.0 -r /tmp/dns_baseline.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth}
     cat thp-*.txt > dns-local-result/thp-$nr_core/thp-rate-$rate.txt
     cat latency-*.txt > dns-local-result/lat-$nr_core/lat-rate-$rate.txt
