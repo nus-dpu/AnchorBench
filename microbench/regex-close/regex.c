@@ -174,6 +174,8 @@ int local_regex_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
 
+			clock_gettime(CLOCK_MONOTONIC, &ctx->ts[tx_count]);
+
 			struct doca_regex_job_search const job_request = {
 					.base = {
 						.type = DOCA_REGEX_JOB_SEARCH,
@@ -205,10 +207,17 @@ int local_regex_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
 			struct doca_event event = {0};
+			struct timespec now;
+			int index;
 			
 			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 			if (result == DOCA_SUCCESS) {
 				/* Handle the completed jobs */
+				index = event.user_data.u64;
+				clock_gettime(CLOCK_MONOTONIC, &now);
+				if (nr_latency < MAX_NR_LATENCY) {
+					latency[nr_latency++] = diff_timespec(&ctx->ts[index], &now);
+				}
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
