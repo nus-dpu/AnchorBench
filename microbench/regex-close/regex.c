@@ -156,7 +156,13 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 
 #define NUM_WORKER	32
 
-int local_regex_processing(struct dns_worker_ctx * worker_ctx) {
+int local_regex_processing(struct regex_ctx * worker_ctx) {
+	size_t tx_count, rx_count;
+	doca_error_t result;
+	int ret;
+
+	rx_count = tx_count = 0;
+
 	while (tx_count < PACKET_BURST) {
 		for (; tx_count != PACKET_BURST;) {
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
@@ -193,7 +199,6 @@ int local_regex_processing(struct dns_worker_ctx * worker_ctx) {
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
 				ret = -1;
-				goto doca_buf_cleanup;
 			}
 		}
 
@@ -213,6 +218,7 @@ int local_regex_processing(struct dns_worker_ctx * worker_ctx) {
 			}
 		}
 	}
+	return ret;
 }
 
 void * regex_work_lcore(void * arg) {
@@ -340,9 +346,10 @@ void * regex_work_lcore(void * arg) {
 		} else {
 			nb_dequeued += ret;
 		}
-	}
 #endif
-	local_regex_processing(rgx_ctx);
+		local_regex_processing(rgx_ctx);
+	}
+
 #if 0
     int lat_start = (int)(0.15 * nr_latency);
 	FILE * output_fp;
