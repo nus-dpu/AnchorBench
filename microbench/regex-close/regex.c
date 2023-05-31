@@ -195,7 +195,7 @@ void * regex_work_lcore(void * arg) {
 		input[nr_rule].len = read;
 		nr_rule++;
 	}
-
+#if 0
 	/* Create array of pointers (char*) to hold the queries */
 	rgx_ctx->queries = (char **)calloc(PACKET_BURST, sizeof(char *));
 	if (rgx_ctx->queries == NULL) {
@@ -221,7 +221,7 @@ void * regex_work_lcore(void * arg) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 		}
 	}
-
+#endif
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
     pthread_barrier_wait(&barrier);
