@@ -260,10 +260,7 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 				if (nr_latency < MAX_NR_LATENCY) {
 					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
 				}
-				char * data;
-				doca_buf_get_data(worker_ctx->src_buf[index], &data);
-				printf("%.*s\n", data_len, data);
-				sha_report_results(worker_ctx->dst_buf[index]);
+				// sha_report_results(worker_ctx->dst_buf[index]);
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
