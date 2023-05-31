@@ -94,7 +94,7 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 		src_buf->response = dst_buf;
 
-	    clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
+	    // clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
 
 		struct doca_sha_job const sha_job = {
 			.base = (struct doca_job) {
@@ -227,12 +227,11 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 				},
 				.resp_buf = dst_buf->buf,
 				.req_buf = src_buf->buf,
-				.flags = DOCA_SHA_JOB_FLAGS_SHA,
+				.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
 			};
 
 			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&sha_job);
 			if (result == DOCA_ERROR_NO_MEMORY) {
-				doca_buf_refcount_rm(buf, NULL);
 				break;
 			}
 
@@ -368,7 +367,7 @@ void * sha_work_lcore(void * arg) {
 		}
 
 		/* build doca_buf */
-		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, rgx_ctx->result_buf[i], 1024, &rgx_ctx->dst_buf[i]);
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, sha_ctx->result_buf[i], 1024, &sha_ctx->dst_buf[i]);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 			exit(1);
