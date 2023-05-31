@@ -314,6 +314,12 @@ static doca_error_t compress_init_lcore(struct compress_ctx * ctx) {
 		return result;
 	}
 
+	result = doca_mmap_set_max_num_chunks(ctx->mmap, 2 * PACKET_BURST);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
+		return result;
+	}
+
 	result = doca_mmap_start(ctx->mmap);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start memory map. Reason: %s", doca_get_error_string(result));
