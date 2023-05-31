@@ -364,7 +364,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		return result;
 	}
 
-	result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+	result = doca_mmap_set_max_num_chunks(ctx->mmap, PACKET_BURST);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
 		return result;
