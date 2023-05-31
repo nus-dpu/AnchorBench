@@ -55,8 +55,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, int i, char * data, int da
 	void *mbuf_data;
 	memcpy(ctx->query_buf[i], data, data_len);
 
-	doca_buf_get_data(buf_element->buf, &mbuf_data);
-	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
+	doca_buf_get_data(buf, &mbuf_data);
+	doca_buf_set_data(buf, mbuf_data, data_len);
 
 	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
 
@@ -196,22 +196,31 @@ void * regex_work_lcore(void * arg) {
 		nr_rule++;
 	}
 
-	uint32_t nb_free, nb_total;
-	nb_free = nb_total = 0;
-
-	/* Segment the region into pieces */
-	doca_error_t result;
-	struct mempool_elt *elt;
-    list_for_each_entry(elt, &rgx_ctx->buf_mempool->elt_free_list, list) {
-		/* Create a DOCA buffer  for this memory region */
-		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inv, rgx_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
-		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Failed to allocate DOCA buf");
-		}
+	/* Create array of pointers (char*) to hold the queries */
+	rgx_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
+	if (rgx_ctx->queries == NULL) {
+		DOCA_LOG_ERR("Dynamic allocation failed");
 	}
 
-	doca_buf_inventory_get_num_elements(rgx_ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(rgx_ctx->buf_inv, &nb_free);
+	for (int i = 0; i < PACKET_BURST; i++) {
+		/* Create array of pointers (char*) to hold the queries */
+		rgx_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
+		if (rgx_ctx->query_buf[i] == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+		}
+
+		/* register packet in mmap */
+		result = doca_mmap_populate(rgx_ctx->mmap, rgx_ctx->query_buf[i], 256, sysconf(_SC_PAGESIZE), NULL, NULL);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+		}
+
+		/* build doca_buf */
+		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inventory, rgx_ctx->mmap, rgx_ctx->query_buf[i], 256, &rgx_ctx->buf[i]);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
+		}
+	}
 
 	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
