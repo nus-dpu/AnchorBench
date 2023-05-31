@@ -156,8 +156,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 
 #define NUM_WORKER	32
 
-int local_regex_processing(struct regex_ctx * worker_ctx) {
-	size_t tx_count, rx_count;
+int local_regex_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued, uint32_t * nb_dequeued) {
 	doca_error_t result;
 	int ret;
 
@@ -217,6 +216,9 @@ int local_regex_processing(struct regex_ctx * worker_ctx) {
 				ret = -1;
 			}
 		}
+
+		*nb_enqueued += tx_count;
+		*nb_dequeued += rx_count;
 	}
 	return ret;
 }
@@ -343,7 +345,7 @@ void * regex_work_lcore(void * arg) {
 			nb_dequeued += ret;
 		}
 #endif
-		local_regex_processing(rgx_ctx);
+		local_regex_processing(rgx_ctx, &nb_enqueued, &nb_dequeued);
 	}
 
 #if 0
