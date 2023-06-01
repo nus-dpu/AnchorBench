@@ -197,7 +197,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 	return finished;
 }
 
-#define NUM_WORKER	256
+#define NUM_WORKER	32
 
 void * sha_work_lcore(void * arg) {
     int ret;
@@ -285,7 +285,7 @@ void * sha_work_lcore(void * arg) {
 			break;
 		}
 
-		for (int i = 0; i < WORKQ_DEPTH; i++) {
+		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
