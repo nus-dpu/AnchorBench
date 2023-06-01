@@ -185,7 +185,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	return finished;
 }
 
-#define NUM_WORKER	256
+#define NUM_WORKER	32
 
 void * regex_work_lcore(void * arg) {
     int ret;

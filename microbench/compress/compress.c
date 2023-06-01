@@ -190,7 +190,7 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 	return finished;
 }
 
-#define NUM_WORKER	256
+#define NUM_WORKER	32
 
 void * compress_work_lcore(void * arg) {
     int ret;
