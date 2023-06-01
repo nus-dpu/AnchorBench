@@ -12,7 +12,7 @@ for size in "${data_size[@]}"; do
 
 		for round in $(seq 1 1 10); do
 			rm thp-*.txt latency-*.txt
-			echo "  >> Test input $rate (Kops)"
+			echo "  >> Test $data_size B (round $round)"
 			./build/compress -l 50 -p 03:00.0 -d $(pwd)/input.dat -c $nr_core -s $rate -b $size
 			cat thp-*.txt > ${size}B-result/thp-$nr_core/thp-rate-$round.txt
 			cat latency-*.txt > ${size}B-result/lat-$nr_core/lat-rate-$round.txt
