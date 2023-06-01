@@ -57,6 +57,10 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 	// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 	// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
+	if (is_mempool_empty(ctx->buf_mempool)) {
+		return 0;
+	}
+
 	// if (nb_free != 0) {
 		struct mempool_elt * src_buf, * dst_buf;
 		char * src_data_buf, * dst_data_buf;
