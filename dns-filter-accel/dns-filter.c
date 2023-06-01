@@ -155,9 +155,9 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 
 	handle_packets_received(pid, worker_ctx, pkts_burst, nb_rx);
 
-	for (int nb_tx = 0; nb_tx != nb_rx;) {
-		nb_tx += regex_scan_deq_job(pid ^ 1, worker_ctx);
-	}
+	// for (int nb_tx = 0; nb_tx != nb_rx;) {
+	// 	nb_tx += regex_scan_deq_job(pid ^ 1, worker_ctx);
+	// }
 
 	// for (int i = 0; i < nb_rx; i++) {
     //     rte_pktmbuf_free(pkts_burst[i]);
@@ -165,20 +165,20 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
     // }
 
 	// if (to_send > 0) {
-		nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
-		if (unlikely(nb_tx < nb_rx)) {
-			retry = 0;
-			while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
-				nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
-			}
-		}
-		nr_send += nb_tx;
+		// nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
+		// if (unlikely(nb_tx < nb_rx)) {
+		// 	retry = 0;
+		// 	while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
+		// 		nb_tx += rte_eth_tx_burst(pid ^ 1, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
+		// 	}
+		// }
+		// nr_send += nb_tx;
 	// }
-	if (unlikely(nb_tx < nb_rx)) {
-		do {
-			rte_pktmbuf_free(pkts_burst[nb_tx]);
-		} while (++nb_tx < nb_rx);
-	}
+	// if (unlikely(nb_tx < nb_rx)) {
+	// 	do {
+	// 		rte_pktmbuf_free(pkts_burst[nb_tx]);
+	// 	} while (++nb_tx < nb_rx);
+	// }
 
 	return nb_rx;
 }
@@ -292,8 +292,8 @@ int dns_filter_worker(void *arg) {
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
 			pkt_burst_forward(worker_ctx, infos[idx]->pid, qids[idx]);
-			// regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
-			// nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
+			regex_scan_deq_job(infos[idx]->pid  ^ 1, worker_ctx);
+			nr_send += dpdk_send_pkts(infos[idx]->pid ^ 1, qids[idx]);
         }
 	}
 
