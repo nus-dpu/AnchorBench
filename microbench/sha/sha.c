@@ -286,7 +286,7 @@ void * sha_work_lcore(void * arg) {
 		}
 
 		for (int i = 0; i < NUM_WORKER; i++) {
-			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
 				}
@@ -297,11 +297,11 @@ void * sha_work_lcore(void * arg) {
 				} else {
 					cur_ptr++;
 					nb_enqueued++;
-					interval = ran_expo(mean);
-					worker[i].interval = (uint64_t)round(interval);
-					worker[i].last_enq_time = current_time;
+					// interval = ran_expo(mean);
+					// worker[i].interval = (uint64_t)round(interval);
+					// worker[i].last_enq_time = current_time;
 				}
-			}
+			// }
 		}
 
 		ret = sha_deq_job(sha_ctx);
