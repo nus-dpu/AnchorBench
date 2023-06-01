@@ -269,10 +269,11 @@ int local_sha_processing(struct sha_ctx * worker_ctx, uint32_t * nb_enqueued, ui
 				ret = -1;
 			}
 		}
-
-		*nb_enqueued += tx_count;
-		*nb_dequeued += rx_count;
 	}
+
+	*nb_enqueued += tx_count;
+	*nb_dequeued += rx_count;
+	
 	return ret;
 }
 

@@ -226,10 +226,11 @@ int local_regex_processing(struct regex_ctx * worker_ctx, uint32_t * nb_enqueued
 				ret = -1;
 			}
 		}
-
-		*nb_enqueued += tx_count;
-		*nb_dequeued += rx_count;
 	}
+
+	*nb_enqueued += tx_count;
+	*nb_dequeued += rx_count;
+
 	return ret;
 }
 

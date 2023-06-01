@@ -267,10 +267,11 @@ int local_compress_processing(struct compress_ctx * worker_ctx, uint32_t * nb_en
 				ret = -1;
 			}
 		}
-
-		*nb_enqueued += tx_count;
-		*nb_dequeued += rx_count;
 	}
+
+	*nb_enqueued += tx_count;
+	*nb_dequeued += rx_count;
+
 	return ret;
 }
 
