@@ -39,7 +39,7 @@
 
 #define M_1				1048576
 
-#define NB_BUF	1024
+#define NB_BUF		128
 #define BUF_SIZE	1024
 
 #define MAX_REGEX_RESPONSE_SIZE 256	/* Maximal size of RegEx jobs response */
