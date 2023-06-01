@@ -52,6 +52,10 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 	// uint32_t nb_total = 0;
 	// uint32_t nb_free = 0;
 
+	if (is_mempool_empty(ctx->buf_mempool)) {
+		return 0;
+	}
+
 	// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 	// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
 
