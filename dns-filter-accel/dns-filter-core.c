@@ -391,6 +391,8 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	doca_buf_get_data(buf_element->buf, &mbuf_data);
 	doca_buf_set_data(buf_element->buf, mbuf_data, data_len);
 
+	clock_gettime(CLOCK_MONOTONIC, &buf_element->ts);
+
 	struct doca_regex_job_search const job_request = {
 			.base = {
 				.type = DOCA_REGEX_JOB_SEARCH,
@@ -437,15 +439,14 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	struct timespec now;
 	char * query;
 
-	// clock_gettime(CLOCK_MONOTONIC, &now);
-
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			// if (nr_latency < MAX_NR_LATENCY) {
-			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			// }
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 #if MALLOC_PACKET
 			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		if (mbuf != NULL) {
