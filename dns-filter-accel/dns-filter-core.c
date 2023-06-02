@@ -70,14 +70,14 @@ uint32_t dpdk_send_pkts(int pid, int qid) {
             pkt_cnt -= ret;
         } while (pkt_cnt > 0);
 
-        // /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
-        // for (int i = 0; i < tx_mbufs[pid].len; i++) {
-        //     /* Allocate new buffer for sended packets */
-        //     tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-        //     if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
-        //         rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
-        //     }
-        // }
+        /* Allocate new packet memory buffer for TX queue (WHY NEED NEW BUFFER??) */
+        for (int i = 0; i < tx_mbufs[pid].len; i++) {
+            /* Allocate new buffer for sended packets */
+            tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+            if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
+                rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
+            }
+        }
 
         tx_mbufs[pid].len = 0;
     }
@@ -426,25 +426,25 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// if (nr_latency < MAX_NR_LATENCY) {
 			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			// }
-			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
-    		// if (mbuf != NULL) {
-			// 	char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
-			// 	memcpy(data, buf_element->packet, buf_element->packet_size);
-			// }
+			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
+    		if (mbuf != NULL) {
+				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
+				memcpy(data, buf_element->packet, buf_element->packet_size);
+			}
 
 			// extract_dns_query(buf_element->packet, &query);
 			// fprintf(stderr, "Result: %s, ts: %lu\n", query, extract_dns_ts(buf_element->packet));
 
-			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
-				int next_pkt = tx_mbufs[pid].len;
-				struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
+			// if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
+			// 	int next_pkt = tx_mbufs[pid].len;
+			// 	struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
 
-				// tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
-				tx_pkt->nb_segs = 1;
-				tx_pkt->next = NULL;
+			// 	// tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
+			// 	tx_pkt->nb_segs = 1;
+			// 	tx_pkt->next = NULL;
 
-				tx_mbufs[pid].len++;
-			}
+			// 	tx_mbufs[pid].len++;
+			// }
 
 			/* Report the scan result of RegEx engine */
 			// regex_scan_report_results(ctx, &event);
