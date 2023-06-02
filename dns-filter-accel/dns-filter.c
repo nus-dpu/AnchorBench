@@ -22,8 +22,6 @@
 
 DOCA_LOG_REGISTER(DNS_FILTER);
 
-#define NR_CPUS	8
-
 #define BURST_TX_RETRIES 	16
 
 #define MSEC_PER_SEC    1000L
