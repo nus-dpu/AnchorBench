@@ -56,16 +56,16 @@ static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 int dpdk_tx_mbuf_init(port_info_t ** infos, uint8_t rxcnt) {
-	for (int idx = 0; idx < txcnt; idx++) {
-		for (int i = 0; i < PACKET_BURST; i++) {
-			int pid = infos[idx]->pid;
-			/* Allocate new buffer for sended packets */
-			tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
-			if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
-				rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
-			}
-		}
-	}
+	// for (int idx = 0; idx < txcnt; idx++) {
+	// 	for (int i = 0; i < PACKET_BURST; i++) {
+	// 		int pid = infos[idx]->pid;
+	// 		/* Allocate new buffer for sended packets */
+	// 		tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+	// 		if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
+	// 			rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
+	// 		}
+	// 	}
+	// }
 }
 
 uint32_t dpdk_send_pkts(int pid, int qid) {
