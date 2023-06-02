@@ -157,10 +157,12 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 	// 	nb_tx += regex_scan_deq_job(pid ^ 1, worker_ctx);
 	// }
 
+#if MALLOC_PACKET
 	for (int i = 0; i < nb_rx; i++) {
         rte_pktmbuf_free(pkts_burst[i]);
         RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[i + 1]);
     }
+#endif
 
 	// if (to_send > 0) {
 		// nb_tx = rte_eth_tx_burst(pid ^ 1, qid, pkts_burst, nb_rx);
