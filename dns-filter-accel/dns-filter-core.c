@@ -376,7 +376,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	/* Get the memory segment */
 	data_buf = buf_element->addr;
 
-	buf_element->packet = (void *)
+	buf_element->packet = (void *)malloc(len);
 
 	buf_element->packet = mbuf;
 	buf_element->packet_size = len;
