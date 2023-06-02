@@ -38,7 +38,8 @@
 #define BUF_SIZE	1024
 
 #define SHA_DATA_LEN	1024
-#define M_1				1048576
+#define K_16			(16 * 1024)
+#define M_1				(1024 * 1024)
 
 struct sha_ctx {
 	struct doca_pci_bdf *pci_address;		/* SHA PCI address to use */

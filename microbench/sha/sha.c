@@ -228,7 +228,7 @@ void * sha_work_lcore(void * arg) {
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
-	input = (char *)calloc(M_1, sizeof(char));
+	input = (char *)calloc(K_16, sizeof(char));
 
     fp = fopen(cfg.data, "rb");
     if (fp == NULL) {
@@ -239,7 +239,7 @@ void * sha_work_lcore(void * arg) {
 	fseek(fp, 0, SEEK_SET);
 
 	/* Read and display data */
-	input_size = fread((char **)input, sizeof(char), M_1, fp);
+	input_size = fread((char **)input, sizeof(char), K_16, fp);
 
 	fclose(fp);
 
@@ -287,7 +287,7 @@ void * sha_work_lcore(void * arg) {
 
 		for (int i = 0; i < NUM_WORKER; i++) {
 			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				if (cur_ptr * data_len >= M_1) {
+				if (cur_ptr * data_len >= K_16) {
 					cur_ptr = 0;
 				}
 				ret = sha_enq_job(sha_ctx, input + cur_ptr * data_len, data_len);
