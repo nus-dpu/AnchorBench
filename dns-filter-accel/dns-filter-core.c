@@ -55,6 +55,19 @@ static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	return TIMESPEC_TO_NSEC(diff);
 }
 
+int dpdk_tx_mbuf_init(port_info_t *infos[]) {
+	for (int idx = 0; idx < rxcnt; idx++) {
+		for (int i = 0; i < PACKET_BURST; i++) {
+			int pid = infos[idx]->pid;
+			/* Allocate new buffer for sended packets */
+			tx_mbufs[pid].m_table[i] = rte_pktmbuf_alloc(pkt_mempools[rte_lcore_id()]);
+			if (unlikely(tx_mbufs[pid].m_table[i] == NULL)) {
+				rte_exit(EXIT_FAILURE, "Failed to allocate %d:wmbuf[%d] on device %d!\n", rte_lcore_id(), i, pid);
+			}
+		}
+	}
+}
+
 uint32_t dpdk_send_pkts(int pid, int qid) {
     int total_pkt, pkt_cnt;
     total_pkt = pkt_cnt = tx_mbufs[pid].len;
@@ -363,9 +376,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 	/* Get the memory segment */
 	data_buf = buf_element->addr;
 
-	buf_element->packet = (char *)malloc(len);
-	buf_element->packet_size = len;
-	memcpy(buf_element->packet, pkt, len);
+	buf_element->packet = (void *)
 
 	buf_element->packet = mbuf;
 	buf_element->packet_size = len;
