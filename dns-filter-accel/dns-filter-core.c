@@ -439,7 +439,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 			// if (nr_latency < MAX_NR_LATENCY) {
 			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			// }
-			// struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
+			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		if (mbuf != NULL) {
 				char * data = rte_pktmbuf_mtod(mbuf, uint8_t *);
 				memcpy(data, buf_element->packet, buf_element->packet_size);
