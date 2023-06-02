@@ -17,7 +17,7 @@ enum {
 	MBUF_SIZE		= RTE_MBUF_DEFAULT_BUF_SIZE + DEFAULT_PRIV_SIZE, /* See: http://dpdk.org/dev/patchwork/patch/4479/ */
 
 	NUM_Q                   = 16,
-	MEMPOOL_NR_BUF			= 1024,
+	MEMPOOL_NR_BUF			= 128,
  	MEMPOOL_BUF_SIZE		= 1024,
 };
 
