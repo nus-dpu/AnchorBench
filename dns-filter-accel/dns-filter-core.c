@@ -55,7 +55,7 @@ static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	return TIMESPEC_TO_NSEC(diff);
 }
 
-int dpdk_tx_mbuf_init(port_info_t *infos[]) {
+int dpdk_tx_mbuf_init(port_info_t ** infos, uint8_t rxcnt) {
 	for (int idx = 0; idx < rxcnt; idx++) {
 		for (int i = 0; i < PACKET_BURST; i++) {
 			int pid = infos[idx]->pid;
