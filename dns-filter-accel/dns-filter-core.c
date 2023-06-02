@@ -452,15 +452,18 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 				free(buf_element->packet);
 			}
 #else
+			struct rte_mbuf * mbuf = (struct rte_mbuf *)buf_element->packet;
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
 				int next_pkt = tx_mbufs[pid].len;
-				struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = buf_element->packet;
+				struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = mbuf;
 
 				tx_pkt->pkt_len = tx_pkt->data_len = buf_element->packet_size;
 				tx_pkt->nb_segs = 1;
 				tx_pkt->next = NULL;
 
 				tx_mbufs[pid].len++;
+			} else {
+				rte_pktmbuf_free(mbuf);
 			}
 #endif
 			// extract_dns_query(buf_element->packet, &query);
