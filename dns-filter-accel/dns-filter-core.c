@@ -439,11 +439,12 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 	struct timespec now;
 	char * query;
 
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			clock_gettime(CLOCK_MONOTONIC, &now);
 			if (nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			}
