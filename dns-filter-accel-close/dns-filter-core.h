@@ -40,6 +40,7 @@ struct dns_worker_ctx {
 	char **queries;								/* Holds DNS queries */
 	struct dns_filter_config *app_cfg;					/* App config struct */
 	struct doca_mmap *mmap;
+	struct timespec ts[PACKET_BURST];
 	char *query_buf[PACKET_BURST];
 	struct doca_buf *buf[PACKET_BURST];
 	struct doca_regex_search_result responses[MAX_REGEX_RESPONSE_SIZE];	/* DOCA RegEx jobs responses */
@@ -51,6 +52,9 @@ struct dns_worker_ctx {
 extern __thread int start_flag;
 extern __thread int done_flag;
 extern __thread struct timeval start;
+
+extern __thread int nr_latency;
+extern __thread uint64_t latency[MAX_NR_LATENCY];
 
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx);

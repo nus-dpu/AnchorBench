@@ -24,6 +24,9 @@
 
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
 
+__thread int nr_latency = 0;
+__thread uint64_t latency[MAX_NR_LATENCY];
+
 #define ETH_HEADER_SIZE 14			/* ETH header size = 14 bytes (112 bits) */
 #define IP_HEADER_SIZE 	20			/* IP header size = 20 bytes (160 bits) */
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
@@ -184,7 +187,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 	while (tx_count < packets_received) {
 		struct timespec enq_start, enq_end, deq_end;
-		clock_gettime(CLOCK_MONOTONIC, &enq_start);
 		for (; tx_count != packets_received;) {
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
 			void *mbuf_data;
@@ -194,6 +196,8 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
+
+			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
 			struct doca_regex_job_search const job_request = {
 					.base = {
@@ -225,12 +229,18 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 		for (; rx_count != tx_count;) {
 			/* dequeue one */
-			struct timespec ts;
+			struct timespec now;
 			struct doca_event event = {0};
+			int index;
 			
 			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 			if (result == DOCA_SUCCESS) {
 				/* Handle the completed jobs */
+				index = event.user_data.u64;
+				clock_gettime(CLOCK_MONOTONIC, &now);
+				if (nr_latency < MAX_NR_LATENCY) {
+					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
+				}
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
