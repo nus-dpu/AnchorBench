@@ -345,6 +345,21 @@ int dns_filter_worker(void *arg) {
 
 	fclose(output_fp);
 
+	int lat_start = (int)(0.15 * nr_latency);
+
+	sprintf(name, "latency-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening latency output file!\n");
+		return NULL;
+	}
+
+	for (int i = lat_start; i < nr_latency; i++) {
+		fprintf(output_fp, "%lu\n", latency[i]);
+	}
+
+	fclose(output_fp);
+
 	return 0;
 }
 
