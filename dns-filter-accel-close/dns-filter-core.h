@@ -53,6 +53,7 @@ extern __thread int start_flag;
 extern __thread int done_flag;
 extern __thread struct timeval start;
 
+#define MAX_NR_LATENCY	(128 * 1024)
 extern __thread int nr_latency;
 extern __thread uint64_t latency[MAX_NR_LATENCY];
 
