@@ -190,8 +190,8 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
 
 	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 
-	// p += UDP_HEADER_SIZE + sizeof(uint64_t);
-	// memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
+	p += UDP_HEADER_SIZE + sizeof(uint64_t);
+	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
 }
 
 /*
