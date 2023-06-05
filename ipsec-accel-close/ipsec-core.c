@@ -127,7 +127,7 @@ extract_sha_payload(struct rte_mbuf *pkt, char **sha_data, int *sha_data_len)
 
 	/* Get DNS query start from handle field */
 	*sha_data = (char *)(data + sizeof(uint64_t));
-	sha_data_len = len - sizeof(uint64_t);
+	*sha_data_len = len - sizeof(uint64_t);
 
 	return 0;
 }
