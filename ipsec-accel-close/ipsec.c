@@ -491,13 +491,6 @@ register_ipsec_filter_params(void)
 	doca_error_t result;
 	struct doca_argp_param *pci_address_param;
 
-	/* Create and register rules param */
-	result = doca_argp_param_create(&rules_param);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
-		return result;
-	}
-
 	/* Create and register RegEx pci address param */
 	result = doca_argp_param_create(&pci_address_param);
 	if (result != DOCA_SUCCESS) {
