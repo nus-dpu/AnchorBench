@@ -489,24 +489,12 @@ doca_error_t
 register_ipsec_filter_params(void)
 {
 	doca_error_t result;
-	struct doca_argp_param *rules_param, *pci_address_param;
+	struct doca_argp_param *pci_address_param;
 
 	/* Create and register rules param */
 	result = doca_argp_param_create(&rules_param);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
-		return result;
-	}
-	doca_argp_param_set_short_name(rules_param, "r");
-	doca_argp_param_set_long_name(rules_param, "rules");
-	doca_argp_param_set_arguments(rules_param, "<path>");
-	doca_argp_param_set_description(rules_param, "Path to rules file (rof2.binary)");
-	doca_argp_param_set_callback(rules_param, rules_callback);
-	doca_argp_param_set_type(rules_param, DOCA_ARGP_TYPE_STRING);
-	doca_argp_param_set_mandatory(rules_param);
-	result = doca_argp_register_param(rules_param);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
 		return result;
 	}
 
