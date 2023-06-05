@@ -8,7 +8,7 @@
 #include <doca_ctx.h>
 #include <doca_dev.h>
 #include <doca_flow.h>
-#include <doca_regex.h>
+#include <doca_sha.h>
 
 #define PACKET_BURST 32			/* The number of packets in the rx queue */
 #define UDP_PORT 1234				/* DNS packet dst port */
@@ -58,7 +58,6 @@ extern __thread int nr_latency;
 extern __thread uint64_t latency[MAX_NR_LATENCY];
 
 int handle_packets_received(int pid, struct ipsec_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
-int regex_scan_deq_job(int pid, struct ipsec_ctx *ctx);
 uint32_t dpdk_send_pkts(int pid, int qid);
 
 #endif  /* _DNS_FILTER_CORE_H_ */

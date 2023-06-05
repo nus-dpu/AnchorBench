@@ -69,7 +69,7 @@ sha_init(struct ipsec_config *app_cfg)
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to install SHA device. Reason: %s", doca_get_error_string(result));
 		result = DOCA_ERROR_INITIALIZATION;
-		goto regex_cleanup;
+		goto sha_cleanup;
 	}
 
 	/* Start DOCA SHA */
@@ -77,11 +77,11 @@ sha_init(struct ipsec_config *app_cfg)
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start DOCA SHA");
 		result = DOCA_ERROR_INITIALIZATION;
-		goto regex_cleanup;
+		goto sha_cleanup;
 	}
 	return DOCA_SUCCESS;
 
-regex_cleanup:
+sha_cleanup:
 	doca_dev_close(app_cfg->dev);
 	doca_sha_destroy(app_cfg->doca_sha);
 	return result;
@@ -343,9 +343,9 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			DOCA_LOG_ERR("Unable to create work queue: %s", doca_get_error_string(result));
 			goto destroy_buf_inventory;
 		}
-		result = doca_ctx_workq_add(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
+		result = doca_ctx_workq_add(doca_sha_as_ctx(app_cfg->doca_sha), worker_ctx->workq);
 		if (result != DOCA_SUCCESS) {
-			DOCA_LOG_ERR("Unable to attach workq to regex: %s", doca_get_error_string(result));
+			DOCA_LOG_ERR("Unable to attach workq to sha: %s", doca_get_error_string(result));
 			goto destroy_workq;
 		}
 
@@ -427,7 +427,7 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 	return DOCA_SUCCESS;
 
 worker_cleanup:
-	doca_ctx_workq_rm(doca_regex_as_ctx(app_cfg->doca_sha), worker_ctx->workq);
+	doca_ctx_workq_rm(doca_sha_as_ctx(app_cfg->doca_sha), worker_ctx->workq);
 destroy_workq:
 	doca_workq_destroy(worker_ctx->workq);
 destroy_buf_inventory:
@@ -589,8 +589,8 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	/* DOCA RegEx initialization */
-	result = regex_init(&app_cfg);
+	/* DOCA SHA initialization */
+	result = sha_init(&app_cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_INFO("Failed to init DOCA RegEx");
 		return result;
