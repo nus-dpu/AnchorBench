@@ -361,7 +361,7 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			return -1;
 		}
 
-		result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, PACKET_BURST);
+		result = doca_mmap_set_max_num_chunks(worker_ctx->mmap, 2 * PACKET_BURST);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
 			doca_mmap_destroy(worker_ctx->mmap);
@@ -383,14 +383,6 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			return -1;
 		}
 
-		/* Create array of pointers (char*) to hold the queries */
-		worker_ctx->queries = rte_zmalloc(NULL, PACKET_BURST * sizeof(char *), 0);
-		if (worker_ctx->queries == NULL) {
-			DOCA_LOG_ERR("Dynamic allocation failed");
-			result = DOCA_ERROR_NO_MEMORY;
-			goto worker_cleanup;
-		}
-
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* Create array of pointers (char*) to hold the queries */
 			worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
@@ -408,7 +400,14 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			}
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->buf[i]);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->src_buf[i]);
+			if (result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
+				goto worker_cleanup;
+			}
+
+			/* build doca_buf */
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 256, &worker_ctx->dst_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto worker_cleanup;
@@ -428,7 +427,7 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 	return DOCA_SUCCESS;
 
 worker_cleanup:
-	doca_ctx_workq_rm(doca_regex_as_ctx(app_cfg->doca_reg), worker_ctx->workq);
+	doca_ctx_workq_rm(doca_regex_as_ctx(app_cfg->doca_sha), worker_ctx->workq);
 destroy_workq:
 	doca_workq_destroy(worker_ctx->workq);
 destroy_buf_inventory:
