@@ -177,6 +177,7 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
 	u = (struct udphdr *)p;
 	p += UDP_HEADER_SIZE + sizeof(uint64_t);
 
+	u->len = UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
 }
