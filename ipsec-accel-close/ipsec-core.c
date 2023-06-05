@@ -171,13 +171,27 @@ check_packets_marking(struct ipsec_ctx *worker_ctx, struct rte_mbuf **packets, u
 static void
 update_packet_payload(struct rte_mbuf * packet, char * result) {
 	char * p;
+	struct iphdr * ip;
 	struct udphdr * u;
+	int tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+
 	p = rte_pktmbuf_mtod(packet, char *);
-	p += ETH_HEADER_SIZE + IP_HEADER_SIZE;
+	p += ETH_HEADER_SIZE;
+	ip = (struct iphdr *)p;
+
+    ip->tot_len = htons(tot_len);
+
+	p += IP_HEADER_SIZE;
+
 	u = (struct udphdr *)p;
 	p += UDP_HEADER_SIZE + sizeof(uint64_t);
 
 	u->len = UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+
+	tx_pkt->l2_len = ETH_HLEN;
+	tx_pkt->l3_len = IP_HLEN;
+
+	packet->ol_flags = RTE_MBUF_F_TX_TCP_CKSUM | RTE_MBUF_F_TX_IP_CKSUM | RTE_MBUF_F_TX_IPV4;
 	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
 }
