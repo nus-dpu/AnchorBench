@@ -180,17 +180,21 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
 	p += ETH_HEADER_SIZE;
 	ip = (struct iphdr *)p;
 
-    ip->tot_len = htons(tot_len);
+    // ip->tot_len = htons(tot_len);
+    ip->tot_len += 16;
 
 	p += IP_HEADER_SIZE;
 	u = (struct udphdr *)p;
 
-	u->len = UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	// u->len = UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	u->len += 16;
 
-	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	// packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	packet->pkt_len += 16;
+	packet->data_len += 16;
 
-	p += UDP_HEADER_SIZE + sizeof(uint64_t);
-	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
+	// p += UDP_HEADER_SIZE + sizeof(uint64_t);
+	// memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
 }
 
 /*
