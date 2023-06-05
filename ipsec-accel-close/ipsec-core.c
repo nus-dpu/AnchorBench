@@ -61,7 +61,7 @@ extract_payload(struct rte_mbuf *pkt, char **query, int *len)
 		return result;
 	}
 
-	if (pkt->len <= ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE) {
+	if (pkt->pkt_len <= ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE) {
 		return -1;
 	}
 
