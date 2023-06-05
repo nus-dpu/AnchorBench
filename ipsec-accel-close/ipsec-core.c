@@ -12,6 +12,7 @@
 #include <rte_errno.h>
 #include <rte_ethdev.h>
 #include <rte_malloc.h>
+#include <rte_mbuf.h>
 #include <rte_sft.h>
 
 #include <doca_argp.h>
@@ -182,17 +183,18 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
     ip->tot_len = htons(tot_len);
 
 	p += IP_HEADER_SIZE;
-
 	u = (struct udphdr *)p;
-	p += UDP_HEADER_SIZE + sizeof(uint64_t);
 
 	u->len = UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 
-	tx_pkt->l2_len = ETH_HLEN;
-	tx_pkt->l3_len = IP_HLEN;
+	tx_pkt->l2_len = ETH_HEADER_SIZE;
+	tx_pkt->l3_len = IP_HEADER_SIZE;
 
 	packet->ol_flags = RTE_MBUF_F_TX_TCP_CKSUM | RTE_MBUF_F_TX_IP_CKSUM | RTE_MBUF_F_TX_IPV4;
+
 	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+
+	p += UDP_HEADER_SIZE + sizeof(uint64_t);
 	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
 }
 
