@@ -393,7 +393,7 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* Create array of pointers (char*) to hold the queries */
-			worker_ctx->query_buf[i] = rte_zmalloc(NULL, 256, 0);
+			worker_ctx->query_buf[i] = rte_zmalloc(NULL, 1200, 0);
 			if (worker_ctx->query_buf[i] == NULL) {
 				DOCA_LOG_ERR("Dynamic allocation failed");
 				result = DOCA_ERROR_NO_MEMORY;
