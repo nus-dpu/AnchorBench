@@ -174,24 +174,21 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
 	char * p;
 	struct iphdr * ip;
 	struct udphdr * u;
-	int tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	int udp_len = sizeof(struct udphdr) + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	int tot_len = sizeof(struct iphdr) + udp_len;
 
 	p = rte_pktmbuf_mtod(packet, char *);
 	p += ETH_HEADER_SIZE;
 	ip = (struct iphdr *)p;
 
-    // ip->tot_len = htons(tot_len);
-    ip->tot_len += 16;
+    ip->tot_len = htons(tot_len);
 
 	p += IP_HEADER_SIZE;
 	u = (struct udphdr *)p;
 
-	// u->len = UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
-	u->len += 16;
+	u->len = htons(udp_len);
 
-	// packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
-	packet->pkt_len += 16;
-	packet->data_len += 16;
+	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 
 	// p += UDP_HEADER_SIZE + sizeof(uint64_t);
 	// memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
