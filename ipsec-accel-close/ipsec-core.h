@@ -36,6 +36,7 @@ struct ipsec_config {
 /* Context structure per DPDK thread */
 struct ipsec_ctx {
 	int queue_id;								/* Queue ID */
+	char **queries;								/* Holds DNS queries */
 	struct ipsec_config *app_cfg;					/* App config struct */
 	struct doca_mmap *mmap;
 	struct doca_buf_inventory *buf_inventory;				/* DOCA buffer inventory */

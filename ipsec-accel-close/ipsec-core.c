@@ -154,7 +154,7 @@ check_packets_marking(struct ipsec_ctx *worker_ctx, struct rte_mbuf **packets, u
 				gettimeofday(&start, NULL);
 			}
 
-			extract_sha_payload(packets[current_packet], &worker_ctx->query_buf[index], &worker_ctx->query_len[index]);
+			extract_sha_payload(packets[current_packet], &worker_ctx->queries[index], &worker_ctx->query_len[index]);
 
 			/* Packet matched by one of pipe entries(rules) */
 			packets[index] = packets[current_packet];
@@ -203,8 +203,9 @@ sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct r
 			struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
 			struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
 			void *mbuf_data;
-			void *data_begin = (void *)worker_ctx->query_buf[tx_count];
+			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = worker_ctx->query_len[tx_count];
+			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
 
 			doca_buf_get_data(src_buf, &mbuf_data);
 			doca_buf_set_data(src_buf, mbuf_data, data_len);
@@ -231,7 +232,7 @@ sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct r
 			if (result == DOCA_SUCCESS) {
 				++tx_count;
 			} else {
-				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
+				DOCA_LOG_ERR("Failed to enqueue SHA job (%s)", doca_get_error_string(result));
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
