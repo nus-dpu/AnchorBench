@@ -116,6 +116,10 @@ extract_sha_payload(struct rte_mbuf *pkt, char **sha_data, int *sha_data_len)
 		return result;
 	}
 
+	if (pkt->pkt_len <= ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE) {
+		return -1;
+	}
+
 	/* Calculate the offset of UDP header start */
 	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
 
