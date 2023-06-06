@@ -4,9 +4,9 @@ step=$3
 max_rate=$4
 size=$5
 
-# data_size=(16 32 64 128 256 512 1024)
+data_size=(16 32 64 128 256 512 1024)
 
-# for size in "${data_size[@]}"; do
+for size in "${data_size[@]}"; do
     output_dir=${size}B-result
 
 	mkdir $output_dir
@@ -27,4 +27,4 @@ size=$5
 
     rm latency-*.txt thp-*.txt
 
-# done
+done
