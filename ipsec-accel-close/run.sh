@@ -2,7 +2,7 @@ nr_core=$1
 start=$2
 step=$3
 max_rate=$4
-size=$5
+# size=$5
 
 data_size=(16 32 64 128 256 512 1024)
 
