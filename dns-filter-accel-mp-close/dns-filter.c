@@ -259,6 +259,12 @@ int dns_filter_worker(void *arg) {
 	doca_error_t result;
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
+		/* Create array of pointers (char*) to hold the queries */
+		elt->addr = rte_zmalloc(NULL, MEMPOOL_BUF_SIZE, 0);
+		if (elt->addr == NULL) {
+			DOCA_LOG_ERR("Dynamic allocation failed");
+		}
+
 		/* register packet in mmap */
 		result = doca_mmap_populate(worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
 		if (result != DOCA_SUCCESS) {
