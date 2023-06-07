@@ -43,6 +43,7 @@ struct dns_worker_ctx {
 
 	char *query_buf[PACKET_BURST];
 	struct doca_buf *buf[PACKET_BURST];
+	struct doca_buf *buffers[MAX_REGEX_RESPONSE_SIZE];			/* Buffers in use for job batch */
 
 	struct mempool_elt *elts[PACKET_BURST];
 	struct mempool *buf_mempool;
