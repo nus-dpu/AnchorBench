@@ -178,7 +178,7 @@ static int pkt_burst_forward(struct dns_worker_ctx *worker_ctx, int pid, int qid
 		do {
 			rte_pktmbuf_free(pkts_burst[nb_tx]);
 		} while (++nb_tx < nb_rx);
-	// }
+	}
 
 	return nb_rx;
 }
