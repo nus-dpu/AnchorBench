@@ -45,6 +45,7 @@ struct mempool_elt {
     struct doca_buf     * buf;
     /* Timestamp */
     struct timespec     ts;
+    void                * response;
     void                * packet;
     int                 packet_size;
     char                * addr;
