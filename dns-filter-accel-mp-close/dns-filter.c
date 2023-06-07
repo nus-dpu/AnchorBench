@@ -450,7 +450,6 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
 		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
-		elt->packet = (char *)calloc(256, sizeof(char));
 	}
 
 	return result;
