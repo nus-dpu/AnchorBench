@@ -34,6 +34,7 @@ inc_dirs = [
 ]
 
 sources = files(
+    'mempool.c',
     project_name + '.c',
 	project_name + '-port-cfg.c',
 	project_name + '-l2p.c',
@@ -43,7 +44,6 @@ sources = files(
 	common_src_path + '/utils.c',
 	common_src_path + '/flow_parser.c',
 	common_path + '/common.c',
-	common_path + '/src/mempool.c',
 )
 
 executable(project_name,
