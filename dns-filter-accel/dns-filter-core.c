@@ -402,7 +402,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 			.rule_group_ids = {1, 0, 0, 0},
 			.buffer = buf_element->buf,
 			.result = (struct doca_regex_search_result *)buf_element->response,
-			.allow_batching = false,
+			.allow_batching = true,
 	};
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
