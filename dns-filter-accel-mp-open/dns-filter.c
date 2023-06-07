@@ -515,7 +515,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		struct mempool_elt *elt;
 		list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
 			/* Create array of pointers (char*) to hold the queries */
-			elt->addr = rte_zmalloc(NULL, 1024, 0);
+			elt->addr = rte_zmalloc(NULL, MEMPOOL_BUF_SIZE, 0);
 			if (elt->addr == NULL) {
 				DOCA_LOG_ERR("Dynamic allocation failed");
 			}
