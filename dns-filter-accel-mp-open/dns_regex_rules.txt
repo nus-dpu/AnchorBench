@@ -1,0 +1,16 @@
+.*youtube.*
+.*wiki.*
+.*google.*
+.*twitter.*
+.*zoom.*
+.*tiktok.*
+.*reddit.*
+.*wikipedia.*
+.*yahoo.*
+.*quora.*
+.*netflix.*
+.*github.*
+.*leetcode.*
+.*bing.*
+.*facebook.*
+.*nike.*
