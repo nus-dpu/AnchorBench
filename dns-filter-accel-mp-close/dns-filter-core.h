@@ -61,7 +61,6 @@ extern struct dns_filter_config app_cfg;
 extern __thread int nr_latency;
 extern __thread uint64_t latency[MAX_NR_LATENCY];
 
-int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx);
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 
 #endif  /* _DNS_FILTER_CORE_H_ */
