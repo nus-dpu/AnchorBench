@@ -51,7 +51,7 @@ struct mempool_elt {
     void                * response;
     void                * packet;
     int                 packet_size;
-    char                addr[];
+    char                * addr;
 };
 
 /* Mempool structure */
