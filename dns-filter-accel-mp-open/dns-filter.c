@@ -515,7 +515,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 		struct mempool_elt *elt;
 		list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
 			/* Create array of pointers (char*) to hold the queries */
-			elt->addr = rte_zmalloc(NULL, MEMPOOL_BUF_SIZE, 0);
+			elt->addr = rte_zmalloc(NULL, 1024, 0);
 			if (elt->addr == NULL) {
 				DOCA_LOG_ERR("Dynamic allocation failed");
 			}
@@ -527,7 +527,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			}
 
 			/* Create a DOCA buffer  for this memory region */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			}

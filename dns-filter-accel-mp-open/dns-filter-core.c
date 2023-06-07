@@ -20,6 +20,7 @@
 #include <doca_mmap.h>
 #include <doca_regex_mempool.h>
 
+#include "mempool.h"
 #include "dns-filter-core.h"
 
 DOCA_LOG_REGISTER(DNS_FILTER::Core);
