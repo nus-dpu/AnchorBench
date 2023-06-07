@@ -184,7 +184,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 	/* Enqueue jobs to DOCA RegEx*/
 	rx_count = tx_count = 0;
-#if 0
+
 	while (tx_count < packets_received) {
 		struct timespec enq_start, enq_end, deq_end;
 		for (; tx_count != packets_received;) {
@@ -253,75 +253,6 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				ret = -1;
 				goto doca_buf_cleanup;
 			}
-		}
-	}
-#endif
-
-	for (; tx_count < packets_received;) {
-		struct doca_buf *buf = worker_ctx->buf[tx_count];
-		void *mbuf_data;
-		void *data_begin = (void *)worker_ctx->queries[tx_count];
-		size_t data_len = strlen(data_begin);
-		memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
-
-		doca_buf_get_data(buf, &mbuf_data);
-		doca_buf_set_data(buf, mbuf_data, data_len);
-
-		clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
-
-		struct doca_regex_job_search const job_request = {
-				.base = {
-					.type = DOCA_REGEX_JOB_SEARCH,
-					.ctx = doca_regex_as_ctx(worker_ctx->app_cfg->doca_reg),
-					.user_data = {.u64 = tx_count },
-				},
-				.rule_group_ids = {1, 0, 0, 0},
-				.buffer = buf,
-				.result = worker_ctx->responses + tx_count,
-				.allow_batching = tx_count != (packets_received - 1),
-		};
-
-		result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&job_request);
-		if (result == DOCA_ERROR_NO_MEMORY) {
-			doca_buf_refcount_rm(buf, NULL);
-			break;
-		}
-
-		if (result == DOCA_SUCCESS) {
-			worker_ctx->buffers[tx_count] = buf;
-			++tx_count;
-		} else {
-			DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
-			ret = -1;
-			goto doca_buf_cleanup;
-		}
-	}
-
-	for (; rx_count < tx_count;) {
-		/* dequeue one */
-		struct timespec now;
-		struct doca_event event = {0};
-		int index;
-		
-		result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
-		if (result == DOCA_SUCCESS) {
-			/* Handle the completed jobs */
-			index = event.user_data.u64;
-			clock_gettime(CLOCK_MONOTONIC, &now);
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
-			}
-			++rx_count;
-		} else if (result == DOCA_ERROR_AGAIN) {
-			/* Wait for the job to complete */
-			// printf("Wait for job to complete\n");
-			// ts.tv_sec = 0;
-			// ts.tv_nsec = 20;
-			// nanosleep(&ts, &ts);
-		} else {
-			DOCA_LOG_ERR("Failed to dequeue RegEx job response");
-			ret = -1;
-			goto doca_buf_cleanup;
 		}
 	}
 
