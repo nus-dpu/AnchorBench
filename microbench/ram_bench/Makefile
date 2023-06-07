@@ -1,0 +1,1 @@
+gcc -g -o list_traversal list_traversal.c
