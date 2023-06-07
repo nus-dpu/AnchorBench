@@ -198,7 +198,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			char *data_buf = buf_element->addr;
 			struct doca_buf *buf = buf_element->buf;
-			memcpy(data_buf, data, data_len);
+			memcpy(data_buf, data_begin, data_len);
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
