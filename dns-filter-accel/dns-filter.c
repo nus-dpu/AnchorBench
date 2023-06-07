@@ -258,8 +258,12 @@ int dns_filter_worker(void *arg) {
 
 	doca_error_t result;
 	struct mempool_elt *elt;
+	int index = 0;
+	struct doca_regex_search_result * res = (struct doca_regex_search_result *)calloc(MEMPOOL_NR_BUF, sizeof(struct doca_regex_search_result));
+
     list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer  for this memory region */
+		elt->response = &res[index++];
 		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
@@ -441,16 +445,6 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
-	}
-
-	int index = 0;
-	struct doca_regex_search_result * res = (struct doca_regex_search_result *)calloc(MEMPOOL_NR_BUF, sizeof(struct doca_regex_search_result));
-
-	/* Segment the region into pieces */
-	struct mempool_elt *elt;
-    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
-		elt->response = &res[index++];
-		// elt->packet = (char *)calloc(256, sizeof(char));
 	}
 
 	return result;
