@@ -263,7 +263,6 @@ int dns_filter_worker(void *arg) {
 		result = doca_mmap_populate(worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-			goto queries_cleanup;
 		}
 
 		/* Create a DOCA buffer  for this memory region */
