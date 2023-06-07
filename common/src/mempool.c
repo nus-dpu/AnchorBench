@@ -98,6 +98,6 @@ int mempool_get(struct mempool * mp, struct mempool_elt ** obj) {
 /*----------------------------------------------------------------------------*/
 void mempool_put(struct mempool * mp, struct mempool_elt * elt) {
     list_del_init(&elt->list);
-    memset(elt->addr, 0, elt->size);
+    memset(elt->addr, 0, mp->elt_size);
     list_add_tail(&elt->list, &mp->elt_free_list);
 }
