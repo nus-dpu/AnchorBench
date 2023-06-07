@@ -264,7 +264,7 @@ int dns_filter_worker(void *arg) {
     list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer  for this memory region */
 		elt->response = &res[index++];
-
+#if 0
 		/* Create array of pointers (char*) to hold the queries */
 		elt->addr = rte_zmalloc(NULL, MEMPOOL_BUF_SIZE, 0);
 		if (elt->addr == NULL) {
@@ -276,7 +276,7 @@ int dns_filter_worker(void *arg) {
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
 		}
-
+#endif
 		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
@@ -455,11 +455,11 @@ static doca_error_t dns_filter_init_lcore(struct dns_worker_ctx * ctx) {
 
 	ctx->buf_mempool = mempool_create(MEMPOOL_NR_BUF, MEMPOOL_BUF_SIZE);
 
-	// result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
-	// if (result != DOCA_SUCCESS) {
-	// 	DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
-	// 	return result;
-	// }
+	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add memory region to memory map. Reason: %s", doca_get_error_string(result));
+		return result;
+	}
 
 	return result;
 }
