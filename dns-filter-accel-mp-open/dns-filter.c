@@ -10,6 +10,7 @@
 #include <doca_argp.h>
 #include <doca_log.h>
 
+#include "mempool.h"
 #include "common.h"
 #include "utils.h"
 #include "dns-filter.h"
