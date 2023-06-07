@@ -234,11 +234,11 @@ void * regex_work_lcore(void * arg) {
 	/* Segment the region into pieces */
 	doca_error_t result;
 	struct mempool_elt *elt;
-	int index = 0;
+	int i = 0;
 	struct doca_regex_search_result * res = (struct doca_regex_search_result *)calloc(NB_BUF, sizeof(struct doca_regex_search_result));
 
     list_for_each_entry(elt, &rgx_ctx->buf_mempool->elt_free_list, list) {
-		elt->response = &res[index++];
+		elt->response = &res[i++];
 
 		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inv, rgx_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
