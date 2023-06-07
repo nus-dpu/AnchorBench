@@ -511,6 +511,7 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 
 		worker_ctx->buf_mempool = mempool_create(MEMPOOL_NR_BUF, MEMPOOL_BUF_SIZE);
 
+		int index = 0;
 		doca_error_t result;
 		struct mempool_elt *elt;
 		list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
@@ -531,6 +532,10 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			}
+
+			worker_ctx->query_buf[index] = elt->addr;
+			worker_ctx->buf[index] = elt->buf;
+			index++;
 		}
 
 		/* Launch the worker to start process packets */

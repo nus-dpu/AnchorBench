@@ -40,10 +40,15 @@ struct dns_worker_ctx {
 	char **queries;								/* Holds DNS queries */
 	struct dns_filter_config *app_cfg;					/* App config struct */
 	struct doca_mmap *mmap;
-	struct timespec ts[PACKET_BURST];
-	// char *query_buf[PACKET_BURST];
+
+	char *query_buf[PACKET_BURST];
+	struct doca_buf *buf[PACKET_BURST];
+
 	struct mempool_elt *elts[PACKET_BURST];
 	struct mempool *buf_mempool;
+	
+	struct timespec ts[PACKET_BURST];
+	// char *query_buf[PACKET_BURST];
 	struct doca_regex_search_result responses[MAX_REGEX_RESPONSE_SIZE];	/* DOCA RegEx jobs responses */
 	struct doca_buf_inventory *buf_inventory;				/* DOCA buffer inventory */
 	struct doca_workq *workq;						/* DOCA work queue */
