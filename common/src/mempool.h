@@ -48,10 +48,10 @@ struct mempool_elt {
     /* Timestamp */
     struct timespec     ts;
     /* Element address */
-    char                * addr;
     void                * response;
     void                * packet;
     int                 packet_size;
+    char                addr[];
 };
 
 /* Mempool structure */
