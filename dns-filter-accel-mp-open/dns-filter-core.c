@@ -194,7 +194,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			size_t data_len = strlen(data_begin);
 			struct mempool_elt * buf_element;
 			
-			mempool_get(ctx->buf_mempool, &buf_element);
+			mempool_get(worker_ctx->buf_mempool, &buf_element);
 
 			char *data_buf = buf_element->addr;
 			struct doca_buf *buf = buf_element->buf;
