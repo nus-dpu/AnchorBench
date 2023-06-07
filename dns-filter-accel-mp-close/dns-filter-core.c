@@ -162,6 +162,10 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	uint32_t payload_offset = 0;
 	const unsigned char *data;
 
+	if (pkt->pkt_len < ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE) {
+		return -1;
+	}
+
 	/* Parse mbuf, and extract the query */
 	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
 	if (result) {
