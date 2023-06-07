@@ -235,7 +235,7 @@ void * regex_work_lcore(void * arg) {
 	doca_error_t result;
 	struct mempool_elt *elt;
 	int index = 0;
-	struct doca_regex_search_result * res = (struct doca_regex_search_result *)calloc(MEMPOOL_NR_BUF, sizeof(struct doca_regex_search_result));
+	struct doca_regex_search_result * res = (struct doca_regex_search_result *)calloc(NB_BUF, sizeof(struct doca_regex_search_result));
 
     list_for_each_entry(elt, &rgx_ctx->buf_mempool->elt_free_list, list) {
 		elt->response = &res[index++];
