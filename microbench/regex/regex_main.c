@@ -385,10 +385,10 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	}
 
 	/* Segment the region into pieces */
-	struct mempool_elt *elt;
-    list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
-		elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
-	}
+	// struct mempool_elt *elt;
+    // list_for_each_entry(elt, &ctx->buf_mempool->elt_free_list, list) {
+	// 	elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
+	// }
 
 	return result;
 }

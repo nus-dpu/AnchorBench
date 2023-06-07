@@ -234,18 +234,18 @@ void * regex_work_lcore(void * arg) {
 	/* Segment the region into pieces */
 	doca_error_t result;
 	struct mempool_elt *elt;
+	int index = 0;
+	struct doca_regex_search_result * res = (struct doca_regex_search_result *)calloc(MEMPOOL_NR_BUF, sizeof(struct doca_regex_search_result));
+
     list_for_each_entry(elt, &rgx_ctx->buf_mempool->elt_free_list, list) {
+		elt->response = &res[index++];
+
 		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(rgx_ctx->buf_inv, rgx_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
 	}
-
-	doca_buf_inventory_get_num_elements(rgx_ctx->buf_inv, &nb_total);
-	doca_buf_inventory_get_num_free_elements(rgx_ctx->buf_inv, &nb_free);
-
-	printf(" >> total number of element: %d, free element: %d\n", nb_total, nb_free);
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
