@@ -259,6 +259,13 @@ int dns_filter_worker(void *arg) {
 	doca_error_t result;
 	struct mempool_elt *elt;
     list_for_each_entry(elt, &worker_ctx->buf_mempool->elt_free_list, list) {
+		/* register packet in mmap */
+		result = doca_mmap_populate(worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
+			goto queries_cleanup;
+		}
+
 		/* Create a DOCA buffer  for this memory region */
 		result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inv, worker_ctx->mmap, elt->addr, MEMPOOL_BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
