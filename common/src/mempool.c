@@ -17,7 +17,6 @@ struct mempool * mempool_create(int num_elt, size_t elt_size) {
     if (!mp) {
         goto failed;
     }
-#if 0
     /* Allocate a continuous memory region */
     mp->addr = (char *)calloc(num_elt, elt_size);
     if (!mp->addr) {
@@ -30,15 +29,17 @@ struct mempool * mempool_create(int num_elt, size_t elt_size) {
     init_list_head(&mp->elt_free_list);
     init_list_head(&mp->elt_used_list);
 
+    struct mempool_elt * elts = (struct mempool_elt *)calloc(num_elt, sizeof(struct mempool_elt));
+
     /* Segment the region into pieces */
     for (int i = 0; i < num_elt; i++) {
-        struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt));
+        // struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt));
+        struct mempool_elt * elt = (struct mempool_elt *)&elts[i];
         elt->mp = mp;
-        elt->size = elt_size;
         elt->addr = mp->addr + i * elt_size;
         list_add_tail(&elt->list, &mp->elt_free_list);
     }
-#endif
+#if 0
     mp->elt_size = elt_size;
     mp->size = total_size;
 
@@ -54,6 +55,7 @@ struct mempool * mempool_create(int num_elt, size_t elt_size) {
         elt->mp = mp;
         list_add_tail(&elt->list, &mp->elt_free_list);
     }
+#endif
 
     return mp;
 
