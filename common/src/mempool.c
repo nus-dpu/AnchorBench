@@ -45,9 +45,12 @@ struct mempool * mempool_create(int num_elt, size_t elt_size) {
     init_list_head(&mp->elt_free_list);
     init_list_head(&mp->elt_used_list);
 
+    struct mempool_elt * elts = (struct mempool_elt *)calloc(num_elt, sizeof(struct mempool_elt));
+
     /* Segment the region into pieces */
     for (int i = 0; i < num_elt; i++) {
-        struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt) + elt_size);
+        // struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt) + elt_size);
+        struct mempool_elt * elt = (struct mempool_elt *)&elts[i];
         elt->mp = mp;
         list_add_tail(&elt->list, &mp->elt_free_list);
     }
