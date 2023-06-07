@@ -531,8 +531,6 @@ dns_worker_lcores_run(struct dns_filter_config *app_cfg)
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Failed to allocate DOCA buf");
 			}
-
-			elt->response = (void *)calloc(1, sizeof(struct doca_regex_search_result));
 		}
 
 		/* Launch the worker to start process packets */
