@@ -242,8 +242,13 @@ void * sha_work_lcore(void * arg) {
 
 	doca_error_t result;
 	struct mempool_elt *elt;
+	int index = 0;
+	void * res = (void *)calloc(NB_BUF, SHA_DATA_LEN);
+
     list_for_each_entry(elt, &sha_ctx->buf_mempool->elt_free_list, list) {
-	/* Create a DOCA buffer for this memory region */
+		elt->response = &res[index++];
+
+		/* Create a DOCA buffer for this memory region */
 		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
