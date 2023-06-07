@@ -42,15 +42,11 @@ struct mempool_elt {
     /* Mempool this element belongs to */
     struct mempool      * mp;
     /* DOCA buf that holds the element data */
-    struct doca_buf     * buf;     
-    /* Mempool element size */
-    int                 size;
+    struct doca_buf     * buf;
     /* Timestamp */
     struct timespec     ts;
-    /* Element address */
-    void                * response;
-    void                * packet;
-    int                 packet_size;
+    // void                * packet;
+    // int                 packet_size;
     char                * addr;
 };
 
