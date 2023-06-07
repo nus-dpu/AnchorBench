@@ -162,6 +162,8 @@ static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	return TIMESPEC_TO_NSEC(diff);
 }
 
+#define MEMPOOL
+
 /*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
  * The inspection includes extracting DNS query and set it to RegEx engine to check a match
@@ -192,17 +194,18 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			void *mbuf_data;
 			void *data_begin = (void *)worker_ctx->queries[tx_count];
 			size_t data_len = strlen(data_begin);
-/*
+
+#ifdef MEMPOOL
 			struct mempool_elt * buf_element;
 			mempool_get(worker_ctx->buf_mempool, &buf_element);
 
 			char *data_buf = buf_element->addr;
 			struct doca_buf *buf = buf_element->buf;
 			memcpy(data_buf, data_begin, data_len);
-*/
-
+#else
 			struct doca_buf *buf = worker_ctx->buf[tx_count];
 			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
+#endif
 
 			doca_buf_get_data(buf, &mbuf_data);
 			doca_buf_set_data(buf, mbuf_data, data_len);
@@ -223,13 +226,18 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 
 			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&job_request);
 			if (result == DOCA_ERROR_NO_MEMORY) {
-				// mempool_put(worker_ctx->buf_mempool, buf_element);
+#ifdef MEMPOOL
+				mempool_put(worker_ctx->buf_mempool, buf_element);
+#endif
 				break;
 			}
 
 			if (result == DOCA_SUCCESS) {
-				// worker_ctx->elts[tx_count] = buf_element;
+#ifdef MEMPOOL
+				worker_ctx->elts[tx_count] = buf_element;
+#else
 				worker_ctx->buffers[tx_count] = buf;
+#endif
 				++tx_count;
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
@@ -252,7 +260,9 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				if (nr_latency < MAX_NR_LATENCY) {
 					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
 				}
-				// mempool_put(worker_ctx->buf_mempool, worker_ctx->elts[index]);
+#ifdef MEMPOOL
+				mempool_put(worker_ctx->buf_mempool, worker_ctx->elts[index]);
+#endif
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
