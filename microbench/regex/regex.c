@@ -90,8 +90,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 				.rule_group_ids = {1, 0, 0, 0},
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
-				.allow_batching = false,
-				// .allow_batching = ((nb_enqueued + 1) % 16 == 0)? false : true,
+				// .allow_batching = false,
+				.allow_batching = ((nb_enqueued + 1) % batch_size == 0)? false : true,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -161,9 +161,9 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			// if (nr_latency < MAX_NR_LATENCY) {
-			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			// }
+			if (nr_latency < MAX_NR_LATENCY) {
+				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			}
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);

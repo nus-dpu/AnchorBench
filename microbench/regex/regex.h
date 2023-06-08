@@ -83,6 +83,7 @@ struct worker {
 extern void * regex_work_lcore(void * arg);
 
 extern int data_len;
+extern int batch_size;
 extern pthread_barrier_t barrier;
 
 #endif  /* _REGEX_H_ */
