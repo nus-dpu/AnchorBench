@@ -66,14 +66,14 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 
 		/* Get one free element from the mempool */
 		mempool_get(ctx->buf_mempool, &src_buf);
-		assert(src_buf != NULL);
+		// assert(src_buf != NULL);
 		mempool_get(ctx->buf_mempool, &dst_buf);
-		assert(dst_buf != NULL);
+		// assert(dst_buf != NULL);
 		/* Get the memory segment */
 		src_data_buf = src_buf->addr;
 		dst_data_buf = dst_buf->addr;
 
-		memset(src_data_buf, 0, BUF_SIZE);
+		// memset(src_data_buf, 0, BUF_SIZE);
 		memcpy(src_data_buf, data, data_len);
 
 		// /* Create a DOCA buffer for this memory region */
