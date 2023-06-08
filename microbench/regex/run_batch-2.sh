@@ -10,7 +10,7 @@ echo ">> Partial matching..."
 
 rm thp-*.txt latency-*.txt
 
-dir=${size}B-partial-batch=${batch}-result
+dir=${data_size}B-partial-batch=${batch}-result
 mkdir ${dir}
 
 for nr_core in $(seq 1 1 8); do 
