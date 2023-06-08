@@ -1,5 +1,5 @@
 queue_depth=128
-data_size=20
+data_size='20'
 rate=1000
 batch=$1
 
