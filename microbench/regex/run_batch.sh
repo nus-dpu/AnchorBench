@@ -1,6 +1,6 @@
 queue_depth=128
 data_size=20
-batch_size=(1 8 16 32 64)
+batch_size=(4 8 16 32 64)
 rate=1000
 
 for size in "${batch_size[@]}"; do
@@ -11,7 +11,7 @@ for size in "${batch_size[@]}"; do
 
 	rm thp-*.txt latency-*.txt
 
-	dir=${size}B-partial-${batch_size}batch-result
+	dir=${size}B-partial-batch=${size}-result
 	mkdir ${dir}
 	
 	for nr_core in $(seq 1 1 8); do 
@@ -23,7 +23,7 @@ for size in "${batch_size[@]}"; do
 		for round in $(seq 1 1 6); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Partial matching | Test $data_size B (round $round)"
-			./build/regex -l 50 -p 03:00.0 -r /tmp/partial_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth}
+			./build/regex -l 50 -p 03:00.0 -r /tmp/partial_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth} -a ${size}
 			cat thp-*.txt 		> ${dir}/thp-$nr_core/thp-rate-$rate.txt
 			cat latency-*.txt 	> ${dir}/lat-$nr_core/lat-rate-$rate.txt
 			echo "  >> Test done!"

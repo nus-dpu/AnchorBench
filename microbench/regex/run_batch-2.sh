@@ -1,6 +1,7 @@
 queue_depth=128
 data_size=20
 rate=1000
+batch=$1
 
 rm url.txt
 python generate.py ${size}B_url.txt
@@ -9,7 +10,7 @@ echo ">> Partial matching..."
 
 rm thp-*.txt latency-*.txt
 
-dir=${size}B-partial-NO-batch-result
+dir=${size}B-partial-batch=${batch}-result
 mkdir ${dir}
 
 for nr_core in $(seq 1 1 8); do 
