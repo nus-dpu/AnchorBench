@@ -4,7 +4,7 @@ rate=1000
 batch=$1
 
 rm url.txt
-python generate.py ${size}B_url.txt
+python generate.py ${data_size}B_url.txt
 
 echo ">> Partial matching..."
 
