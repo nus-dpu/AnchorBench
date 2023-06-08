@@ -1,5 +1,5 @@
 queue_depth=128
-data_size=(20 30 60 100 200 400)
+data_size=(20 60 100 200 400)
 rate=1000
 
 for size in "${data_size[@]}"; do
