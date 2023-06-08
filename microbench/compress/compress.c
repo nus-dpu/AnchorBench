@@ -106,6 +106,7 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 			},
 			.dst_buff = dst_buf->buf,
 			.src_buff = src_buf->buf,
+			.output_chksum = src_buf->response,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&compress_job);
@@ -242,8 +243,13 @@ void * compress_work_lcore(void * arg) {
 
 	doca_error_t result;
 	struct mempool_elt *elt;
+	int index = 0;
+	void * res = (void *)calloc(NB_BUF, sizeof(uint64_t));
+
     list_for_each_entry(elt, &compress_ctx->buf_mempool->elt_free_list, list) {
-	/* Create a DOCA buffer for this memory region */
+		elt->response = &res[index++];
+	
+		/* Create a DOCA buffer for this memory region */
 		result = doca_buf_inventory_buf_by_addr(compress_ctx->buf_inv, compress_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
