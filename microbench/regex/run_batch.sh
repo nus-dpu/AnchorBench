@@ -1,5 +1,5 @@
 queue_depth=128
-data_size=20
+data_size='20'
 batch_size=(4 8 16 32 64)
 rate=1000
 
