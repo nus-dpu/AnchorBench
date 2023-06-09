@@ -199,11 +199,9 @@ void * regex_work_lcore(void * arg) {
 	int nr_rule = 0;
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
-	if (sched_getcpu() < 1) {
-		mean = mean / 8;
-	} else if (sched_getcpu() < 2) {
+	if (sched_getcpu() < 2) {
 		mean = mean / 4;
-	} else if (sched_getcpu() < 3) {
+	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
 	}
 
