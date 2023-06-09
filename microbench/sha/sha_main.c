@@ -332,7 +332,7 @@ static doca_error_t sha_init_lcore(struct sha_ctx * ctx) {
 		return result;
 	}
 
-	ctx->buf_mempool = mempool_create(NB_BUF, data_len);
+	ctx->buf_mempool = mempool_create(NB_BUF, BUF_SIZE);
 
 	result = doca_mmap_populate(ctx->mmap, ctx->buf_mempool->addr, ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
