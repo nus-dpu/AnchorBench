@@ -106,7 +106,6 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 			},
 			.dst_buff = dst_buf->buf,
 			.src_buff = src_buf->buf,
-			.output_chksum = src_buf->response,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&compress_job);
