@@ -1,7 +1,6 @@
 queue_depth=1
 data_size=(20 60 100 200 400)
 rate=1000
-batch=$1
 
 for size in "${data_size[@]}"; do
 	rm url.txt
@@ -11,7 +10,7 @@ for size in "${data_size[@]}"; do
 
 	rm thp-*.txt latency-*.txt
 
-	dir=${size}B-full-batch=${batch}-result
+	dir=${size}B-singleFlush-result
 	mkdir ${dir}
 
 	for nr_core in $(seq 1 1 8); do 
