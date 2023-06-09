@@ -35,7 +35,7 @@
 #define MAX_ARG_SIZE 256			/* Maximum size of input argument */
 
 #define NB_BUF		128
-#define BUF_SIZE	1024
+#define BUF_SIZE	32780
 
 #define SHA_DATA_LEN	1024
 #define M_1				1048576
