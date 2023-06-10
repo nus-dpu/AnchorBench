@@ -364,11 +364,13 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     doca_error_t result;
 
 	if (sched_getcpu() < 2) {
-		cfg.queue_depth = 1;
+		// cfg.queue_depth = 1;
+		cfg.queue_depth = 32;
 	} else if (sched_getcpu() < 4) {
 		cfg.queue_depth = 8;
 	} else {
-		cfg.queue_depth = 32;
+		// cfg.queue_depth = 32;
+		cfg.queue_depth = 1;
 	}
 
     result = doca_workq_create(cfg.queue_depth, &ctx->workq);
