@@ -284,7 +284,7 @@ void * regex_work_lcore(void * arg) {
 			break;
 		}
 
-		if (sched_getcpu() < 4) {
+		if (sched_getcpu() < 2 || sched_getcpu() > 3) {
 			continue;
 		}
 
