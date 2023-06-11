@@ -12,7 +12,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 __thread struct input_info input[MAX_NR_RULE];
 
-__thread int nr_latency = 0;
+__thread uint64_t nr_latency = 0;
 struct latency_info {
 	uint64_t start;
 	uint64_t end;
@@ -383,7 +383,7 @@ void * regex_work_lcore(void * arg) {
 		return NULL;
 	}
 
-	for (int i = 0; i < nr_latency; i++) {
+	for (uint64_t i = 0; i < nr_latency; i++) {
 		// fprintf(output_fp, "%lu\n", latency[i]);
 		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 	}
