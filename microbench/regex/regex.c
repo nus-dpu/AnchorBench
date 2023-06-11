@@ -41,6 +41,8 @@ double ran_expo(double mean) {
 #endif
 }
 
+__thread int core_id;
+
 /*
  * Enqueue job to DOCA RegEx qp
  *
@@ -92,7 +94,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 				.rule_group_ids = {1, 0, 0, 0},
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
-				.allow_batching = false,
+				// .allow_batching = false,
+				.allow_batching = (core_id == 0)? false : true,
 				// .allow_batching = ((nb_enqueued + 1) % batch_size != 0),
 		};
 
@@ -215,6 +218,8 @@ void * regex_work_lcore(void * arg) {
 		worker[i].interval = 0;
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
+
+	core_id = sched_getcpu();
 
     fp = fopen(cfg.data, "rb");
     if (fp == NULL) {
