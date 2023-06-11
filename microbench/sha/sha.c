@@ -9,12 +9,14 @@ DOCA_LOG_REGISTER(SHA::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024)
+#define MAX_NR_LATENCY	(8 * 1024 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
 __thread int nr_latency = 0;
-__thread uint64_t latency[MAX_NR_LATENCY];
+// __thread uint64_t latency[MAX_NR_LATENCY];
+__thread bool start_record = false;
+__thread uint64_t * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
@@ -168,7 +170,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			src_doca_buf = (struct mempool_elt *)event.user_data.ptr;
 			dst_doca_buf = (struct mempool_elt *)src_doca_buf->response;
-			if (nr_latency < MAX_NR_LATENCY) {
+			if (start_record && nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&src_doca_buf->ts, &now);
 			}
 			/* release the buffer back into the pool so it can be re-used */
@@ -255,6 +257,8 @@ void * sha_work_lcore(void * arg) {
 		}
 	}
 
+	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint64_t));
+
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
     pthread_barrier_wait(&barrier);
@@ -263,6 +267,10 @@ void * sha_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - begin.tv_sec > 5) {
+			start_record = true;
+		}
+
 		if (current_time.tv_sec - begin.tv_sec > 10) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
