@@ -326,7 +326,7 @@ void * regex_work_lcore(void * arg) {
 			increase_rate = false;
 		}
 
-		if (current_time.tv_sec - last_mean_change.tv_sec >= 8) {
+		if (current_time.tv_sec - last_mean_change.tv_sec >= 5) {
 			if (increase_rate) {
 				mean -= 80000.00;
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
@@ -369,7 +369,6 @@ void * regex_work_lcore(void * arg) {
 		}
 	}
 
-    int lat_start = (int)(0.15 * nr_latency);
 	FILE * output_fp;
 	char name[32];
 
@@ -380,7 +379,7 @@ void * regex_work_lcore(void * arg) {
 		return NULL;
 	}
 
-	for (int i = lat_start; i < nr_latency; i++) {
+	for (int i = 0; i < nr_latency; i++) {
 		// fprintf(output_fp, "%lu\n", latency[i]);
 		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].end - latency[i].start, latency[i].start, latency[i].end);
 	}
