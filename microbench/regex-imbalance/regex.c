@@ -344,11 +344,11 @@ void * regex_work_lcore(void * arg) {
 
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
 		}
-#if 0
-		if (sched_getcpu() > 1) {
+
+		if (sched_getcpu() > 2) {
 			continue;
 		}
-#endif
+
 		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
