@@ -334,7 +334,7 @@ void * regex_work_lcore(void * arg) {
 				mean += 60000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
-]
+
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
 		}
 #if 0
