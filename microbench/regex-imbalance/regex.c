@@ -223,10 +223,10 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
-		dec_start = 260;
+		dec_start = 300;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
-		dec_start = 230;
+		dec_start = 250;
 	} else {
 		dec_start = 200;
 	}
@@ -293,7 +293,7 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - begin.tv_sec > 300) {
+		if (current_time.tv_sec - begin.tv_sec > 360) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
@@ -338,7 +338,7 @@ void * regex_work_lcore(void * arg) {
 				}
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += 12000.00;
+				mean += 6000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
