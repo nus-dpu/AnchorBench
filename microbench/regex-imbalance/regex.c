@@ -345,7 +345,7 @@ void * regex_work_lcore(void * arg) {
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
 		}
 
-		if (sched_getcpu() > 2) {
+		if (sched_getcpu() > 1) {
 			continue;
 		}
 
