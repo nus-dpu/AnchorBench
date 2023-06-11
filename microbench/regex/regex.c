@@ -8,7 +8,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024)
+#define MAX_NR_LATENCY	(128 * 1024 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
@@ -198,13 +198,6 @@ void * regex_work_lcore(void * arg) {
     ssize_t read;
 	int nr_rule = 0;
 
-	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
-	if (sched_getcpu() < 2) {
-		mean = mean / 4;
-	} else if (sched_getcpu() < 4) {
-		mean = mean / 2;
-	}
-
 	struct worker worker[NUM_WORKER];
 
 	double interval;
@@ -282,10 +275,6 @@ void * regex_work_lcore(void * arg) {
 
 			fclose(output_fp);
 			break;
-		}
-
-		if (sched_getcpu() > 1) {
-			continue;
 		}
 
 		for (int i = 0; i < NUM_WORKER; i++) {
