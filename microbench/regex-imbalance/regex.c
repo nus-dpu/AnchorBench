@@ -8,7 +8,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024)
+#define MAX_NR_LATENCY	(256 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
@@ -213,19 +213,19 @@ void * regex_work_lcore(void * arg) {
 	int nr_rule = 0;
 
 	int nr_thp_info = 0;
-	struct thp_info * thp_info = (struct thp_info *)calloc(240, sizeof(struct thp_info));
+	struct thp_info * thp_info = (struct thp_info *)calloc(550, sizeof(struct thp_info));
 
 	int dec_start;
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 2) {
 		mean = mean / (1.4 * 1.4);
-		dec_start = 660;
+		dec_start = 300;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 1.4;
-		dec_start = 580;
+		dec_start = 275;
 	} else {
-		dec_start = 500;
+		dec_start = 250;
 	}
 
 	printf("CPU %02d| mean: %.2f, max: %.2f\n", sched_getcpu(), mean, max);
@@ -288,7 +288,7 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - begin.tv_sec > 1200) {
+		if (current_time.tv_sec - begin.tv_sec > 540) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
@@ -328,10 +328,10 @@ void * regex_work_lcore(void * arg) {
 
 		if (current_time.tv_sec - last_mean_change.tv_sec >= 5) {
 			if (increase_rate) {
-				mean -= 80000.00;
+				mean -= 100000.00;
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += 80000.00;
+				mean += 100000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
@@ -381,7 +381,7 @@ void * regex_work_lcore(void * arg) {
 
 	for (int i = 0; i < nr_latency; i++) {
 		// fprintf(output_fp, "%lu\n", latency[i]);
-		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].end - latency[i].start, latency[i].start, latency[i].end);
+		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 	}
 
 	fclose(output_fp);
