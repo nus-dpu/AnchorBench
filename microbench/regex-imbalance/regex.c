@@ -319,10 +319,10 @@ void * regex_work_lcore(void * arg) {
 
 		if (current_time.tv_sec - last_mean_change.tv_sec >= 8) {
 			if (increase_rate) {
-				mean -= (NUM_WORKER * cfg.nr_core * 1.0e6 / 300);
+				mean -= 20000.00;
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += (NUM_WORKER * cfg.nr_core * 1.0e6 / 300);
+				mean += 20000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
