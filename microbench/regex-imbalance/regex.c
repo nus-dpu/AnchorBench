@@ -171,7 +171,22 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 				nr_latency++;
 				// latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			} else {
+				FILE * output_fp;
+				char name[32];
+
+				sprintf(name, "latency-%d.txt", sched_getcpu());
+				output_fp = fopen(name, "w");
+				if (!output_fp) {
+					printf("Error opening latency output file!\n");
+					return NULL;
+				}
+	
 				printf("CPU %02d| RUN OUT OF SPACE!\n", sched_getcpu());
+				for (uint64_t i = 0; i < nr_latency; i++) {
+					// fprintf(output_fp, "%lu\n", latency[i]);
+					fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+				}
+				exit(1);
 			}
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
