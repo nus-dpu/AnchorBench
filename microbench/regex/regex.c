@@ -8,7 +8,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(1024 * 1024)
+#define MAX_NR_LATENCY	(128 * 1024 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
@@ -283,7 +283,7 @@ void * regex_work_lcore(void * arg) {
 		}
 
 		for (int i = 0; i < NUM_WORKER; i++) {
-			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
@@ -291,11 +291,11 @@ void * regex_work_lcore(void * arg) {
 				} else {
 					index = (index + 1) % nr_rule;
 					nb_enqueued++;
-					interval = ran_expo(mean);
-					worker[i].interval = (uint64_t)round(interval);
-					worker[i].last_enq_time = current_time;
+					// interval = ran_expo(mean);
+					// worker[i].interval = (uint64_t)round(interval);
+					// worker[i].last_enq_time = current_time;
 				}
-			}
+			// }
 		}
 
 		ret = regex_scan_deq_job(rgx_ctx);
