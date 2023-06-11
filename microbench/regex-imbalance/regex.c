@@ -296,9 +296,9 @@ void * regex_work_lcore(void * arg) {
 				return;
 			}
 
-			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
-				nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)), 
-				nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
+			for (int i = 0; i < nr_thp_info; i++) {
+				fprintf(output_fp, "%lu\t%6.2lf\t%6.2lf\n", thp_info[i].sec, thp_info[i].enqueue_rate, thp_info[i].dequeue_rate);
+			}
 
 			fclose(output_fp);
 			break;
@@ -308,7 +308,9 @@ void * regex_work_lcore(void * arg) {
 			thp_info[nr_thp_info].sec = current_time.tv_sec;
 			thp_info[nr_thp_info].enqueue_rate = sec_nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(last_log));
 			thp_info[nr_thp_info].dequeue_rate = sec_nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(current_time) - TIMESPEC_TO_NSEC(last_log));
+			nr_thp_info++;
 			sec_nb_enqueued = sec_nb_dequeued = 0;
+			printf("CPU %02d| Enqueue: %6.2lf(RPS), dequeue: %6.2lf(RPS)\n", sched_getcpu(), thp_info[nr_thp_info].enqueue_rate, thp_info[nr_thp_info].dequeue_rate);
             clock_gettime(CLOCK_MONOTONIC, &last_log);
 		}
 
