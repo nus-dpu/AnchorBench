@@ -220,10 +220,10 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
-		dec_start = 300;
+		dec_start = 350;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
-		dec_start = 275;
+		dec_start = 300;
 	} else {
 		dec_start = 250;
 	}
@@ -333,7 +333,7 @@ void * regex_work_lcore(void * arg) {
 				}
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += 10000.00;
+				mean += 15000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
