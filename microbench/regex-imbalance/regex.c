@@ -322,7 +322,7 @@ void * regex_work_lcore(void * arg) {
 				mean -= 120000.00;
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += 120000.00;
+				mean += 40000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
