@@ -316,11 +316,11 @@ void * regex_work_lcore(void * arg) {
 
 		if (current_time.tv_sec - last_mean_change.tv_sec >= 8) {
 			if (increase_rate) {
-				printf("CPU %02d| Decrease mean %lu by 300\n", sched_getcpu(), mean);
-				mean -= 300;
+				mean -= (NUM_WORKER * cfg.nr_core * 1.0e6 / 300);
+				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				printf("CPU %02d| Increase mean %lu by 300\n", sched_getcpu(), mean);
-				mean += 300;
+				mean += (NUM_WORKER * cfg.nr_core * 1.0e6 / 300);
+				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
 			if (mean >= 4000) {
