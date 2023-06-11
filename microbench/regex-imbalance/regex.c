@@ -166,14 +166,14 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
-				latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
-				nr_latency++;
-				// latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			} else {
-				printf("CPU %02d| RUN OUT OF SPACE!\n", sched_getcpu());
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
+			// 	latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
+			// 	nr_latency++;
+			// 	// latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			// } else {
+			// 	printf("CPU %02d| RUN OUT OF SPACE!\n", sched_getcpu());
+			// }
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
 			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
@@ -376,22 +376,22 @@ void * regex_work_lcore(void * arg) {
 		}
 	}
 
-	FILE * output_fp;
-	char name[32];
+	// FILE * output_fp;
+	// char name[32];
 
-	sprintf(name, "latency-%d.txt", sched_getcpu());
-	output_fp = fopen(name, "w");
-	if (!output_fp) {
-		printf("Error opening latency output file!\n");
-		return NULL;
-	}
+	// sprintf(name, "latency-%d.txt", sched_getcpu());
+	// output_fp = fopen(name, "w");
+	// if (!output_fp) {
+	// 	printf("Error opening latency output file!\n");
+	// 	return NULL;
+	// }
 
-	for (uint64_t i = 0; i < nr_latency; i++) {
-		// fprintf(output_fp, "%lu\n", latency[i]);
-		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
-	}
+	// for (uint64_t i = 0; i < nr_latency; i++) {
+	// 	// fprintf(output_fp, "%lu\n", latency[i]);
+	// 	fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+	// }
 
-	fclose(output_fp);
+	// fclose(output_fp);
 
     return NULL;
 }
