@@ -216,9 +216,9 @@ void * regex_work_lcore(void * arg) {
 	struct thp_info * thp_info = (struct thp_info *)calloc(240, sizeof(struct thp_info));
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
-	if (sched_getcpu() < 2) {
+	if (sched_getcpu() == 0) {
 		mean = mean / 4;
-	} else if (sched_getcpu() < 4) {
+	} else if (sched_getcpu() == 1) {
 		mean = mean / 2;
 	}
 
