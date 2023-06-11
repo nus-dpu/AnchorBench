@@ -8,7 +8,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(512 * 1024)
+#define MAX_NR_LATENCY	(1024 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
@@ -17,7 +17,8 @@ struct latency_info {
 	uint64_t start;
 	uint64_t end;
 };
-__thread struct latency_info latency[MAX_NR_LATENCY];
+// __thread struct latency_info latency[MAX_NR_LATENCY];
+__thread struct latency_info * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
@@ -171,22 +172,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 				nr_latency++;
 				// latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			} else {
-				FILE * output_fp;
-				char name[32];
-
-				sprintf(name, "latency-%d.txt", sched_getcpu());
-				output_fp = fopen(name, "w");
-				if (!output_fp) {
-					printf("Error opening latency output file!\n");
-					return NULL;
-				}
-	
 				printf("CPU %02d| RUN OUT OF SPACE!\n", sched_getcpu());
-				for (uint64_t i = 0; i < nr_latency; i++) {
-					// fprintf(output_fp, "%lu\n", latency[i]);
-					fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
-				}
-				exit(1);
 			}
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
@@ -294,6 +280,8 @@ void * regex_work_lcore(void * arg) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
 	}
+
+	latency = (struct latency_info *)calloc(MAX_NR_LATENCY, sizeof(struct latency_info));
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
