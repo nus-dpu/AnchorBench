@@ -1,5 +1,5 @@
 queue_depth=128
-data_size=(20)
+size=20
 nr_core=3
 rate=100
 
