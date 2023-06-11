@@ -1,4 +1,4 @@
-queue_depth=(1 4 8 32 64 128)
+queue_depth=(1 128)
 data_size=(20 60 100 200 400)
 rate=1000
 batch=$1
