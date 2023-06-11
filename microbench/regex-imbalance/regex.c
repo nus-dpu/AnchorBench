@@ -8,7 +8,7 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(256 * 1024)
+#define MAX_NR_LATENCY	(1024 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
@@ -220,12 +220,12 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
-		dec_start = 350;
+		dec_start = 200;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
-		dec_start = 300;
+		dec_start = 160;
 	} else {
-		dec_start = 250;
+		dec_start = 120;
 	}
 
 	printf("CPU %02d| mean: %.2f, max: %.2f\n", sched_getcpu(), mean, max);
@@ -288,7 +288,7 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - begin.tv_sec > 540) {
+		if (current_time.tv_sec - begin.tv_sec > 400) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
@@ -326,7 +326,7 @@ void * regex_work_lcore(void * arg) {
 			increase_rate = false;
 		}
 
-		if (current_time.tv_sec - last_mean_change.tv_sec >= 5) {
+		if (current_time.tv_sec - last_mean_change.tv_sec >= 4) {
 			if (increase_rate) {
 				if (mean > 1000.00) {
 					mean -= 10000.00;
