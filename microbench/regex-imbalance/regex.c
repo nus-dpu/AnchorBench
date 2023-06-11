@@ -166,6 +166,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
 			if (nr_latency < MAX_NR_LATENCY) {
+				printf("CPU %02d| RUN OUT OF SPACE!\n", sched_getcpu());
 				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
 				latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
 				nr_latency++;
