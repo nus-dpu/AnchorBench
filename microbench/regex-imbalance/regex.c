@@ -216,11 +216,14 @@ void * regex_work_lcore(void * arg) {
 	struct thp_info * thp_info = (struct thp_info *)calloc(240, sizeof(struct thp_info));
 
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
+	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() == 0) {
 		mean = mean / 4;
 	} else if (sched_getcpu() == 1) {
 		mean = mean / 2;
 	}
+
+	printf("CPU %02d| mean: %.2f, max: %.2f\n", sched_getcpu(), mean, max);
 
 	struct worker worker[NUM_WORKER];
 
@@ -323,7 +326,7 @@ void * regex_work_lcore(void * arg) {
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
-			if (mean >= 4000) {
+			if (mean < max) {
 				increase_rate = false;
 			}
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
