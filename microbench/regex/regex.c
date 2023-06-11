@@ -198,6 +198,8 @@ void * regex_work_lcore(void * arg) {
     ssize_t read;
 	int nr_rule = 0;
 
+	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
+
 	struct worker worker[NUM_WORKER];
 
 	double interval;
