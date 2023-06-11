@@ -332,7 +332,7 @@ void * regex_work_lcore(void * arg) {
 			} else {
 				mean += 120000.00;
 			}
-]
+
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
 		}
 #if 0
