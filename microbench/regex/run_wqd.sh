@@ -1,6 +1,7 @@
 queue_depth=(1 4 8 32 64 128)
 data_size=(20 60 100 200 400)
 rate=1000
+batch=$1
 
 for depth in "${queue_depth[@]}"; do
 	rm thp-*.txt latency-*.txt
