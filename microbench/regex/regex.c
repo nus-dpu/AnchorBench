@@ -8,12 +8,13 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024 * 1024)
+#define MAX_NR_LATENCY	(8 * 1024 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
 __thread int nr_latency = 0;
 // __thread uint64_t latency[MAX_NR_LATENCY];
+__thread bool start_record = false;
 __thread uint64_t * latency;
 
 __thread unsigned int seed;
@@ -162,7 +163,7 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			if (nr_latency < MAX_NR_LATENCY) {
+			if (start_record && nr_latency < MAX_NR_LATENCY) {
 				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			}
 			/* release the buffer back into the pool so it can be re-used */
@@ -258,6 +259,10 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - begin.tv_sec > 5) {
+			start_record = true;
+		}
+
 		if (current_time.tv_sec - begin.tv_sec > 10) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
