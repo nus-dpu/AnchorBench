@@ -223,10 +223,10 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
-		dec_start = 360;
+		dec_start = 260;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
-		dec_start = 280;
+		dec_start = 230;
 	} else {
 		dec_start = 200;
 	}
