@@ -1,4 +1,4 @@
-queue_depth=1
+queue_depth=128
 data_size=(20)
 rate=1000
 
