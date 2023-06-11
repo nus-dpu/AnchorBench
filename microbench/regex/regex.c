@@ -13,7 +13,8 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 __thread struct input_info input[MAX_NR_RULE];
 
 __thread int nr_latency = 0;
-__thread uint64_t latency[MAX_NR_LATENCY];
+// __thread uint64_t latency[MAX_NR_LATENCY];
+__thread uint64_t * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
@@ -230,6 +231,8 @@ void * regex_work_lcore(void * arg) {
 
 	uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
+
+	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint64_t));
 
 	/* Segment the region into pieces */
 	doca_error_t result;
