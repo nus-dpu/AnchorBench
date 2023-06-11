@@ -5,7 +5,7 @@ rate=1000
 for depth in "${queue_depth[@]}"; do
 	rm thp-*.txt latency-*.txt
 
-	depth_dir=${size}B-full-batch=${batch}-result
+	depth_dir=${depth}-wqd
 	mkdir ${depth_dir}
 
 	for size in "${data_size[@]}"; do
