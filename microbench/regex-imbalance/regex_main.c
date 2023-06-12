@@ -365,9 +365,9 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 	int depth = cfg.queue_depth;
 
 	if (sched_getcpu() < 2) {
-		depth /= 4;
+		depth = 1;
 	} else if (sched_getcpu() < 4) {
-		depth /= 2;
+		depth = 16;
 	}
 
     result = doca_workq_create(depth, &ctx->workq);
