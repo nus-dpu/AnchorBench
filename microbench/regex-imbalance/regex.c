@@ -340,11 +340,13 @@ void * regex_work_lcore(void * arg) {
 		if (current_time.tv_sec - last_mean_change.tv_sec >= 4) {
 			if (increase_rate) {
 				if (mean > lower_bound) {
-					mean -= 10000.00;
+					// mean -= 10000.00;
+					mean -= 5000.00;
 				}
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += 6000.00;
+				// mean += 6000.00;
+				mean += 2000.00;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
