@@ -226,14 +226,14 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 1) {
 		mean = mean / 4;
-		dec_start = 300;
-	 	lower_bound = 100000.0;
+		dec_start = 350;
+	 	lower_bound = 10000.0;
 	} else if (sched_getcpu() < 2) {
 		mean = mean / 2;
-		dec_start = 250;
+		dec_start = 300;
 		lower_bound = 5000.0;
 	} else {
-		dec_start = 200;
+		dec_start = 250;
 		lower_bound = 0.0;
 	}
 
@@ -299,7 +299,7 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - begin.tv_sec > 400) {
+		if (current_time.tv_sec - begin.tv_sec > 500) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
