@@ -224,11 +224,11 @@ void * regex_work_lcore(void * arg) {
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 	double lower_bound = 0.0;
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
-	if (sched_getcpu() < 2) {
+	if (sched_getcpu() < 1) {
 		mean = mean / 4;
 		dec_start = 300;
 	 	lower_bound = 20000.0;
-	} else if (sched_getcpu() < 4) {
+	} else if (sched_getcpu() < 2) {
 		mean = mean / 2;
 		dec_start = 250;
 		lower_bound = 10000.0;
@@ -350,11 +350,11 @@ void * regex_work_lcore(void * arg) {
 
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
 		}
-
+#if 0
 		if (core_id > 1) {
 			continue;
 		}
-
+#endif
 		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
