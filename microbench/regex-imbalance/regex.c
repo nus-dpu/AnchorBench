@@ -220,15 +220,19 @@ void * regex_work_lcore(void * arg) {
 
 	int dec_start;
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
+	double lower_bound = 0.0;
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
 		dec_start = 300;
+	 	lower_bound = 40000.0;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
 		dec_start = 250;
+		lower_bound = 20000.0;
 	} else {
 		dec_start = 200;
+		lower_bound = 10000.0;
 	}
 
 	printf("CPU %02d| mean: %.2f, max: %.2f\n", sched_getcpu(), mean, max);
@@ -333,7 +337,7 @@ void * regex_work_lcore(void * arg) {
 
 		if (current_time.tv_sec - last_mean_change.tv_sec >= 4) {
 			if (increase_rate) {
-				if (mean >= 10000.00) {
+				if (mean > lower_bound) {
 					mean -= 10000.00;
 				}
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
