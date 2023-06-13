@@ -228,8 +228,8 @@ void * regex_work_lcore(void * arg) {
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
 		dec_start = 300;
-	 	lower_bound = 34000.0;
-		epoch = 17000;
+	 	lower_bound = 38000.0;
+		epoch = 19000;
 	} else if (sched_getcpu() < 5) {
 		mean = mean / 2;
 		dec_start = 250;
