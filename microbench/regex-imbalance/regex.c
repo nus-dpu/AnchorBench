@@ -226,12 +226,12 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	double epoch = 0.0;
 	if (sched_getcpu() < 2) {
-		mean = mean / 4;
+		mean = mean / 8;
 		dec_start = 300;
 	 	lower_bound = 38000.0;
 		epoch = 19000;
 	} else if (sched_getcpu() < 5) {
-		mean = mean / 2;
+		mean = mean / 4;
 		dec_start = 250;
 		lower_bound = 24000.0;
 		epoch = 24000;

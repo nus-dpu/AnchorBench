@@ -1,7 +1,7 @@
 queue_depth=128
 size=20
 nr_core=8
-rate=400
+rate=200
 
 rm url.txt
 python generate.py ${size}B_url.txt
