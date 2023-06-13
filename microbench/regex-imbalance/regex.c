@@ -233,12 +233,12 @@ void * regex_work_lcore(void * arg) {
 	} else if (sched_getcpu() < 5) {
 		mean = mean / 2;
 		dec_start = 250;
-		lower_bound = 24000.0;
-		epoch = 24000;
+		lower_bound = 25000.0;
+		epoch = 25000;
 	} else {
 		dec_start = 200;
 		lower_bound = 0.0;
-		epoch = 22000;
+		epoch = 30000;
 	}
 
 	printf("CPU %02d| mean: %.2f, max: %.2f\n", sched_getcpu(), mean, max);
