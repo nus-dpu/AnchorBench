@@ -9,7 +9,7 @@ DOCA_LOG_REGISTER(SHA::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(8 * 1024 * 1024)
+#define MAX_NR_LATENCY	(128 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
