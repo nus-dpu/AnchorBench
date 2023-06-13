@@ -225,11 +225,11 @@ void * regex_work_lcore(void * arg) {
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
 		dec_start = 300;
-	 	lower_bound = 40000.0;
+	 	lower_bound = 160000.0;
 	} else if (sched_getcpu() < 4) {
 		mean = mean / 2;
 		dec_start = 250;
-		lower_bound = 20000.0;
+		lower_bound = 40000.0;
 	} else {
 		dec_start = 200;
 		lower_bound = 10000.0;
