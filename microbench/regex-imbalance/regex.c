@@ -218,6 +218,8 @@ void * regex_work_lcore(void * arg) {
 	int nr_thp_info = 0;
 	struct thp_info * thp_info = (struct thp_info *)calloc(550, sizeof(struct thp_info));
 
+	int core_id = sched_getcpu();
+
 	int dec_start;
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 	double lower_bound = 0.0;
@@ -349,7 +351,7 @@ void * regex_work_lcore(void * arg) {
             clock_gettime(CLOCK_MONOTONIC, &last_mean_change);
 		}
 
-		if (sched_getcpu() > 1) {
+		if (core_id > 1) {
 			continue;
 		}
 
