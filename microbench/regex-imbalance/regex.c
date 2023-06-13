@@ -227,12 +227,12 @@ void * regex_work_lcore(void * arg) {
 	double epoch = 0.0;
 	if (sched_getcpu() < 2) {
 		mean = mean / 4;
-		dec_start = 270;
+		dec_start = 230;
 	 	lower_bound = 38000.0;
 		epoch = 19000;
 	} else if (sched_getcpu() < 5) {
 		mean = mean / 2;
-		dec_start = 240;
+		dec_start = 280;
 		lower_bound = 26000.0;
 		epoch = 26000;
 	} else {
@@ -339,6 +339,13 @@ void * regex_work_lcore(void * arg) {
 
 		if (current_time.tv_sec - begin.tv_sec > dec_start) {
 			increase_rate = false;
+			if (sched_getcpu() < 2) {
+				epoch = 25000;
+			} else if (sched_getcpu() < 5) {
+				epoch = 20000;
+			} else {
+				epoch = 35000;
+			}
 		}
 
 		if (current_time.tv_sec - last_mean_change.tv_sec >= 4) {
@@ -348,7 +355,7 @@ void * regex_work_lcore(void * arg) {
 				}
 				printf("CPU %02d| Decrease >> new mean: %.2f\n", sched_getcpu(), mean);
 			} else {
-				mean += 36000.00;
+				mean += epoch;
 				printf("CPU %02d| Increase >> new mean: %.2f\n", sched_getcpu(), mean);
 			}
 
