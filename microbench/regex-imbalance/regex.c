@@ -341,7 +341,7 @@ void * regex_work_lcore(void * arg) {
 		if (current_time.tv_sec - begin.tv_sec > dec_start) {
 			increase_rate = false;
 			if (sched_getcpu() < 2) {
-				epoch = 40000;
+				epoch = 45000;
 			} else if (sched_getcpu() < 5) {
 				epoch = 30000;
 			} else {
