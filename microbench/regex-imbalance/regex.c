@@ -227,17 +227,17 @@ void * regex_work_lcore(void * arg) {
 	double epoch = 0.0;
 	if (sched_getcpu() < 2) {
 		mean = 217000;
-		dec_start = 100;
+		dec_start = 90;
 	 	lower_bound = 42000.0;
 		epoch = 35000;
 	} else if (sched_getcpu() < 5) {
 		mean = 363000;
-		dec_start = 120;
+		dec_start = 110;
 		lower_bound = 43000.0;
 		epoch = 32000;
 	} else {
 		mean = 680000;
-		dec_start = 140;
+		dec_start = 150;
 		lower_bound = 0.0;
 		epoch = 34000;
 	}
@@ -304,7 +304,7 @@ void * regex_work_lcore(void * arg) {
 
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
-		if (current_time.tv_sec - begin.tv_sec > 500) {
+		if (current_time.tv_sec - begin.tv_sec > 250) {
             clock_gettime(CLOCK_MONOTONIC, &end);
 			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
@@ -341,7 +341,7 @@ void * regex_work_lcore(void * arg) {
 		if (current_time.tv_sec - begin.tv_sec > dec_start) {
 			increase_rate = false;
 			if (sched_getcpu() < 2) {
-				epoch = 38000;
+				epoch = 40000;
 			} else if (sched_getcpu() < 5) {
 				epoch = 30000;
 			} else {
