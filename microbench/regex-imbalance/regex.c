@@ -237,7 +237,7 @@ void * regex_work_lcore(void * arg) {
 		epoch = 32000;
 	} else {
 		mean = 816000;
-		dec_start = 160;
+		dec_start = 150;
 		lower_bound = 0.0;
 		epoch = 34000;
 	}
@@ -341,7 +341,7 @@ void * regex_work_lcore(void * arg) {
 		if (current_time.tv_sec - begin.tv_sec > dec_start) {
 			increase_rate = false;
 			if (sched_getcpu() < 2) {
-				epoch = 30000;
+				epoch = 36000;
 			} else if (sched_getcpu() < 5) {
 				epoch = 25000;
 			} else {
