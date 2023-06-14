@@ -226,19 +226,20 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	double epoch = 0.0;
 	if (sched_getcpu() < 2) {
-		mean = mean / 4;
+		mean = 138000;
 		dec_start = 230;
 	 	lower_bound = 38000.0;
-		epoch = 19000;
+		epoch = 20000;
 	} else if (sched_getcpu() < 5) {
-		mean = mean / 2;
+		mean = 342000;
 		dec_start = 280;
-		lower_bound = 30000.0;
+		lower_bound = 42000.0;
 		epoch = 30000;
 	} else {
+		mean = 800000;
 		dec_start = 180;
 		lower_bound = 0.0;
-		epoch = 35000;
+		epoch = 40000;
 	}
 
 	printf("CPU %02d| mean: %.2f, max: %.2f\n", sched_getcpu(), mean, max);
