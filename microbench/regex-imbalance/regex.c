@@ -237,7 +237,7 @@ void * regex_work_lcore(void * arg) {
 		epoch = 32000;
 	} else {
 		mean = 680000;
-		dec_start = 160;
+		dec_start = 150;
 		lower_bound = 0.0;
 		epoch = 34000;
 	}
