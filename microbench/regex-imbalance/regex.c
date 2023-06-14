@@ -226,14 +226,14 @@ void * regex_work_lcore(void * arg) {
 	double max = NUM_WORKER * cfg.nr_core * 1.0e6 / 5000.00;
 	double epoch = 0.0;
 	if (sched_getcpu() < 2) {
-		mean = 213000;
+		mean = 215000;
 		dec_start = 110;
-	 	lower_bound = 38000.0;
+	 	lower_bound = 40000.0;
 		epoch = 35000;
 	} else if (sched_getcpu() < 5) {
-		mean = 362000;
+		mean = 363000;
 		dec_start = 130;
-		lower_bound = 42000.0;
+		lower_bound = 43000.0;
 		epoch = 32000;
 	} else {
 		mean = 680000;
@@ -341,11 +341,11 @@ void * regex_work_lcore(void * arg) {
 		if (current_time.tv_sec - begin.tv_sec > dec_start) {
 			increase_rate = false;
 			if (sched_getcpu() < 2) {
-				epoch = 36000;
+				epoch = 38000;
 			} else if (sched_getcpu() < 5) {
-				epoch = 25000;
+				epoch = 30000;
 			} else {
-				epoch = 20000;
+				epoch = 25000;
 			}
 		}
 
