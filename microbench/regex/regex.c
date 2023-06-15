@@ -238,7 +238,7 @@ void * regex_work_lcore(void * arg) {
 	uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
 
-	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint64_t));
+	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint32_t));
 
 	/* Segment the region into pieces */
 	doca_error_t result;
