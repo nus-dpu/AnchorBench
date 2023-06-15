@@ -38,7 +38,7 @@
 #define M_1				1048576
 
 #define NB_BUF		128
-#define BUF_SIZE	1024
+#define BUF_SIZE	256
 
 struct regex_ctx {
 	struct doca_pci_bdf *pci_address;		/* RegEx PCI address to use */
