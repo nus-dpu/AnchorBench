@@ -8,19 +8,19 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024)
+#define MAX_NR_LATENCY	(16 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
 
 __thread int nr_latency = 0;
 // __thread uint64_t latency[MAX_NR_LATENCY];
 __thread bool start_record = false;
-__thread uint64_t * latency;
+__thread uint32_t * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
 
-uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+uint32_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
 		diff.tv_nsec += NSEC_PER_SEC;
@@ -329,7 +329,7 @@ void * regex_work_lcore(void * arg) {
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
-		fprintf(output_fp, "%lu\n", latency[i]);
+		fprintf(output_fp, "%u\n", latency[i]);
 	}
 
 	fclose(output_fp);
