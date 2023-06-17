@@ -358,7 +358,7 @@ doca_buf_cleanup:
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte_mbuf * mbuf, char * pkt, int len, char * data, int data_len) {
+static int regex_scan_enq_job(struct dns_worker_ctx * ctx, bool flush, struct rte_mbuf * mbuf, char * pkt, int len, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -404,7 +404,7 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, int index, struct rte
 			.rule_group_ids = {1, 0, 0, 0},
 			.buffer = buf_element->buf,
 			.result = (struct doca_regex_search_result *)buf_element->response,
-			.allow_batching = true,
+			.allow_batching = flush,
 	};
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -523,7 +523,7 @@ dns_processing(int pid, struct dns_worker_ctx *worker_ctx, uint16_t packets_rece
 	
 		extract_dns_query(mbuf, &query);
 
-		regex_scan_enq_job(worker_ctx, i, mbuf, pkt, len, query, strlen(query));
+		regex_scan_enq_job(worker_ctx, (i == (packets_received - 1))? false : true, mbuf, pkt, len, query, strlen(query));
 	}
 }
 
