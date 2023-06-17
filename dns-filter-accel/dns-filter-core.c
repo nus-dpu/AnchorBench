@@ -185,7 +185,7 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 
 	/* Parse DNS packet information and fill them into handle fields */
 	/* Ignore the timestamp field*/
-	if (ns_initparse(data, len - sizeof(uint64_t), &handle) < 0) {
+	if (ns_initparse(data, len - 2 * sizeof(uint64_t), &handle) < 0) {
 		DOCA_LOG_ERR("Fail to parse domain DNS packet");
 		return -1;
 	}
@@ -196,8 +196,8 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 	return 0;
 }
 
-static uint64_t
-extract_dns_ts(struct rte_mbuf *pkt)
+static void
+stamp_dns_ts(struct rte_mbuf *pkt, uint64_t latency)
 {
 	int len, result;
 	struct rte_mbuf mbuf = *pkt;
@@ -205,6 +205,7 @@ extract_dns_ts(struct rte_mbuf *pkt)
 	struct rte_sft_mbuf_info mbuf_info;
 	uint32_t payload_offset = 0;
 	const unsigned char *data;
+	uint64_t * ptr;
 
 	/* Parse mbuf, and extract the query */
 	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
@@ -229,7 +230,8 @@ extract_dns_ts(struct rte_mbuf *pkt)
 
 	data += (len - sizeof(uint64_t));
 
-	return *((uint64_t *)data);
+	ptr = (uint64_t *)data;
+	*ptr = latency;
 }
 
 /*
@@ -445,9 +447,9 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
-			if (nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
-			}
+			// if (nr_latency < MAX_NR_LATENCY) {
+			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
+			// }
 #if MALLOC_PACKET
 			struct rte_mbuf * mbuf = (struct rte_mbuf *)dpdk_get_txpkt(pid, buf_element->packet_size);
     		if (mbuf != NULL) {
@@ -458,6 +460,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 #else
 			struct rte_mbuf * mbuf = (struct rte_mbuf *)buf_element->packet;
 			if (likely(tx_mbufs[pid].len < DEFAULT_PKT_BURST)) {
+				stamp_dns_ts(mbuf, diff_timespec(&buf_element->ts, &now));
 				int next_pkt = tx_mbufs[pid].len;
 				struct rte_mbuf * tx_pkt = tx_mbufs[pid].m_table[next_pkt] = mbuf;
 
