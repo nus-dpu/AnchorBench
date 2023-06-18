@@ -161,6 +161,44 @@ static uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	return TIMESPEC_TO_NSEC(diff);
 }
 
+static void
+stamp_dns_ts(struct rte_mbuf *pkt, uint64_t latency)
+{
+	int len, result;
+	struct rte_mbuf mbuf = *pkt;
+	struct rte_sft_error error;
+	struct rte_sft_mbuf_info mbuf_info;
+	uint32_t payload_offset = 0;
+	const unsigned char *data;
+	uint64_t * ptr;
+
+	/* Parse mbuf, and extract the query */
+	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
+	if (result) {
+		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
+		return result;
+	}
+
+	/* Calculate the offset of UDP header start */
+	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
+
+	/* Skip UDP header to get DNS (query) start */
+	payload_offset += UDP_HEADER_SIZE;
+
+	/* Get a pointer to start of packet payload */
+	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
+	if (data == NULL) {
+		DOCA_LOG_ERR("Error in pkt mbuf adj");
+		return -1;
+	}
+	len = rte_pktmbuf_data_len(&mbuf);
+
+	data += (len - sizeof(uint64_t));
+
+	ptr = (uint64_t *)data;
+	*ptr = latency;
+}
+
 /*
  * In this function happened the inspection of DNS packets and classify if the query fit the listing type
  * The inspection includes extracting DNS query and set it to RegEx engine to check a match
@@ -238,9 +276,10 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				/* Handle the completed jobs */
 				index = event.user_data.u64;
 				clock_gettime(CLOCK_MONOTONIC, &now);
-				if (nr_latency < MAX_NR_LATENCY) {
-					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
-				}
+				// if (nr_latency < MAX_NR_LATENCY) {
+				// 	latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
+				// }
+				stamp_dns_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
