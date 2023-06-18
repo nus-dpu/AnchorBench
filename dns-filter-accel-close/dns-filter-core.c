@@ -76,7 +76,7 @@ extract_dns_query(struct rte_mbuf *pkt, char **query)
 
 	/* Parse DNS packet information and fill them into handle fields */
 	/* Ignore the timestamp field*/
-	if (ns_initparse(data, len - sizeof(uint64_t), &handle) < 0) {
+	if (ns_initparse(data, len - 2 * sizeof(uint64_t), &handle) < 0) {
 		// DOCA_LOG_ERR("Fail to parse domain DNS packet");
 		return -1;
 	}
