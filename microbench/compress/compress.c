@@ -93,7 +93,7 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 		doca_buf_get_data(buf->src_buf, &mbuf_data);
 		doca_buf_set_data(buf->src_buf, mbuf_data, data_len);
 
-	    clock_gettime(CLOCK_MONOTONIC, &src_buf->ts);
+	    clock_gettime(CLOCK_MONOTONIC, &buf->ts);
 
 		struct doca_compress_job const compress_job = {
 			.base = (struct doca_job) {
