@@ -32,9 +32,9 @@ struct mempool * mempool_create(int num_elt, size_t elt_size) {
     struct mempool_elt * elts = (struct mempool_elt *)calloc(num_elt / 2, sizeof(struct mempool_elt));
 
     /* Segment the region into pieces */
-    for (int i = 0; i < num_elt / 2; i++) {
+    for (int i = 0; i < num_elt; i += 2) {
         // struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt));
-        struct mempool_elt * elt = (struct mempool_elt *)&elts[i];
+        struct mempool_elt * elt = (struct mempool_elt *)&elts[i / 2];
         elt->mp = mp;
         elt->src_addr = mp->addr + i * elt_size;
         elt->dst_addr = mp->addr + (i + 1) * elt_size;
