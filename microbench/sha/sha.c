@@ -238,7 +238,6 @@ void * sha_work_lcore(void * arg) {
 
 	doca_error_t result;
 	struct mempool_elt *elt;
-	int index = 0;
 
     list_for_each_entry(elt, &sha_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer for this memory region */
