@@ -100,7 +100,7 @@ static int compress_enq_job(struct compress_ctx * ctx, char * data, int data_len
 				.type = DOCA_COMPRESS_DEFLATE_JOB,
 				.flags = DOCA_JOB_FLAGS_NONE,
 				.ctx = doca_compress_as_ctx(ctx->doca_compress),
-				.user_data = { .ptr = src_buf },
+				.user_data = { .ptr = buf },
 			},
 			.dst_buff = buf->dst_buf,
 			.src_buff = buf->src_buf,
