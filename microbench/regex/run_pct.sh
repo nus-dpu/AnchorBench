@@ -1,13 +1,14 @@
 queue_depth=128
+size=20
 rate=1000
 
 rm url.txt
 rm thp-*.txt latency-*.txt
 
-dir=20B-100p-result
+dir=${size}B-100p-result
 mkdir ${dir}
 
-python generate.py 20B_url.txt
+python generate.py ${size}B_url.txt
 
 for nr_core in $(seq 1 1 8); do 
     echo ">> Full matching | Test with $nr_core cores >>"
@@ -27,10 +28,10 @@ done
 rm url.txt
 rm thp-*.txt latency-*.txt
 
-dir=20B-80p-result
+dir=${size}B-80p-result
 mkdir ${dir}
 
-python generate.py 20B_80p_url.txt
+python generate.py ${size}B_80p_url.txt
 
 for nr_core in $(seq 1 1 8); do 
     echo ">> Full matching | Test with $nr_core cores >>"
@@ -50,10 +51,10 @@ done
 rm url.txt
 rm thp-*.txt latency-*.txt
 
-dir=20B-60p-result
+dir=${size}B-60p-result
 mkdir ${dir}
 
-python generate.py 20B_60p_url.txt
+python generate.py ${size}B_60p_url.txt
 
 for nr_core in $(seq 1 1 8); do 
     echo ">> Full matching | Test with $nr_core cores >>"
@@ -73,10 +74,10 @@ done
 rm url.txt
 rm thp-*.txt latency-*.txt
 
-dir=20B-40p-result
+dir=${size}B-40p-result
 mkdir ${dir}
 
-python generate.py 20B_40p_url.txt
+python generate.py ${size}B_40p_url.txt
 
 for nr_core in $(seq 1 1 8); do 
     echo ">> Full matching | Test with $nr_core cores >>"
@@ -96,10 +97,10 @@ done
 rm url.txt
 rm thp-*.txt latency-*.txt
 
-dir=20B-20p-result
+dir=${size}B-20p-result
 mkdir ${dir}
 
-python generate.py 20B_20p_url.txt
+python generate.py ${size}B_20p_url.txt
 
 for nr_core in $(seq 1 1 8); do 
     echo ">> Full matching | Test with $nr_core cores >>"
@@ -119,10 +120,10 @@ done
 rm url.txt
 rm thp-*.txt latency-*.txt
 
-dir=20B-0p-result
+dir=${size}B-0p-result
 mkdir ${dir}
 
-python generate.py 20B_0p_url.txt
+python generate.py ${size}B_0p_url.txt
 
 for nr_core in $(seq 1 1 8); do 
     echo ">> Full matching | Test with $nr_core cores >>"
