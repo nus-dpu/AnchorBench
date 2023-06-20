@@ -245,7 +245,13 @@ void * sha_work_lcore(void * arg) {
 		elt->response = &res[index++];
 
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, elt->addr, BUF_SIZE, &elt->buf);
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, elt->src_addr, BUF_SIZE, &elt->src_buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		}
+
+		/* Create a DOCA buffer for this memory region */
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, elt->dst_addr, BUF_SIZE, &elt->dst_buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
