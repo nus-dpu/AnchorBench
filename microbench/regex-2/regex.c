@@ -56,6 +56,7 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
+	struct timespec now;
 
 	if (is_mempool_empty(ctx->buf_mempool)) {
 		return 0;
@@ -163,7 +164,6 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	uint32_t nb_free = 0;
 	uint32_t nb_total = 0;
 	struct mempool_elt * buf_element;
-	struct timespec now;
 
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
