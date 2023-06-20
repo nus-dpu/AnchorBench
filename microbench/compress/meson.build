@@ -35,8 +35,8 @@ sources = files(
     project_name + '.c',
     project_name + '_main.c',
 	common_src_path + '/utils.c',
+	'mempool.c',
 	common_path + '/common.c',
-	common_path + '/src/mempool.c',
 )
 
 executable(project_name,
