@@ -102,8 +102,8 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 				.ctx = doca_sha_as_ctx(ctx->doca_sha),
 				.user_data = { .ptr = buf },
 			},
-			.resp_buf = buf->src_buf,
-			.req_buf = buf->dst_buf,
+			.resp_buf = buf->dst_buf,
+			.req_buf = buf->src_buf,
 			.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
 		};
 
