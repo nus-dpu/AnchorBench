@@ -404,23 +404,19 @@ void * regex_work_lcore(void * arg) {
 
 	FILE * output_fp;
 	char name[32];
-	int last_time = latency[0].start;
+
+	sprintf(name, "latency-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening latency output file!\n");
+		return NULL;
+	}
 
 	for (int i = 0; i < nr_latency; i++) {
-		last_time = latency[i].start;
-		sprintf(name, "latency-%d-t%d.txt", sched_getcpu(), last_time);
-		output_fp = fopen(name, "w");
-		if (!output_fp) {
-			printf("Error opening latency output file!\n");
-			return NULL;
-		}
+		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+	}
 
-		for (int count = 0; count < 2048 && (latency[i].start - last_time < 1); count++, i++) {
-			fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
-		}
-
-		fclose(output_fp);
-	}	
+	fclose(output_fp);
 
     return NULL;
 }
