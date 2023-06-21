@@ -46,6 +46,8 @@ double ran_expo(double mean) {
 #endif
 }
 
+__thread int core_id = 0;
+
 /*
  * Enqueue job to DOCA RegEx qp
  *
@@ -97,8 +99,9 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 				.rule_group_ids = {1, 0, 0, 0},
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
-				.allow_batching = true,
+				// .allow_batching = true,
 				// .allow_batching = ((nb_enqueued + 1) % batch_size != 0),
+				.allow_batching = (core_id == 0 || core_id == 0)? false : true,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -223,7 +226,7 @@ void * regex_work_lcore(void * arg) {
 	int nr_thp_info = 0;
 	struct thp_info * thp_info = (struct thp_info *)calloc(550, sizeof(struct thp_info));
 
-	int core_id = sched_getcpu();
+	core_id = sched_getcpu();
 
 	int dec_start;
 	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
