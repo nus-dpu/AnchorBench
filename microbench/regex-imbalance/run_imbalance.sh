@@ -23,7 +23,7 @@ echo ">> Full matching | Test at rate $rate >>"
 rm thp-*.txt latency-*.txt
 echo "  >> Full matching | Test $size B"
 ./build/regex -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth}
-mv thp-*.txt 		${dir}/
+mv thp-*.txt ${dir}/thp/
 for nr_core in $(seq 0 1 7); do 
-    mv latency-${nr_core}-*.txt ${dir}/lat-${nr_core}/
+    mv latency-${nr_core}.txt   ${dir}/lat-${nr_core}/
 done
