@@ -1,13 +1,14 @@
 queue_depth=128
 data_size=(20 60 100 200)
-rate=1000
+per_core_rate=1000
+batch=$1
 
 for size in "${data_size[@]}"; do
 	rm url.txt
 	python generate.py ${size}B_url.txt
 
 	rm thp-*.txt latency-*.txt
-	dir=${size}B-partial-result
+	dir=${size}B-batch=${batch}-result
 	mkdir ${dir}
 	
 	for nr_core in $(seq 1 1 8); do 
@@ -15,6 +16,8 @@ for size in "${data_size[@]}"; do
 
 		mkdir ${dir}/thp-$nr_core/
 		mkdir ${dir}/lat-$nr_core/
+
+        rate=$((nr_core * per_core_rate))
 
 		# for round in $(seq 1 1 6); do
 			rm thp-*.txt latency-*.txt
