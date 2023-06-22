@@ -37,7 +37,7 @@
 
 #define M_1				1048576
 
-#define NB_BUF		128
+#define NB_BUF		256
 #define BUF_SIZE	256
 
 struct regex_ctx {
