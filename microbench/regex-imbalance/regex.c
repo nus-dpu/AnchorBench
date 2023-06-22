@@ -254,7 +254,7 @@ void * regex_work_lcore(void * arg) {
 		mean = 714000;
 		dec_start = 150;
 		// lower_bound = 0.0;
-		lower_bound = 68000.0;
+		lower_bound = 34000.0;
 		epoch = 34000;
 	}
 
