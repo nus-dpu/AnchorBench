@@ -16,6 +16,8 @@ sources = files(
 	'main.c',
 )
 
+deps = []
+deps += dependency('libdpdk')
 deps += ['ethdev']
 
 default_cflags = machine_args + ['-DALLOW_EXPERIMENTAL_API']
