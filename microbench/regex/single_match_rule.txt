@@ -10,4 +10,4 @@
 # provided with the software product.
 #
 
-1, [\w]+
+1, ^[\w]+
