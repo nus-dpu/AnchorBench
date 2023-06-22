@@ -20,6 +20,7 @@ deps = []
 deps += dependency('libdpdk')
 deps += ['ethdev']
 
+machine_args = []
 default_cflags = machine_args + ['-DALLOW_EXPERIMENTAL_API']
 cflags = default_cflags
 
