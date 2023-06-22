@@ -236,17 +236,20 @@ void * regex_work_lcore(void * arg) {
 	if (sched_getcpu() < 2) {
 		mean = 217000;
 		dec_start = 100;
-	 	lower_bound = 42000.0;
+	 	// lower_bound = 42000.0;
+	 	lower_bound = 77000.0;
 		epoch = 35000;
 	} else if (sched_getcpu() < 5) {
 		mean = 363000;
 		dec_start = 130;
-		lower_bound = 43000.0;
+		// lower_bound = 43000.0;
+		lower_bound = 75000.0;
 		epoch = 32000;
 	} else {
 		mean = 680000;
 		dec_start = 150;
-		lower_bound = 0.0;
+		// lower_bound = 0.0;
+		lower_bound = 68000.0;
 		epoch = 34000;
 	}
 
