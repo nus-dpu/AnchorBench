@@ -1,7 +1,7 @@
 queue_depth=128
 data_size=(20 60 100 200)
 batch_size=(2 4 8 16 32 64 128)
-rate=1000
+per_core_rate=400
 
 for len in "${data_size[@]}"; do
 	python generate.py ${len}B_url.txt
@@ -12,8 +12,10 @@ for len in "${data_size[@]}"; do
 		dir=${len}B-full-batch=${size}-result
 		mkdir ${dir}
 		
-		for nr_core in $(seq 1 1 1); do 
+		for nr_core in $(seq 1 1 8); do 
 			echo ">> Full matching | Test with $nr_core cores >>"
+
+			rate = $((nr_core * per_core_rate))
 
 			mkdir ${dir}/thp-$nr_core/
 			mkdir ${dir}/lat-$nr_core/
