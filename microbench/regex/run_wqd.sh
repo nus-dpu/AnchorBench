@@ -1,6 +1,6 @@
 queue_depth=(1 128)
 data_size=(20 60 100 200 400)
-rate=1000
+per_core_rate=400
 batch=$1
 
 for depth in "${queue_depth[@]}"; do
@@ -25,6 +25,8 @@ for depth in "${queue_depth[@]}"; do
 
 			mkdir ${dir}/thp-$nr_core/
 			mkdir ${dir}/lat-$nr_core/
+
+	        rate=$((nr_core * per_core_rate))
 
 			# for round in $(seq 1 1 6); do
 				rm thp-*.txt latency-*.txt
