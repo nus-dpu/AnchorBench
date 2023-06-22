@@ -15,7 +15,7 @@ for len in "${data_size[@]}"; do
 		for nr_core in $(seq 1 1 8); do 
 			echo ">> Full matching | Test with $nr_core cores >>"
 
-			rate = $((nr_core * per_core_rate))
+			rate=$((nr_core * per_core_rate))
 
 			mkdir ${dir}/thp-$nr_core/
 			mkdir ${dir}/lat-$nr_core/
