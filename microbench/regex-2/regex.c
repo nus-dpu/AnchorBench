@@ -51,7 +51,7 @@ __thread int core_id;
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len) {
+static int regex_scan_enq_job(struct regex_ctx * ctx, bool last, char * data, int data_len) {
 	doca_error_t result;
 	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
@@ -95,8 +95,8 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
 				// .allow_batching = false,
-				.allow_batching = (core_id == 0)? false : true,
-				// .allow_batching = ((nb_enqueued + 1) % batch_size != 0),
+				// .allow_batching = (core_id == 0)? false : true,
+				.allow_batching = !last,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -210,9 +210,9 @@ void * regex_work_lcore(void * arg) {
     ssize_t read;
 	int nr_rule = 0;
 
-	double mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
+	double mean = batch_size * cfg.nr_core * 1.0e6 / cfg.rate;
 
-	struct worker worker[NUM_WORKER];
+	struct worker worker[batch_size];
 
 	double interval;
 
@@ -221,7 +221,7 @@ void * regex_work_lcore(void * arg) {
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
 
-	for (int i = 0; i < NUM_WORKER; i++) {
+	for (int i = 0; i < batch_size; i++) {
 		worker[i].interval = 0;
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
@@ -299,20 +299,22 @@ void * regex_work_lcore(void * arg) {
 			break;
 		}
 
-		for (int i = 0; i < NUM_WORKER; i++) {
-			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				ret = regex_scan_enq_job(rgx_ctx, input[index].line, input[index].len);
+		if (diff_timespec(&worker[0].last_enq_time, &current_time) > worker[0].interval) {
+			for (int i = 0; i < batch_size; i++) {
+				bool last = (i == batch_size - 1)? true: false;
+				ret = regex_scan_enq_job(rgx_ctx, last, input[index].line, input[index].len);
 				if (ret < 0) {
 					DOCA_LOG_ERR("Failed to enqueue jobs");
 					continue;
 				} else {
 					index = (index + 1) % nr_rule;
 					nb_enqueued++;
-					// interval = ran_expo(mean);
-					// worker[i].interval = (uint64_t)round(interval);
-					// worker[i].last_enq_time = current_time;
 				}
-			// }
+			}
+
+			interval = ran_expo(mean);
+			worker[0].interval = (uint64_t)round(interval);
+			worker[0].last_enq_time = current_time;
 		}
 
 		ret = regex_scan_deq_job(rgx_ctx);
