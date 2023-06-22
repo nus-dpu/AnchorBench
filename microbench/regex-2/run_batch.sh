@@ -1,7 +1,7 @@
 queue_depth=128
 data_size=(20 60 100 200)
 batch_size=(2 4 8 16 32 64 128)
-per_core_rate=400
+per_core_rate=1000
 
 for len in "${data_size[@]}"; do
 	python generate.py ${len}B_url.txt
