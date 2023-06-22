@@ -12,7 +12,7 @@ for len in "${data_size[@]}"; do
 		dir=${len}B-full-batch=${size}-result
 		mkdir ${dir}
 		
-		for nr_core in $(seq 1 1 8); do 
+		for nr_core in $(seq 1 1 1); do 
 			echo ">> Full matching | Test with $nr_core cores >>"
 
 			mkdir ${dir}/thp-$nr_core/
