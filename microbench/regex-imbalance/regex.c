@@ -99,9 +99,11 @@ static int regex_scan_enq_job(struct regex_ctx * ctx, char * data, int data_len)
 				.rule_group_ids = {1, 0, 0, 0},
 				.buffer = buf_element->buf,
 				.result = (struct doca_regex_search_result *)buf_element->response,
-				// .allow_batching = true,
-				// .allow_batching = ((nb_enqueued + 1) % batch_size != 0),
-				.allow_batching = (core_id == 0 || core_id == 1)? false : true,
+				// .allow_batching = false,
+				.allow_batching = true,
+				// .allow_batching = (core_id < 2)? false : true,
+				// .allow_batching = (core_id > 1 && core_id < 5)? false : true,
+				// .allow_batching = (core_id > 4 && core_id < 8)? false : true,
 		};
 
 		result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
@@ -375,6 +377,8 @@ void * regex_work_lcore(void * arg) {
 		}
 #if 0
 		if (core_id > 1) {
+		// if (core_id < 2 || core_id > 4) {
+		// if (core_id < 5) {
 			continue;
 		}
 #endif
