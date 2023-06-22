@@ -12,10 +12,15 @@ DOCA_LOG_REGISTER(REGEX::CORE);
 
 __thread struct input_info input[MAX_NR_RULE];
 
+struct lat_info {
+	uint64_t start;
+	uint64_t end;
+};
+
 __thread int nr_latency = 0;
 // __thread uint64_t latency[MAX_NR_LATENCY];
 __thread bool start_record = false;
-__thread uint32_t * latency;
+__thread struct lat_info * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
@@ -165,8 +170,6 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 	struct mempool_elt * buf_element;
 	struct timespec start, now;
 
-	clock_gettime(CLOCK_MONOTONIC, &start);
-
 	do {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
@@ -191,7 +194,10 @@ static int regex_scan_deq_job(struct regex_ctx *ctx) {
 
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		latency[nr_latency++] = diff_timespec(&start, &now);
+		// latency[nr_latency++] = diff_timespec(&start, &now);
+		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
+		latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
+		nr_latency++;
 	}
 
 	return finished;
@@ -245,7 +251,8 @@ void * regex_work_lcore(void * arg) {
 	uint32_t nb_free, nb_total;
 	nb_free = nb_total = 0;
 
-	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint32_t));
+	// latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint32_t));
+	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
 
 	/* Segment the region into pieces */
 	doca_error_t result;
@@ -338,7 +345,7 @@ void * regex_work_lcore(void * arg) {
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
-		fprintf(output_fp, "%u\n", latency[i]);
+		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 	}
 
 	fclose(output_fp);
