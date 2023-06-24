@@ -11,7 +11,7 @@ for len in "${data_size[@]}"; do
 		for size in "${batch_size[@]}"; do
 			rm thp-*.txt latency-*.txt
 
-			dir=${len}B-full-batch=${size}-result
+			dir=${len}B-full-batch=${size}-rate=${rate}-result
 			mkdir ${dir}
 			
 			for nr_core in $(seq 1 1 4); do 
