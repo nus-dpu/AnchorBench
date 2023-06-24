@@ -24,8 +24,8 @@ for len in "${data_size[@]}"; do
 				echo "  >> Full matching | Test $len B (round $round)"
 				# ./build/regex -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth} -a 1
 				./build/regex -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth} -a ${size}
-				mov thp-*.txt		${dir}/thp-$nr_core/
-				mov latency-*.txt 	${dir}/lat-$nr_core/
+				mv thp-*.txt		${dir}/thp-$nr_core/
+				mv latency-*.txt 	${dir}/lat-$nr_core/
 				echo "  >> Test done!"
 				sleep 2
 			done
