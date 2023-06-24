@@ -6,7 +6,7 @@ batch_size=(1 2 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64)
 for len in "${data_size[@]}"; do
 	python generate.py ${len}B_url.txt
 
-	for rate in $(seq 10 100 2000); do
+	for rate in $(seq 100 100 2000); do
 
 		for size in "${batch_size[@]}"; do
 			rm thp-*.txt latency-*.txt
