@@ -1,5 +1,5 @@
 queue_depth=128
-data_size=(20)
+data_size=(20 60 100 200)
 batch_size=(1 2 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64)
 # batch_size=inf
 
