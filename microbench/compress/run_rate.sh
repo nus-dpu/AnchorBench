@@ -1,8 +1,7 @@
 data_size=(16 32 64 128 256)
-per_core_rate=(100 200 400 800 1200 1600)
 
 for size in "${data_size[@]}"; do
-	for rate in "${per_core_rate[@]}"; do
+	for rate in $(seq 100 100 2000); do
 
 		dir=${size}B-percore=${rate}-result/
 		mkdir ${dir}
