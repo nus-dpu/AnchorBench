@@ -172,7 +172,7 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 			buf = (struct mempool_elt *)event.user_data.ptr;
 			if (start_record && nr_latency < MAX_NR_LATENCY) {
 				// latency[nr_latency++] = diff_timespec(&buf->ts, &now);
-				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
+				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
 				latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
 				nr_latency++;
 			}
