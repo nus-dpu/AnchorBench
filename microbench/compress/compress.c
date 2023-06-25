@@ -9,12 +9,17 @@ DOCA_LOG_REGISTER(COMPRESS::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024)
+#define MAX_NR_LATENCY	(32 * 1024)
+
+struct lat_info {
+	uint64_t start;
+	uint64_t end;
+};
 
 __thread int nr_latency = 0;
 // __thread uint64_t latency[MAX_NR_LATENCY];
 __thread bool start_record = false;
-__thread uint64_t * latency;
+__thread struct lat_info * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
@@ -166,7 +171,10 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			buf = (struct mempool_elt *)event.user_data.ptr;
 			if (start_record && nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&buf->ts, &now);
+				// latency[nr_latency++] = diff_timespec(&buf->ts, &now);
+				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
+				latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
+				nr_latency++;
 			}
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
@@ -189,7 +197,7 @@ static int compress_deq_job(struct compress_ctx *ctx) {
 	return finished;
 }
 
-#define NUM_WORKER	32
+#define NUM_WORKER	1
 
 void * compress_work_lcore(void * arg) {
     int ret;
@@ -252,7 +260,7 @@ void * compress_work_lcore(void * arg) {
 		}
 	}
 
-	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint64_t));
+	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -290,7 +298,7 @@ void * compress_work_lcore(void * arg) {
 			break;
 		}
 
-		for (int i = 0; i < WORKQ_DEPTH; i++) {
+		for (int i = 0; i < NUM_WORKER; i++) {
 			// if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				if (cur_ptr * data_len >= M_1) {
 					cur_ptr = 0;
@@ -330,7 +338,7 @@ void * compress_work_lcore(void * arg) {
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
-		fprintf(output_fp, "%lu\n", latency[i]);
+		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 	}
 
 	fclose(output_fp);

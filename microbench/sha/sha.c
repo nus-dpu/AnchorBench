@@ -9,14 +9,19 @@ DOCA_LOG_REGISTER(SHA::CORE);
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
 
-#define MAX_NR_LATENCY	(128 * 1024)
+#define MAX_NR_LATENCY	(32 * 1024)
 
 __thread struct input_info input[MAX_NR_RULE];
+
+struct lat_info {
+	uint64_t start;
+	uint64_t end;
+};
 
 __thread int nr_latency = 0;
 // __thread uint64_t latency[MAX_NR_LATENCY];
 __thread bool start_record = false;
-__thread uint64_t * latency;
+__thread struct lat_info * latency;
 
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
@@ -166,7 +171,10 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 		if (result == DOCA_SUCCESS) {
 			buf = (struct mempool_elt *)event.user_data.ptr;
 			if (start_record && nr_latency < MAX_NR_LATENCY) {
-				latency[nr_latency++] = diff_timespec(&buf->ts, &now);
+				// latency[nr_latency++] = diff_timespec(&buf->ts, &now);
+				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf_element->ts);
+				latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
+				nr_latency++;
 			}
 			/* release the buffer back into the pool so it can be re-used */
 			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
@@ -190,7 +198,7 @@ static int sha_deq_job(struct sha_ctx *ctx) {
 	return finished;
 }
 
-#define NUM_WORKER	32
+#define NUM_WORKER	1
 
 void * sha_work_lcore(void * arg) {
     int ret;
@@ -253,7 +261,7 @@ void * sha_work_lcore(void * arg) {
 		}
 	}
 
-	latency = (uint64_t)calloc(MAX_NR_LATENCY, sizeof(uint64_t));
+	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -319,7 +327,7 @@ void * sha_work_lcore(void * arg) {
 		}
 	}
 
-    int lat_start = (int)(0.15 * nr_latency);
+	int lat_start = (int)(0.15 * nr_latency);
 	FILE * output_fp;
 	char name[32];
 
@@ -331,7 +339,7 @@ void * sha_work_lcore(void * arg) {
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
-		fprintf(output_fp, "%lu\n", latency[i]);
+		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 	}
 
 	fclose(output_fp);
