@@ -25,5 +25,5 @@ for size in "${data_size[@]}"; do
 		done
 
 		rm thp-*.txt latency-*.txt
-
+	done
 done
