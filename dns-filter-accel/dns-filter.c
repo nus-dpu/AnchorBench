@@ -345,7 +345,7 @@ int dns_filter_worker(void *arg) {
 	tot_enqueue_rate = (float)nb_enqueued / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 	tot_dequeue_rate = (float)nb_dequeued / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 
-	fprintf(output_fp, "%6.2lf\t%6.2lf\n", nb_enqueued_rate, nb_dequeued_rate);
+	fprintf(output_fp, "%6.2lf\t%6.2lf\n", tot_enqueue_rate, tot_dequeue_rate);
 
 	fclose(output_fp);
 
