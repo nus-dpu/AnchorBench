@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-    for (int i = 0; i < cfg.nr_core; i++) {
+    for (int i = 0; i < 100; i++) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
 
