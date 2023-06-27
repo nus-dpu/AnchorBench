@@ -32,9 +32,8 @@
 #include <rte_udp.h>
 #include <rte_tcp.h>
 
-extern __thread int remain;
-extern __thread int index0;
-extern __thread uint64_t exec_time[128 * 1024];
+__thread int nb_enqueued = 0;
+__thread int nb_dequeued = 0;
 
 #define NR_CPUS	8
 extern struct rte_mempool * pkt_mempools[NR_CPUS];
