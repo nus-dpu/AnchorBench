@@ -32,8 +32,8 @@
 #include <rte_udp.h>
 #include <rte_tcp.h>
 
-__thread int nb_enqueued = 0;
-__thread int nb_dequeued = 0;
+extern __thread int nb_enqueued;
+extern __thread int nb_dequeued;
 
 #define NR_CPUS	8
 extern struct rte_mempool * pkt_mempools[NR_CPUS];
