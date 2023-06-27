@@ -360,7 +360,6 @@ doca_buf_cleanup:
  */
 static int regex_scan_enq_job(struct dns_worker_ctx * ctx, bool flush, struct rte_mbuf * mbuf, char * pkt, int len, char * data, int data_len) {
 	doca_error_t result;
-	int nb_enqueued = 0;
 	uint32_t nb_total = 0;
 	uint32_t nb_free = 0;
 	size_t tx_count = 0;
@@ -412,15 +411,16 @@ static int regex_scan_enq_job(struct dns_worker_ctx * ctx, bool flush, struct rt
 	if (result == DOCA_ERROR_NO_MEMORY) {
 		// doca_buf_refcount_rm(buf_element->buf, NULL);
 		mempool_put(ctx->buf_mempool, buf_element);
-		return nb_enqueued; /* qp is full, try to dequeue. */
+		return 0; /* qp is full, try to dequeue. */
 	}
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
 		return -1;
 	}
+
 	nb_enqueued++;
 
-	return nb_enqueued;
+	return 0;
 }
 
 /*
@@ -447,6 +447,7 @@ int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx) {
 		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 		if (result == DOCA_SUCCESS) {
 			buf_element = (struct mempool_elt *)event.user_data.ptr;
+			nb_dequeued++;
 			// if (nr_latency < MAX_NR_LATENCY) {
 			// 	latency[nr_latency++] = diff_timespec(&buf_element->ts, &now);
 			// }
