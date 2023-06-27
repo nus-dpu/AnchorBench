@@ -277,6 +277,8 @@ static doca_error_t sha_init(struct sha_config *sha_cfg) {
 	return result;
 }
 
+int total_workq = 0;
+
 static doca_error_t sha_init_lcore(struct sha_ctx * ctx) {
     doca_error_t result;
     uint32_t nb_free, nb_total;
@@ -290,8 +292,10 @@ static doca_error_t sha_init_lcore(struct sha_ctx * ctx) {
 
 	result = doca_ctx_workq_add(doca_sha_as_ctx(ctx->doca_sha), ctx->workq);
 	if (result != DOCA_SUCCESS) {
-		printf("Unable to attach work queue to SHA. Reason: %s", doca_get_error_string(result));
+		printf("(Total workq num: %d) Unable to attach work queue to SHA. Reason: %s\n", total_workq, doca_get_error_string(result));
 		return result;
+	} else {
+		total_workq++;
 	}
 
     /* Create and start buffer inventory */
@@ -400,12 +404,12 @@ int main(int argc, char **argv) {
 
         /* The pthread_create() call stores the thread ID into
             corresponding element of tinfo[]. */
-
+/*
         ret = pthread_attr_setaffinity_np(&pattr, sizeof(cpu_set_t), &cpu);
         if (ret != 0) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
-
+*/
         ret = pthread_create(&pids[i], &pattr, &sha_work_lcore, (void *)sha_ctx);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
