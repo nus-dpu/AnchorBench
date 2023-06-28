@@ -59,6 +59,9 @@ struct sha_ctx {
 	int ptr;
 	char * input;
 	int input_size;
+
+	int nb_enqueued;
+	int nb_dequeued;
 };
 
 struct regex_input {
@@ -75,6 +78,9 @@ struct regex_ctx {
 	int index;
 	struct regex_input *input;
 	int nr_input;
+
+	int nb_enqueued;
+	int nb_dequeued;
 };
 
 struct app_ctx {
