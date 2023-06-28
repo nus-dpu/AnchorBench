@@ -67,12 +67,12 @@ static int sha_enq_job(struct sha_ctx * ctx) {
 	char * data = ctx->ptr;
 	int data_len = ctx->len;
 
-	if (is_mempool_empty(ctx->buf_mempool)) {
+	if (is_sha_mempool_empty(ctx->buf_mempool)) {
 		return 0;
 	}
 
 	/* Get one free element from the mempool */
-	mempool_get(ctx->buf_mempool, &buf);
+	sha_mempool_get(ctx->buf_mempool, &buf);
 	/* Get the memory segment */
 	src_buf = buf->src_addr;
 	dst_buf = buf->dst_addr;
@@ -98,7 +98,7 @@ static int sha_enq_job(struct sha_ctx * ctx) {
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
 	if (result == DOCA_ERROR_NO_MEMORY) {
-		mempool_put(ctx->buf_mempool, buf);
+		sha_mempool_put(ctx->buf_mempool, buf);
 		return 0; /* qp is full, try to dequeue. */
 	}
 
@@ -122,12 +122,12 @@ static int regex_enq_job(struct regex_ctx * ctx) {
 	char * data_buf;
 	void * mbuf_data;
 
-	if (is_mempool_empty(ctx->buf_mempool)) {
+	if (is_regex_mempool_empty(ctx->buf_mempool)) {
 		return 0;
 	}
 
 	/* Get one free element from the mempool */
-	mempool_get(ctx->buf_mempool, &buf);
+	regex_mempool_get(ctx->buf_mempool, &buf);
 	/* Get the memory segment */
 	data_buf = buf->addr;
 
@@ -152,7 +152,7 @@ static int regex_enq_job(struct regex_ctx * ctx) {
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&job_request);
 	if (result == DOCA_ERROR_NO_MEMORY) {
-		mempool_put(ctx->buf_mempool, buf);
+		regex_mempool_put(ctx->buf_mempool, buf);
 		return 0; /* qp is full, try to dequeue. */
 	}
 	if (result != DOCA_SUCCESS) {
@@ -166,9 +166,9 @@ static int regex_enq_job(struct regex_ctx * ctx) {
 	return 0;
 }
 
-static int sha_deq_job(struct sha_ctx * ctx, struct timespec * now) {
+static int sha_deq_job(struct sha_ctx * ctx, struct doca_event * event, struct timespec * now) {
 	struct sha_mempool_elt * buf;
-	buf = (struct sha_mempool_elt *)event.user_data.ptr;
+	buf = (struct sha_mempool_elt *)event->user_data.ptr;
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
 		latency[nr_latency].type = SHA;
 		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
@@ -178,9 +178,9 @@ static int sha_deq_job(struct sha_ctx * ctx, struct timespec * now) {
 	mempool_put(ctx->buf_mempool, buf);
 }
 
-static int regex_deq_job(struct regex_ctx * ctx, struct timespec * now) {
+static int regex_deq_job(struct regex_ctx * ctx, struct doca_event * event, struct timespec * now) {
 	struct regex_mempool_elt * buf;
-	buf = (struct regex_mempool_elt *)event.user_data.ptr;
+	buf = (struct regex_mempool_elt *)event->user_data.ptr;
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
 		latency[nr_latency].type = REGEX;
 		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
@@ -210,10 +210,10 @@ static int deq_job(struct app_ctx * ctx) {
 		if (result == DOCA_SUCCESS) {
 			switch (event.type) {
 				case DOCA_SHA_JOB_SHA256:
-					sha_deq_job(ctx->sha_ctx, &now);
+					sha_deq_job(&ctx->sha_ctx, &now);
 					break;
 				case DOCA_REGEX_JOB_SEARCH:
-					regex_deq_job(ctx->regex_ctx, &now);
+					regex_deq_job(&ctx->regex_ctx, &now);
 					break;
 				default:
 					printf("Unknown type of event!\n");
@@ -240,7 +240,7 @@ void load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
 
 	/* Init SHA input */
 	input = (char *)calloc(K_16, sizeof(char));
-	input_file_name = props->GetProperty(SHA_INPUT_PROPERTY, SHA_INPUT_DEFAULT);
+	input_file_name = props->GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
 
     fp = fopen(input_file_name, "rb");
     if (fp == NULL) {
@@ -273,7 +273,7 @@ void load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
 
 	/* Init RegEx input */
 	input = (char *)calloc(MAX_NR_RULE, sizeof(struct input_info));
-	input_file_name = props.GetProperty(REGEX_INPUT_PROPERTY, REGEX_INPUT_DEFAULT);
+	input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
 
 	fp = fopen(input_file_name, "rb");
     if (fp == NULL) {
