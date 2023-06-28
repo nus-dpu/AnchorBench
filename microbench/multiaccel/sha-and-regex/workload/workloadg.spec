@@ -1,2 +1,2 @@
-shaproportion=0.9
-regexproportion=0.1
+shaproportion=1.0
+regexproportion=0.0
