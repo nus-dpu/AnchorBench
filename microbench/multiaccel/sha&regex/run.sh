@@ -14,7 +14,7 @@ for size in "${data_size[@]}"; do
 		for rate in $(seq 100 100 2000); do
 			rm *-thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops)"
-			./build/multiapp -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -f workload/workloada.spec -c $nr_core -s $rate -b $size
+			./build/multiaccel -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -f workload/workloada.spec -c $nr_core -s $rate -b $size
 			mv *-thp-*.txt 		${dir}/thp-$nr_core/
 			mv latency-*.txt 	${dir}/lat-$nr_core/
 			echo "  >> Test done!"
