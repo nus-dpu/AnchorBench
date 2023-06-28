@@ -13,12 +13,12 @@ DOCA_LOG_REGISTER(MULTIACCEL::CORE);
 #define MAX_NR_LATENCY	(32 * 1024)
 
 struct lat_info {
+	Job type;
 	uint64_t start;
 	uint64_t end;
 };
 
 __thread int nr_latency = 0;
-// __thread uint64_t latency[MAX_NR_LATENCY];
 __thread bool start_record = false;
 __thread struct lat_info * latency;
 
@@ -54,11 +54,13 @@ double ran_expo(double mean) {
  * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
  * @return: number of the enqueued jobs or -1
  */
-static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
+static int sha_enq_job(struct sha_ctx * ctx) {
 	doca_error_t result;
 	struct sha_mempool_elt * buf;
 	char * src_buf, * dst_buf;
 	void * mbuf_data;
+	char * data = ctx->ptr;
+	int data_len = ctx->len;
 
 	if (is_mempool_empty(ctx->buf_mempool)) {
 		return 0;
@@ -91,8 +93,6 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 
 	result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
 	if (result == DOCA_ERROR_NO_MEMORY) {
-		// doca_buf_refcount_rm(src_buf->buf, NULL);
-		// doca_buf_refcount_rm(dst_buf->buf, NULL);
 		mempool_put(ctx->buf_mempool, buf);
 		return 0; /* qp is full, try to dequeue. */
 	}
@@ -103,21 +103,23 @@ static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
 		return -1;
 	} else {
 		ctx->nb_enqueued++;
+		ctx->ptr = ctx->input + (ctx->ptr + data_len - ctx->input) % ctx->input_size;
 	}
 
 	return 0;
 }
 
-static int regex_enq_job(struct regex_ctx * ctx, char * data, int data_len) {
+static int regex_enq_job(struct regex_ctx * ctx) {
 	doca_error_t result;
+	char * data = ctx->input[ctx->index].line;
+	int data_len = ctx->input[ctx->index].len;
+	struct regex_mempool_elt * buf;
+	char * data_buf;
+	void * mbuf_data;
 
 	if (is_mempool_empty(ctx->buf_mempool)) {
 		return 0;
 	}
-
-	struct regex_mempool_elt * buf;
-	char * data_buf;
-	void * mbuf_data;
 
 	/* Get one free element from the mempool */
 	mempool_get(ctx->buf_mempool, &buf);
@@ -153,6 +155,7 @@ static int regex_enq_job(struct regex_ctx * ctx, char * data, int data_len) {
 		return -1;
 	} else {
 		ctx->nb_enqueued++;
+		ctx->index = (ctx->index + 1) % ctx->nr_input;
 	}
 
 	return 0;
@@ -162,6 +165,7 @@ static int sha_deq_job(struct sha_ctx * ctx, struct timespec * now) {
 	struct sha_mempool_elt * buf;
 	buf = (struct sha_mempool_elt *)event.user_data.ptr;
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
+		latency[nr_latency].type = SHA;
 		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
 		latency[nr_latency].end = TIMESPEC_TO_NSEC(*now);
 		nr_latency++;
@@ -173,6 +177,7 @@ static int regex_deq_job(struct regex_ctx * ctx, struct timespec * now) {
 	struct regex_mempool_elt * buf;
 	buf = (struct regex_mempool_elt *)event.user_data.ptr;
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
+		latency[nr_latency].type = REGEX;
 		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
 		latency[nr_latency].end = TIMESPEC_TO_NSEC(*now);
 		nr_latency++;
@@ -243,9 +248,10 @@ void load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
 	/* Read and display data */
 	input_size = fread((char **)input, sizeof(char), K_16, fp);
 
-	sha_ctx->ptr = 0;
+	sha_ctx->ptr = input;
 	sha_ctx->input = input;
 	sha_ctx->input_size = input_size;
+	sha_ctx->len = data_len;
 	sha_ctx->nb_enqueued = sha_ctx->nb_dequeued = 0;
 
 	fclose(fp);
@@ -309,7 +315,14 @@ void * multiaccel_work_lcore(void * arg) {
 	struct doca_regex_search_result * res;
 	int res_index = 0;
 
-	props.Load(app_ctx->config_file);
+	ifstream input(app_ctx->config_file);
+	try {
+		props.Load(input);
+	} catch (const std::string &message) {
+		std::cout << message << std::endl;
+		exit(0);
+	}
+	input.close();
 
 	mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 
@@ -352,7 +365,7 @@ void * multiaccel_work_lcore(void * arg) {
 
 	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
 
-	wl.Init(props)
+	wl.Init(props);
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -401,7 +414,7 @@ void * multiaccel_work_lcore(void * arg) {
 
 		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				Job next = wl->NextOperation();
+				Job next = wl.NextOperation();
 				switch (next) {
 					case SHA:
 						ret = sha_enq_job(sha_ctx);
@@ -421,12 +434,10 @@ void * multiaccel_work_lcore(void * arg) {
 			}
 		}
 
-		ret = multiaccel_deq_job(app_ctx);
+		ret = deq_job(app_ctx);
 		if (ret < 0) {
 			DOCA_LOG_ERR("Failed to dequeue jobs responses");
 			continue;
-		} else {
-			nb_dequeued += ret;
 		}
 	}
 #if 0

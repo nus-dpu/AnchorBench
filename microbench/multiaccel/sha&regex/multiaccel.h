@@ -56,9 +56,10 @@ struct sha_ctx {
 	struct doca_sha *doca_sha;			/* DOCA SHA interface */
 	struct doca_workq *workq;			/* DOCA work queue */
 
-	int ptr;
+	char * ptr;
 	char * input;
 	int input_size;
+	int len;
 
 	int nb_enqueued;
 	int nb_dequeued;
