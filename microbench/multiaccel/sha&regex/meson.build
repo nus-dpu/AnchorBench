@@ -23,7 +23,7 @@ machine_args = []
 default_cflags = machine_args
 cflags = default_cflags
 
-common_path = '../../' + 'common'
+common_path = '../../../' + 'common'
 core_path = 'core'
 
 inc_dirs = [
