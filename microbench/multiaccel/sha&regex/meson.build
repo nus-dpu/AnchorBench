@@ -48,5 +48,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
-        link_args: ['-lpthread'],
+        link_args: ['-lm', '-lpthread'],
         install: false)
