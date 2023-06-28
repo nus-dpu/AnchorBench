@@ -18,8 +18,10 @@ for size in "${data_size[@]}"; do
 				mkdir ${dir}/workload${i}/rate-$rate/thp-$nr_core/
 				mkdir ${dir}/workload${i}/rate-$rate/lat-$nr_core/
 
-				echo "  >> Test input $rate (Kops) with $nr_core on workload${i} ..."
-				./build/multiaccel -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -f workload/workload${i}.spec -c $nr_core -s $rate -b $size
+				workload=workload${i}.spec
+
+				echo "  >> Test input $rate (Kops) with $nr_core on ${workload} ..."
+				./build/multiaccel -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -f workload/${workload} -c $nr_core -s $rate -b $size
 				mv *-thp-*.txt 		${dir}/workload${i}/rate-$rate/thp-$nr_core/
 				mv *-latency-*.txt 	${dir}/workload${i}/rate-$rate/lat-$nr_core/
 				echo "  >> Test done!"
