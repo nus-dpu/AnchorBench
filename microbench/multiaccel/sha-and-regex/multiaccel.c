@@ -340,7 +340,7 @@ void * multiaccel_work_lcore(void * arg) {
 	for (int i = lat_start; i < nr_latency; i++) {
 		if (latency[i].type == SHA_JOB) {
 			fprintf(sha_output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
-		} else {
+		} else if (latency[i].type == REGEX_JOB) {
 			fprintf(regex_output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 		}
 	}
