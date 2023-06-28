@@ -61,7 +61,6 @@ int get_next_job(double ratios[], int size) {
 static int deq_job(struct app_ctx * ctx) {
 	doca_error_t result;
 	struct doca_event event = {0};
-	struct timespec ts;
 	struct timespec now;
 
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -193,8 +192,8 @@ void * multiaccel_work_lcore(void * arg) {
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
 
-	job_ratio[0] = cfg.regex_ratio;
-	job_ratio[1] = cfg.sha_ratio;
+	job_ratio[0] = cfg.regex_proportion;
+	job_ratio[1] = cfg.sha_proportion;
 
 	for (int i = 0; i < NUM_WORKER; i++) {
 		worker[i].interval = 0;
@@ -231,8 +230,6 @@ void * multiaccel_work_lcore(void * arg) {
 	}
 
 	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
-
-	InitWorkload();
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 

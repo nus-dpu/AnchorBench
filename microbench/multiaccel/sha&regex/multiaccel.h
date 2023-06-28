@@ -86,9 +86,6 @@ struct app_ctx {
 	struct doca_dev *dev;			/* DOCA work queue */
 	struct doca_workq *workq;			/* DOCA work queue */
 
-	double sha_ratio;
-	double regex_ratio;
-
 	struct sha_ctx sha_ctx;
 	struct regex_ctx regex_ctx;
 };

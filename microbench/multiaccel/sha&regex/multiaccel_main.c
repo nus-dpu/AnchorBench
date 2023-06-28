@@ -1,4 +1,3 @@
-#include "props.h"
 #include "multiaccel.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::MAIN);
@@ -526,9 +525,9 @@ int main(int argc, char **argv) {
 	while ((read = getline(&line, &len, fp)) != -1) {
 		if (sscanf(line, "%[^=]=%s", field, value) == 2) {
 			if (strcmp(field, "shaproportion") == 0) {
-				cfg->sha_ratio = strtod(value, NULL);
+				cfg->sha_proportion = strtod(value, NULL);
 			} else if (strcmp(field, "regexproportion") == 0) {
-				cfg->regex_ratio = strtod(value, NULL);
+				cfg->regex_proportion = strtod(value, NULL);
 			}
 		}
 	}
