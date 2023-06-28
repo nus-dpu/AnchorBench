@@ -15,7 +15,7 @@ for size in "${data_size[@]}"; do
 			echo "  >> Test input $rate (Kops) with $nr_core..."
 			./build/multiaccel -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -f workload/workloada.spec -c $nr_core -s $rate -b $size
 			mv *-thp-*.txt 		${dir}/rate-$rate/thp-$nr_core/
-			mv latency-*.txt 	${dir}/rate-$rate/lat-$nr_core/
+			mv *-latency-*.txt 	${dir}/rate-$rate/lat-$nr_core/
 			echo "  >> Test done!"
 			sleep 2
 		done
