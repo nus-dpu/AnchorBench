@@ -26,9 +26,8 @@ cflags = default_cflags
 core_path = '../' + 'core'
 
 inc_dirs = [
-	include_directories(common_src_path),
-	include_directories(common_path),
-	include_directories('../..'),
+	include_directories(core_path),
+	include_directories('../'),
 ]
 
 sources = files(
