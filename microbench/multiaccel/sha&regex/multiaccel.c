@@ -256,11 +256,11 @@ void * multiaccel_work_lcore(void * arg) {
 			printf("CPU %02d| REGEX enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
                 regex_ctx->nb_enqueued, regex_ctx->nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
                 regex_ctx->nb_dequeued, regex_ctx->nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
-#if 0
+
 			FILE * output_fp;
 			char name[32];
 
-			sprintf(name, "thp-%d.txt", sched_getcpu());
+			sprintf(name, "regex-thp-%d.txt", sched_getcpu());
 			output_fp = fopen(name, "w");
 			if (!output_fp) {
 				printf("Error opening throughput output file!\n");
@@ -268,11 +268,24 @@ void * multiaccel_work_lcore(void * arg) {
 			}
 
 			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
-				nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)), 
-				nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
+				regex_ctx->nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)), 
+				regex_ctx->nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
 
 			fclose(output_fp);
-#endif
+
+			sprintf(name, "sha-thp-%d.txt", sched_getcpu());
+			output_fp = fopen(name, "w");
+			if (!output_fp) {
+				printf("Error opening throughput output file!\n");
+				return;
+			}
+
+			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
+				sha_ctx->nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)), 
+				sha_ctx->nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
+
+			fclose(output_fp);
+
 			break;
 		}
 
@@ -305,7 +318,7 @@ void * multiaccel_work_lcore(void * arg) {
 			continue;
 		}
 	}
-#if 0
+
 	int lat_start = (int)(0.15 * nr_latency);
 	FILE * output_fp;
 	char name[32];
@@ -318,10 +331,10 @@ void * multiaccel_work_lcore(void * arg) {
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
-		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+		fprintf(output_fp, "%d\t%lu\t%lu\t%lu\n", latency[i].type, latency[i].start, latency[i].end, latency[i].end - latency[i].start);
 	}
 
 	fclose(output_fp);
-#endif
+
     return NULL;
 }

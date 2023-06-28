@@ -1,22 +1,24 @@
-data_size=(16 32 64 128 256 512 1024)
+# data_size=(16 32 64 128 256 512 1024)
+data_size=(2048)
 
 for size in "${data_size[@]}"; do
-	mkdir ${size}B-result/
+	dir=SHA=${size}B-result/
+	mkdir ${dir}
 
-	for nr_core in $(seq 1 1 8); do 
+	for nr_core in $(seq 1 1 1); do 
 		echo ">> Test with $nr_core cores >>"
 
-		mkdir ${size}B-result/thp-$nr_core/
-		mkdir ${size}B-result/lat-$nr_core/
+		mkdir ${dir}/thp-$nr_core/
+		mkdir ${dir}/lat-$nr_core/
 
-		for rate in $(seq 10 140 5000); do
+		for rate in $(seq 100 100 2000); do
 			rm thp-*.txt latency-*.txt
 			echo "  >> Test input $rate (Kops)"
-			./build/sha -l 50 -p 03:00.0 -d $(pwd)/input.dat -c $nr_core -s $rate -b $size
-			cat thp-*.txt > ${size}B-result/thp-$nr_core/thp-rate-$rate.txt
-			cat latency-*.txt > ${size}B-result/lat-$nr_core/lat-rate-$rate.txt
+			./build/multiapp -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -f workload/workloada.spec -c $nr_core -s $rate -b $size
+			mv thp-*.txt 		${dir}/thp-$nr_core/
+			mv latency-*.txt 	${dir}/lat-$nr_core/
 			echo "  >> Test done!"
-			sleep 5
+			sleep 2
 		done
 	done
 
