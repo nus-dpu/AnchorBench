@@ -320,21 +320,33 @@ void * multiaccel_work_lcore(void * arg) {
 	}
 
 	int lat_start = (int)(0.15 * nr_latency);
-	FILE * output_fp;
+	FILE * sha_output_fp, * regex_output_fp;
 	char name[32];
 
-	sprintf(name, "latency-%d.txt", sched_getcpu());
-	output_fp = fopen(name, "w");
-	if (!output_fp) {
+	sprintf(name, "sha-latency-%d.txt", sched_getcpu());
+	sha_output_fp = fopen(name, "w");
+	if (!sha_output_fp) {
+		printf("Error opening latency output file!\n");
+		return NULL;
+	}
+
+	sprintf(name, "regex-latency-%d.txt", sched_getcpu());
+	regex_output_fp = fopen(name, "w");
+	if (!regex_output_fp) {
 		printf("Error opening latency output file!\n");
 		return NULL;
 	}
 
 	for (int i = lat_start; i < nr_latency; i++) {
-		fprintf(output_fp, "%d\t%lu\t%lu\t%lu\n", latency[i].type, latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+		if (latency[i].type == SHA_JOB) {
+			fprintf(sha_output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+		} else {
+			fprintf(regex_output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+		}
 	}
 
-	fclose(output_fp);
+	fclose(sha_output_fp);
+	fclose(regex_output_fp);
 
     return NULL;
 }
