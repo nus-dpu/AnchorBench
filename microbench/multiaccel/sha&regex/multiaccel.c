@@ -1,6 +1,3 @@
-#include <string>
-#include <iostream>
-
 #include <assert.h>
 #include <stddef.h>
 #include <rte_cycles.h>

@@ -1,3 +1,6 @@
+#include <string>
+#include <iostream>
+
 #include "props.h"
 #include "workload.h"
 
@@ -25,13 +28,13 @@ int InitWorkload() {
 char * GetSHAInput() {
     std::string name;
     name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
-    return name.c_str();
+    return (char *)name.c_str();
 }
 
 char * GetRegExInput() {
     std::string name;
     name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
-    return name.c_str();
+    return (char *)name.c_str();
 }
 
 int GetNextJob() {
