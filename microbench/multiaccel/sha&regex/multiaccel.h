@@ -64,7 +64,7 @@ struct sha_ctx {
 };
 
 struct regex_input {
-	char *line;
+	char line[256];
 	int len;
 };
 
