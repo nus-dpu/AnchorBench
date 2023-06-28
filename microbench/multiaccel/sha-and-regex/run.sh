@@ -26,5 +26,5 @@ for size in "${data_size[@]}"; do
 				sleep 2
 			done
 		done
-
+	done
 done
