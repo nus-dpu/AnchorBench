@@ -5,9 +5,10 @@
 #include <stddef.h>
 #include <rte_cycles.h>
 
+#include "props.h"
+#include "workload.h"
+
 extern "C" {
-	#include "props.h"
-	#include "workload.h"
 	#include "multiaccel.h"
 }
 
