@@ -203,12 +203,12 @@ void * multiaccel_work_lcore(void * arg) {
     seed = (unsigned int) time(NULL);
 
 	if (cfg.regex_proportion > 0) {
-		job_ratio[job_index].type = REGEX_JOB;
-		job_ratio[job_index].ratio = cfg.regex_proportion;
+		job_ratio[nr_job].type = REGEX_JOB;
+		job_ratio[nr_job].ratio = cfg.regex_proportion;
 		nr_job++;
 	} else {
-		job_ratio[job_index].type = SHA_JOB;
-		job_ratio[job_index].ratio = cfg.sha_proportion;
+		job_ratio[nr_job].type = SHA_JOB;
+		job_ratio[nr_job].ratio = cfg.sha_proportion;
 		nr_job++;
 	}
 
