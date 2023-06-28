@@ -7,7 +7,6 @@ for size in "${data_size[@]}"; do
 
 	for rate in $(seq 100 100 3000); do
 		mkdir ${dir}/rate-$rate/
-		mkdir ${dir}/rate-$rate/
 
 		for nr_core in $(seq 1 1 1); do 
 			mkdir ${dir}/rate-$rate/thp-$nr_core/
