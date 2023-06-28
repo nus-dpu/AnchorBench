@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "multiaccel.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::MAIN);
@@ -514,7 +516,7 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-	std::ifstream input(app_ctx->config_file);
+	std::ifstream input(cfg->config_file);
 	try {
 		props.Load(input);
 	} catch (const std::string &message) {

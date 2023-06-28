@@ -43,15 +43,9 @@ uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 }
 
 double ran_expo(double mean) {
-    double u, x;
+    double x;
     drand48_r(&drand_buf, &x);
-    // u = x / RAND_MAX;
     return -log(1 - x) * mean;
-#if 0
-    double u;
-    u = (double) rand_r(&seed) / RAND_MAX;
-    return -log(1- u) * mean;
-#endif
 }
 
 /*
