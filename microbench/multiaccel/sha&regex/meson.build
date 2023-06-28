@@ -37,7 +37,9 @@ inc_dirs = [
 sources = files(
     project_name + '.cc',
     project_name + '_main.cc',
+	'sha_job.c',
 	'sha_mempool.c',
+	'regex_job.c',
 	'regex_mempool.c',
 	core_path + '/workload.cc',
 )

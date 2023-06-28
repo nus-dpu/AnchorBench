@@ -354,8 +354,6 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 	struct sha_ctx * sha_ctx = &ctx->sha_ctx;
 	struct regex_ctx * regex_ctx = &ctx->regex_ctx;
     doca_error_t result;
-    uint32_t nb_free, nb_total;
-	nb_free = nb_total = 0;
 
     result = doca_workq_create(WORKQ_DEPTH, &ctx->workq);
 	if (result != DOCA_SUCCESS) {
@@ -516,7 +514,7 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-	std::ifstream input(cfg->config_file);
+	std::ifstream input(cfg.config_file);
 	try {
 		props.Load(input);
 	} catch (const std::string &message) {

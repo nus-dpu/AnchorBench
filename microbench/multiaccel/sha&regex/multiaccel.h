@@ -131,4 +131,9 @@ extern pthread_barrier_t barrier;
 
 extern Properties props;
 
+int sha_enq_job(struct sha_ctx * ctx);
+int sha_deq_job(struct sha_ctx * ctx, struct doca_event * event, struct timespec * now);
+int regex_enq_job(struct regex_ctx * ctx);
+int regex_deq_job(struct regex_ctx * ctx, struct doca_event * event, struct timespec * now);
+
 #endif  /* _SHA_H_ */
