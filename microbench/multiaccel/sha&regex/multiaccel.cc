@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <rte_cycles.h>
 
-DOCA_LOG_REGISTER(SHA::CORE);
+DOCA_LOG_REGISTER(MULTIACCEL::CORE);
 
 #define NSEC_PER_SEC    1000000000L
 

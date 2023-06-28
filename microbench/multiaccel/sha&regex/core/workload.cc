@@ -2,17 +2,17 @@
 
 #include <string>
 
-const std::string workload::SHA_INPUT_PROPERTY = "shainput";
-const std::string workload::SHA_INPUT_DEFAULT = "sha.dat";
+const std::string Workload::SHA_INPUT_PROPERTY = "shainput";
+const std::string Workload::SHA_INPUT_DEFAULT = "sha.dat";
 
-const std::string workload::SHA_PROPORTION_PROPERTY = "shaproportion";
-const std::string workload::SHA_PROPORTION_DEFAULT = "0.5";
+const std::string Workload::SHA_PROPORTION_PROPERTY = "shaproportion";
+const std::string Workload::SHA_PROPORTION_DEFAULT = "0.5";
 
-const std::string workload::REGEX_INPUT_PROPERTY = "regexinput";
-const std::string workload::REGEX_INPUT_DEFAULT = "regex.dat";
+const std::string Workload::REGEX_INPUT_PROPERTY = "regexinput";
+const std::string Workload::REGEX_INPUT_DEFAULT = "regex.dat";
 
-const std::string workload::REGEX_PROPORTION_PROPERTY = "regexproportion";
-const std::string workload::REGEX_PROPORTION_DEFAULT = "0.5";
+const std::string Workload::REGEX_PROPORTION_PROPERTY = "regexproportion";
+const std::string Workload::REGEX_PROPORTION_DEFAULT = "0.5";
 
 void Workload::Init(const Properties &p) {
     double sha_proportion = std::stod(p.GetProperty(SHA_PROPORTION_PROPERTY,

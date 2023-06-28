@@ -1,6 +1,8 @@
 #ifndef _PROPERTY_H_
 #define _PROPERTY_H_
 
+#include <map>
+
 class Properties {
 public:
     std::string GetProperty(const std::string &key,
@@ -34,7 +36,7 @@ inline void Properties::SetProperty(const std::string &key, const std::string &v
 }
 
 inline bool Properties::Load(std::ifstream &input) {
-    if (!input.is_open()) throw utils::Exception("File not open!");
+    if (!input.is_open()) throw Exception("File not open!");
 
     while (!input.eof() && !input.bad()) {
         std::string line;

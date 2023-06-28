@@ -1,6 +1,6 @@
-#include "mempool.h"
+#include "regex_mempool.h"
 
-int is_mempool_empty(struct mempool * mp) {
+int is_regex_mempool_empty(struct regex_mempool * mp) {
     if (list_empty(&mp->elt_free_list)) {
         return 1;
     }
@@ -9,10 +9,10 @@ int is_mempool_empty(struct mempool * mp) {
 }
 
 /*----------------------------------------------------------------------------*/
-struct mempool * mempool_create(int num_elt, size_t elt_size) {
+struct regex_mempool * regex_mempool_create(int num_elt, size_t elt_size) {
     size_t total_size = num_elt * elt_size;
 
-    struct mempool * mp = (struct mempool *)malloc(sizeof(struct mempool));
+    struct regex_mempool * mp = (struct regex_mempool *)malloc(sizeof(struct regex_mempool));
 
     if (!mp) {
         goto failed;
@@ -29,33 +29,15 @@ struct mempool * mempool_create(int num_elt, size_t elt_size) {
     init_list_head(&mp->elt_free_list);
     init_list_head(&mp->elt_used_list);
 
-    struct mempool_elt * elts = (struct mempool_elt *)calloc(num_elt, sizeof(struct mempool_elt));
+    struct regex_mempool_elt * elts = (struct regex_mempool_elt *)calloc(num_elt, sizeof(struct regex_mempool_elt));
 
     /* Segment the region into pieces */
     for (int i = 0; i < num_elt; i++) {
-        // struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt));
-        struct mempool_elt * elt = (struct mempool_elt *)&elts[i];
+        struct regex_mempool_elt * elt = (struct regex_mempool_elt *)&elts[i];
         elt->mp = mp;
         elt->addr = mp->addr + i * elt_size;
         list_add_tail(&elt->list, &mp->elt_free_list);
     }
-#if 0
-    mp->elt_size = elt_size;
-    mp->size = total_size;
-
-    init_list_head(&mp->elt_free_list);
-    init_list_head(&mp->elt_used_list);
-
-    struct mempool_elt * elts = (struct mempool_elt *)calloc(num_elt, sizeof(struct mempool_elt));
-
-    /* Segment the region into pieces */
-    for (int i = 0; i < num_elt; i++) {
-        // struct mempool_elt * elt = (struct mempool_elt *)calloc(1, sizeof(struct mempool_elt) + elt_size);
-        struct mempool_elt * elt = (struct mempool_elt *)&elts[i];
-        elt->mp = mp;
-        list_add_tail(&elt->list, &mp->elt_free_list);
-    }
-#endif
 
     return mp;
 
@@ -66,8 +48,8 @@ failed:
 }
 
 /*----------------------------------------------------------------------------*/
-void mempool_free(struct mempool * mp) {
-    struct mempool_elt * elt, * temp;
+void regex_mempool_free(struct regex_mempool * mp) {
+    struct regex_mempool_elt * elt, * temp;
     list_for_each_entry_safe(elt, temp, &mp->elt_free_list, list) {
         free(elt);
     }
@@ -83,8 +65,8 @@ void mempool_free(struct mempool * mp) {
 }
 
 /*----------------------------------------------------------------------------*/
-int mempool_get(struct mempool * mp, struct mempool_elt ** obj) {
-    struct mempool_elt * elt = list_first_entry_or_null(&mp->elt_free_list, struct mempool_elt, list);
+int regex_mempool_get(struct regex_mempool * mp, struct regex_mempool_elt ** obj) {
+    struct regex_mempool_elt * elt = list_first_entry_or_null(&mp->elt_free_list, struct regex_mempool_elt, list);
 
     if (!elt) {
         *obj = NULL;
@@ -101,8 +83,6 @@ int mempool_get(struct mempool * mp, struct mempool_elt ** obj) {
 }
 
 /*----------------------------------------------------------------------------*/
-void mempool_put(struct mempool * mp, struct mempool_elt * elt) {
-    // list_del_init(&elt->list);
-    // memset(elt->addr, 0, mp->elt_size);
+void regex_mempool_put(struct regex_mempool * mp, struct regex_mempool_elt * elt) {
     list_add_tail(&elt->list, &mp->elt_free_list);
 }

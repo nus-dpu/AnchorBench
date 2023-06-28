@@ -1,6 +1,6 @@
-#include "sha.h"
+#include "multiaccel.h"
 
-DOCA_LOG_REGISTER(SHA::MAIN);
+DOCA_LOG_REGISTER(MULTIACCEL::MAIN);
 
 struct app_config cfg;
 pthread_barrier_t barrier;

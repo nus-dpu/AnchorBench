@@ -37,7 +37,7 @@ inline void DiscreteGenerator<Value>::AddValue(Value value, double weight) {
 template <typename Value>
 inline Value DiscreteGenerator<Value>::Next() {
   // mutex_.lock();
-  double chooser = utils::RandomDouble();
+  double chooser = RandomDouble();
   // mutex_.unlock();
   
   for (auto p = values_.cbegin(); p != values_.cend(); ++p) {
