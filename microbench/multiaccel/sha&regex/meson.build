@@ -25,24 +25,20 @@ cflags = default_cflags
 
 common_src_path = '../../../' + 'common/src'
 common_path = '../../../' + 'common'
-core_path = 'core'
 
 inc_dirs = [
 	include_directories(common_src_path),
 	include_directories(common_path),
-	include_directories(core_path),
 	include_directories('../'),
 ]
 
 sources = files(
     project_name + '.c',
     project_name + '_main.c',
-	'props.cc',
 	'sha_job.c',
 	'sha_mempool.c',
 	'regex_job.c',
 	'regex_mempool.c',
-	core_path + '/workload.cc',
 	common_path + '/common.c',
 	common_src_path + '/utils.c',
 )
