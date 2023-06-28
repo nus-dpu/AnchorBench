@@ -28,7 +28,7 @@ double ran_expo(double mean) {
     return -log(1 - x) * mean;
 }
 
-int ran_discrete_gen(double ratios, int size) {
+int ran_discrete_gen(double ratios[], int size) {
 	double x;
 	double ratio = 0.0;
     drand48_r(&drand_buf, &x);
@@ -43,7 +43,7 @@ int ran_discrete_gen(double ratios, int size) {
 	return -1;
 }
 
-int get_next_job(double ratios, int size) {
+int get_next_job(double ratios[], int size) {
 	int x = ran_discrete_gen(ratios, size);
 	if (x < 0) {
 		perror("Discrete generation failed!\n");
@@ -193,8 +193,8 @@ void * multiaccel_work_lcore(void * arg) {
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
 
-	job_ratio[0] = app_cfg.regex_ratio;
-	job_ratio[1] = app_cfg.sha_ratio;
+	job_ratio[0] = cfg.regex_ratio;
+	job_ratio[1] = cfg.sha_ratio;
 
 	for (int i = 0; i < NUM_WORKER; i++) {
 		worker[i].interval = 0;
