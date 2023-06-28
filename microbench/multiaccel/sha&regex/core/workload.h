@@ -14,18 +14,24 @@ enum Job {
 };
 
 class Workload {
-    static const std::string SHA_PROPORTION_PROPERTY;
-    static const std::string SHA_PROPORTION_DEFAULT;
+    static const std::string SHA_INPUT_PROPERTY;
+    static const std::string SHA_INPUT_DEFAULT;
+
+    static const std::string REGEX_INPUT_PROPERTY;
+    static const std::string REGEX_INPUT_DEFAULT;
+
+    static const std::string REGEX_PROPORTION_PROPERTY;
+    static const std::string REGEX_PROPORTION_DEFAULT;
 
     static const std::string REGEX_PROPORTION_PROPERTY;
     static const std::string REGEX_PROPORTION_DEFAULT;
 
     virtual Job NextOperation() { return op_chooser_.Next(); }
 
-    virtual void Init(const properties &p);
+    virtual void Init(const Properties &p);
 
-    CoreWorkload() {}
-    ~CoreWorkload() {}
+    Workload() {}
+    ~Workload() {}
   
 protected:
     DiscreteGenerator<Job> op_chooser_;

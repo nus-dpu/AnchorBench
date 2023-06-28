@@ -1,7 +1,11 @@
 #ifndef _PROPERTY_H_
 #define _PROPERTY_H_
 
+#include <string>
 #include <map>
+#include <fstream>
+#include <cassert>
+#include "utils.h"
 
 class Properties {
 public:
