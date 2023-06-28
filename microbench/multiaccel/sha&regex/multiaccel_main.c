@@ -517,7 +517,7 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-	fp = fopen(cfg->config_file, "r");
+	fp = fopen(cfg.config_file, "r");
 	if (fp == NULL) {
 		return false;
 	}
@@ -525,9 +525,9 @@ int main(int argc, char **argv) {
 	while ((read = getline(&line, &len, fp)) != -1) {
 		if (sscanf(line, "%[^=]=%s", field, value) == 2) {
 			if (strcmp(field, "shaproportion") == 0) {
-				cfg->sha_proportion = strtod(value, NULL);
+				cfg.sha_proportion = strtod(value, NULL);
 			} else if (strcmp(field, "regexproportion") == 0) {
-				cfg->regex_proportion = strtod(value, NULL);
+				cfg.regex_proportion = strtod(value, NULL);
 			}
 		}
 	}
