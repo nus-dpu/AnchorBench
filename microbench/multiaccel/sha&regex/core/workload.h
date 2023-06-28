@@ -20,8 +20,8 @@ class Workload {
     static const std::string REGEX_INPUT_PROPERTY;
     static const std::string REGEX_INPUT_DEFAULT;
 
-    static const std::string REGEX_PROPORTION_PROPERTY;
-    static const std::string REGEX_PROPORTION_DEFAULT;
+    static const std::string SHA_PROPORTION_PROPERTY;
+    static const std::string SHA_PROPORTION_DEFAULT;
 
     static const std::string REGEX_PROPORTION_PROPERTY;
     static const std::string REGEX_PROPORTION_DEFAULT;
