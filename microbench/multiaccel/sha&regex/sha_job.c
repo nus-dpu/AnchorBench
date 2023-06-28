@@ -1,5 +1,7 @@
 #include "multiaccel.h"
 
+DOCA_LOG_REGISTER(MULTIACCEL::SHA);
+
 /*
  * Enqueue job to DOCA SHA qp
  *

@@ -1,5 +1,7 @@
 #include "multiaccel.h"
 
+DOCA_LOG_REGISTER(MULTIACCEL::REGEX);
+
 int regex_enq_job(struct regex_ctx * ctx) {
 	struct app_ctx * app_ctx = (struct app_ctx *)((char *)ctx - offsetof(struct app_ctx, regex_ctx));
 	doca_error_t result;

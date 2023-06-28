@@ -127,7 +127,7 @@ extern int data_len;
 extern pthread_barrier_t barrier;
 
 struct lat_info {
-	Job type;
+	int type;
 	uint64_t start;
 	uint64_t end;
 };
@@ -137,6 +137,7 @@ struct lat_info {
 
 #define MAX_NR_LATENCY	(32 * 1024)
 
+extern __thread int nr_latency;
 extern __thread bool start_record;
 extern __thread struct lat_info * latency;
 
