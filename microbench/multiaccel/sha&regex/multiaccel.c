@@ -2,7 +2,6 @@
 #include <stddef.h>
 #include <rte_cycles.h>
 
-#include "props.h"
 #include "multiaccel.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::CORE);
@@ -27,6 +26,29 @@ double ran_expo(double mean) {
     double x;
     drand48_r(&drand_buf, &x);
     return -log(1 - x) * mean;
+}
+
+int ran_discrete_gen(double ratios, int size) {
+	double x;
+	double ratio = 0.0;
+    drand48_r(&drand_buf, &x);
+
+	for (int i = 0; i < size; i++) {
+		ratio += ratios[i];
+		if (x < ratio) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int get_next_job(double ratios, int size) {
+	int x = ran_discrete_gen(ratios, size);
+	if (x < 0) {
+		perror("Discrete generation failed!\n");
+	}
+	return x + 1;
 }
 
 /*
@@ -76,14 +98,14 @@ int load_sha_workload(struct sha_ctx * sha_ctx) {
 	char * input;
 	int input_size;
   	// std::string input_file_name;
-	char * input_file_name;
+	// char * input_file_name;
 
 	/* Init SHA input */
 	input = (char *)calloc(K_16, sizeof(char));
 	// input_file_name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
-	input_file_name = GetSHAInput();
+	// input_file_name = GetSHAInput();
 
-    fp = fopen(input_file_name, "rb");
+    fp = fopen("REGEX.dat", "rb");
     if (fp == NULL) {
         return -1;
 	}
@@ -113,14 +135,14 @@ int load_regex_workload(struct regex_ctx * regex_ctx) {
 	int nr_input = 0;
 	struct regex_input * input;
   	// std::string input_file_name;
-  	char * input_file_name;
+  	// char * input_file_name;
 
 	/* Init RegEx input */
 	input = (struct regex_input *)calloc(MAX_NR_RULE, sizeof(struct regex_input));
 	// input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
-	input_file_name = GetRegExInput();
+	// input_file_name = GetRegExInput();
 
-	fp = fopen(input_file_name, "rb");
+	fp = fopen("SHA.dat", "rb");
     if (fp == NULL) {
         return -1;
 	}
@@ -164,10 +186,15 @@ void * multiaccel_work_lcore(void * arg) {
 	struct doca_regex_search_result * res;
 	int res_index = 0;
 
+	double job_ratio[2];
+
 	mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
+
+	job_ratio[0] = app_cfg.regex_ratio;
+	job_ratio[1] = app_cfg.sha_ratio;
 
 	for (int i = 0; i < NUM_WORKER; i++) {
 		worker[i].interval = 0;
@@ -254,7 +281,8 @@ void * multiaccel_work_lcore(void * arg) {
 
 		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				int next = GetNextJob();
+				// int next = GetNextJob();
+				int next = get_next_job(job_ratio, sizeof(job_ratio) / sizeof(job_ratio[0]));
 				switch (next) {
 					case SHA_JOB:
 						ret = sha_enq_job(sha_ctx);

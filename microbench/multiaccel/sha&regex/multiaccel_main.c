@@ -130,7 +130,7 @@ static doca_error_t queuedepth_callback(void *param, void *config) {
  *
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
-static doca_error_t register_sha_params() {
+static doca_error_t register_multiaccel_params() {
 	doca_error_t result = DOCA_SUCCESS;
 	struct doca_argp_param *pci_param, *rules_param, *config_param, *nr_core_param, *rate_param, *len_param, *queuedepth_param;
 
@@ -476,6 +476,11 @@ int main(int argc, char **argv) {
     pthread_attr_t pattr;
     cpu_set_t cpu;
 	struct app_ctx *app_ctx = NULL;
+    FILE * fp;
+	char * line = NULL;
+	size_t len = 0;
+	ssize_t read;
+	char field[32], value[32];
 
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("multiaccel", &cfg);
@@ -485,7 +490,7 @@ int main(int argc, char **argv) {
 	}
 
 	/* Register Multiapp params */
-	result = register_sha_params();
+	result = register_multiaccel_params();
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register sample parameters: %s", doca_get_error_string(result));
 		doca_argp_destroy();
@@ -513,7 +518,22 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-	InitProps(cfg.config_file);
+	fp = fopen(cfg->config_file, "r");
+	if (fp == NULL) {
+		return false;
+	}
+
+	while ((read = getline(&line, &len, fp)) != -1) {
+		if (sscanf(line, "%[^=]=%s", field, value) == 2) {
+			if (strcmp(field, "shaproportion") == 0) {
+				cfg->sha_ratio = strtod(value, NULL);
+			} else if (strcmp(field, "regexproportion") == 0) {
+				cfg->regex_ratio = strtod(value, NULL);
+			}
+		}
+	}
+
+	fclose(fp);
 	
 	for (int i = 0; i < cfg.nr_core; i++) {
         CPU_ZERO(&cpu);
