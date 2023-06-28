@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "props.h"
 #include "multiaccel.h"
 
