@@ -1,0 +1,407 @@
+#include "core/properties.h"
+#include "multiaccel.h"
+
+#include <assert.h>
+#include <rte_cycles.h>
+
+DOCA_LOG_REGISTER(SHA::CORE);
+
+#define NSEC_PER_SEC    1000000000L
+
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
+#define MAX_NR_LATENCY	(32 * 1024)
+
+struct lat_info {
+	uint64_t start;
+	uint64_t end;
+};
+
+__thread int nr_latency = 0;
+// __thread uint64_t latency[MAX_NR_LATENCY];
+__thread bool start_record = false;
+__thread struct lat_info * latency;
+
+__thread unsigned int seed;
+__thread struct drand48_data drand_buf;
+
+uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
+	if (diff.tv_nsec < 0) {
+		diff.tv_nsec += NSEC_PER_SEC;
+		diff.tv_sec--;
+	}
+	return TIMESPEC_TO_NSEC(diff);
+}
+
+double ran_expo(double mean) {
+    double u, x;
+    drand48_r(&drand_buf, &x);
+    // u = x / RAND_MAX;
+    return -log(1 - x) * mean;
+#if 0
+    double u;
+    u = (double) rand_r(&seed) / RAND_MAX;
+    return -log(1- u) * mean;
+#endif
+}
+
+/*
+ * Enqueue job to DOCA SHA qp
+ *
+ * @sha_ctx [in]: sha_ctx configuration struct
+ * @job_request [in]: SHA job request, already initialized with first chunk.
+ * @remaining_bytes [in]: the remaining bytes to send all jobs (chunks).
+ * @return: number of the enqueued jobs or -1
+ */
+static int sha_enq_job(struct sha_ctx * ctx, char * data, int data_len) {
+	doca_error_t result;
+	int nb_enqueued = 0;
+	// uint32_t nb_total = 0;
+	// uint32_t nb_free = 0;
+
+	// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+	// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+
+	if (is_mempool_empty(ctx->buf_mempool)) {
+		return 0;
+	}
+
+	// if (nb_free != 0) {
+		struct mempool_elt * buf;
+		char * src_buf, * dst_buf;
+		void *mbuf_data;
+
+		/* Get one free element from the mempool */
+		mempool_get(ctx->buf_mempool, &buf);
+		/* Get the memory segment */
+		src_buf = buf->src_addr;
+		dst_buf = buf->dst_addr;
+
+		memcpy(src_buf, data, data_len);
+
+		// /* Create a DOCA buffer for this memory region */
+		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, src_data_buf, BUF_SIZE, &src_buf->buf);
+		// if (result != DOCA_SUCCESS) {
+		// 	DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		// 	return nb_enqueued;
+		// }
+
+		// /* Create a DOCA buffer for this memory region */
+		// result = doca_buf_inventory_buf_by_addr(ctx->buf_inv, ctx->mmap, dst_data_buf, BUF_SIZE, &dst_buf->buf);
+		// if (result != DOCA_SUCCESS) {
+		// 	DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		// 	return nb_enqueued;
+		// }
+
+		doca_buf_get_data(buf->src_buf, &mbuf_data);
+		doca_buf_set_data(buf->src_buf, mbuf_data, data_len);
+
+	    clock_gettime(CLOCK_MONOTONIC, &buf->ts);
+
+		struct doca_sha_job const sha_job = {
+			.base = (struct doca_job) {
+				.type = DOCA_SHA_JOB_SHA256,
+				.flags = DOCA_JOB_FLAGS_NONE,
+				.ctx = doca_sha_as_ctx(ctx->doca_sha),
+				.user_data = { .ptr = buf },
+			},
+			.resp_buf = buf->dst_buf,
+			.req_buf = buf->src_buf,
+			.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
+		};
+
+		result = doca_workq_submit(ctx->workq, (struct doca_job *)&sha_job);
+		if (result == DOCA_ERROR_NO_MEMORY) {
+			// doca_buf_refcount_rm(src_buf->buf, NULL);
+			// doca_buf_refcount_rm(dst_buf->buf, NULL);
+			mempool_put(ctx->buf_mempool, buf);
+			return nb_enqueued; /* qp is full, try to dequeue. */
+		}
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to enqueue job. Reason: %s", doca_get_error_string(result));
+			exit(1);
+			return -1;
+		}
+		// *remaining_bytes -= job_size; /* Update remaining bytes to scan. */
+		nb_enqueued++;
+		// --nb_free;
+	// }
+
+	return nb_enqueued;
+}
+
+/*
+ * Printing the SHA results
+ *
+ * @sha_ctx [in]: sample SHA configuration struct
+ * @event [in]: DOCA event structure
+ */
+static void sha_report_results(struct doca_buf *buf) {
+	uint8_t * resp;
+	char sha_output[DOCA_SHA256_BYTE_COUNT * 2 + 1] = {0};
+	doca_buf_get_data(buf, (void **)&resp);
+	for (int i = 0; i < DOCA_SHA256_BYTE_COUNT; i++)
+		sprintf(sha_output + (2 * i), "%02x", resp[i]);
+	printf(" result >> %s\n", sha_output);
+}
+
+/*
+ * Dequeue jobs responses
+ *
+ * @sha_ctx [in]: sha_ctx configuration struct
+ * @chunk_len [in]: job chunk size
+ * @return: number of the dequeue jobs or a negative posix status code.
+ */
+static int sha_deq_job(struct sha_ctx *ctx) {
+	doca_error_t result;
+	int finished = 0;
+	struct doca_event event = {0};
+	struct timespec ts;
+	uint32_t nb_free = 0;
+	uint32_t nb_total = 0;
+	struct mempool_elt * buf;
+	struct timespec now;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	do {
+		result = doca_workq_progress_retrieve(ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+		if (result == DOCA_SUCCESS) {
+			buf = (struct mempool_elt *)event.user_data.ptr;
+			if (start_record && nr_latency < MAX_NR_LATENCY) {
+				// latency[nr_latency++] = diff_timespec(&buf->ts, &now);
+				latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
+				latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
+				nr_latency++;
+			}
+			/* release the buffer back into the pool so it can be re-used */
+			// doca_buf_inventory_get_num_elements(ctx->buf_inv, &nb_total);
+			// doca_buf_inventory_get_num_free_elements(ctx->buf_inv, &nb_free);
+			/* Report the scan result of SHA engine */
+			// sha_report_results(dst_doca_buf->buf);
+			/* release the buffer back into the pool so it can be re-used */
+			// doca_buf_refcount_rm(src_doca_buf->buf, NULL);
+			// doca_buf_refcount_rm(dst_doca_buf->buf, NULL);
+			/* Put the element back into the mempool */
+			mempool_put(ctx->buf_mempool, buf);
+			++finished;
+		} else if (result == DOCA_ERROR_AGAIN) {
+			break;
+		} else {
+			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
+			return -1;
+		}
+	} while (result == DOCA_SUCCESS);
+
+	return finished;
+}
+
+#define NUM_WORKER	32
+
+void load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
+    FILE * fp;
+	char * input;
+	int input_size;
+  	std::string input_file_name;
+
+	/* Init SHA input */
+	input = (char *)calloc(K_16, sizeof(char));
+	input_file_name = props->GetProperty(SHA_INPUT_PROPERTY, SHA_INPUT_DEFAULT);
+
+    fp = fopen(input_file_name, "rb");
+    if (fp == NULL) {
+        return -1;
+	}
+
+	/* Seek to the beginning of the file */
+	fseek(fp, 0, SEEK_SET);
+
+	/* Read and display data */
+	input_size = fread((char **)input, sizeof(char), K_16, fp);
+
+	sha_ctx->ptr = 0;
+	sha_ctx->input = input;
+	sha_ctx->input_size = input_size;
+
+	fclose(fp);
+}
+
+void load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
+    FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+	int nr_input = 0;
+	char * input;
+  	std::string input_file_name;
+
+	/* Init RegEx input */
+	input = (char *)calloc(MAX_NR_RULE, sizeof(struct input_info));
+	input_file_name = props.GetProperty(REGEX_INPUT_PROPERTY, REGEX_INPUT_DEFAULT);
+
+	fp = fopen(input_file_name, "rb");
+    if (fp == NULL) {
+        return -1;
+	}
+
+	/* Seek to the beginning of the file */
+	fseek(fp, 0, SEEK_SET);
+
+	while ((read = getline(&line, &len, fp)) != -1) {
+		if (nr_input >= MAX_NR_RULE) {
+			break;
+		}
+		memcpy(input[nr_input].line, line, read);
+		input[nr_input].len = read;
+		nr_input++;
+	}
+
+	regex_ctx->index = 0;
+	regex_ctx->input = input;
+	regex_ctx->nr_input = nr_input;
+
+	fclose(fp);
+}
+
+void * multiaccel_work_lcore(void * arg) {
+    int ret;
+	struct app_ctx * app_ctx = (struct app_ctx *)arg;
+	struct sha_ctx * sha_ctx = app_ctx->app_ctx;
+	struct regex_ctx * regex_ctx = app_ctx->regex_ctx;
+
+	Properties props;
+
+	double mean;
+	struct worker worker[NUM_WORKER];
+	double interval;
+    struct timespec begin, end, current_time;
+
+	doca_error_t result;
+	struct mempool_elt * elt;
+	struct doca_regex_search_result * res;
+	int res_index = 0;
+
+	props.Load(app_ctx->config_file);
+
+	mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
+
+    srand48_r(time(NULL), &drand_buf);
+    seed = (unsigned int) time(NULL);
+
+	for (int i = 0; i < NUM_WORKER; i++) {
+		worker[i].interval = 0;
+		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
+	}
+
+	load_sha_workload(props, sha_ctx);
+	load_regex_workload(props, regex_ctx);
+
+    list_for_each_entry(elt, &sha_ctx->buf_mempool->elt_free_list, list) {
+		/* Create a DOCA buffer for this memory region */
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, elt->src_addr, BUF_SIZE, &elt->src_buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		}
+
+		/* Create a DOCA buffer for this memory region */
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, elt->dst_addr, BUF_SIZE, &elt->dst_buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		}
+	}
+
+	res = (struct doca_regex_search_result *)calloc(NB_BUF, sizeof(struct doca_regex_search_result));
+
+	list_for_each_entry(elt, &regex_ctx->buf_mempool->elt_free_list, list) {
+		elt->response = &res[i++];
+
+		/* Create a DOCA buffer for this memory region */
+		result = doca_buf_inventory_buf_by_addr(regex_ctx->buf_inv, regex_ctx->mmap, elt->src_addr, BUF_SIZE, &elt->src_buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to allocate DOCA buf");
+		}
+	}
+
+	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
+
+    printf("CPU %02d| Work start!\n", sched_getcpu());
+
+    pthread_barrier_wait(&barrier);
+
+    clock_gettime(CLOCK_MONOTONIC, &begin);
+
+	while (1) {
+    	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - begin.tv_sec > 5) {
+			start_record = true;
+		}
+
+		if (current_time.tv_sec - begin.tv_sec > 10) {
+            clock_gettime(CLOCK_MONOTONIC, &end);
+			printf("CPU %02d| Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", sched_getcpu(),
+                nb_enqueued, nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)),
+                nb_dequeued, nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
+#if 0
+			FILE * output_fp;
+			char name[32];
+
+			sprintf(name, "thp-%d.txt", sched_getcpu());
+			output_fp = fopen(name, "w");
+			if (!output_fp) {
+				printf("Error opening throughput output file!\n");
+				return;
+			}
+
+			fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
+				nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)), 
+				nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
+
+			fclose(output_fp);
+#endif
+			break;
+		}
+
+		for (int i = 0; i < NUM_WORKER; i++) {
+			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+				ret = multiaccel_enq_job(app_ctx);
+				if (ret < 0) {
+					DOCA_LOG_ERR("Failed to enqueue jobs");
+					continue;
+				} else {
+					nb_enqueued++;
+					interval = ran_expo(mean);
+					worker[i].interval = (uint64_t)round(interval);
+					worker[i].last_enq_time = current_time;
+				}
+			}
+		}
+
+		ret = multiaccel_deq_job(app_ctx);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to dequeue jobs responses");
+			continue;
+		} else {
+			nb_dequeued += ret;
+		}
+	}
+#if 0
+	int lat_start = (int)(0.15 * nr_latency);
+	FILE * output_fp;
+	char name[32];
+
+	sprintf(name, "latency-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening latency output file!\n");
+		return NULL;
+	}
+
+	for (int i = lat_start; i < nr_latency; i++) {
+		fprintf(output_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+	}
+
+	fclose(output_fp);
+#endif
+    return NULL;
+}
