@@ -398,7 +398,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	sha_ctx->buf_mempool = mempool_create(NB_BUF, SHA_BUF_SIZE);
+	sha_ctx->buf_mempool = sha_mempool_create(NB_BUF, SHA_BUF_SIZE);
 
 	result = doca_mmap_populate(sha_ctx->mmap, sha_ctx->buf_mempool->addr, sha_ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
@@ -444,7 +444,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	regex_ctx->buf_mempool = mempool_create(NB_BUF, REGEX_BUF_SIZE);
+	regex_ctx->buf_mempool = regex_mempool_create(NB_BUF, REGEX_BUF_SIZE);
 
 	result = doca_mmap_populate(regex_ctx->mmap, regex_ctx->buf_mempool->addr, regex_ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
@@ -461,7 +461,7 @@ int main(int argc, char **argv) {
     pthread_t pids[MAX_NR_CORE];
     pthread_attr_t pattr;
     cpu_set_t cpu;
-	struct sha_ctx *sha_ctx = NULL;
+	struct app_ctx *app_ctx = NULL;
 
 	/* Parse cmdline/json arguments */
 	result = doca_argp_init("multiaccel", &cfg);
@@ -487,7 +487,7 @@ int main(int argc, char **argv) {
 	}
 
     /* Init DOCA SHA */
-	if (sha_init(&cfg) != DOCA_SUCCESS) {
+	if (multiaccel_init(&cfg) != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to init DOCA SHA: %s", doca_get_error_string(result));
 		return EXIT_FAILURE;
 	}
@@ -503,12 +503,12 @@ int main(int argc, char **argv) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
 
-		sha_ctx = (struct sha_ctx *)calloc(1, sizeof(struct sha_ctx));
+		app_ctx = (struct app_ctx *)calloc(1, sizeof(struct app_ctx));
 
-        sha_ctx->dev = cfg.dev;
-        sha_ctx->doca_sha = cfg.doca_sha;
+        app_ctx->sha_ctx.doca_sha = cfg.doca_sha;
+        app_ctx->regex_ctx.doca_regex = cfg.doca_regex;
 
-        sha_init_lcore(sha_ctx);
+        multiaccel_init_lcore(app_ctx);
 
         /* The pthread_create() call stores the thread ID into
             corresponding element of tinfo[]. */
@@ -518,7 +518,7 @@ int main(int argc, char **argv) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
 
-        ret = pthread_create(&pids[i], &pattr, &sha_work_lcore, (void *)sha_ctx);
+        ret = pthread_create(&pids[i], &pattr, &multiaccel_work_lcore, (void *)app_ctx);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }

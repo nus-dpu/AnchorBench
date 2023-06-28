@@ -14,6 +14,7 @@ enum Job {
 };
 
 class Workload {
+public:
     static const std::string SHA_INPUT_PROPERTY;
     static const std::string SHA_INPUT_DEFAULT;
 

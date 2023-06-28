@@ -272,11 +272,11 @@ int load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
     size_t len = 0;
     ssize_t read;
 	int nr_input = 0;
-	char * input;
+	struct input_info * input;
   	std::string input_file_name;
 
 	/* Init RegEx input */
-	input = (char *)calloc(MAX_NR_RULE, sizeof(struct input_info));
+	input = (struct input_info *)calloc(MAX_NR_RULE, sizeof(struct input_info));
 	input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
 
 	fp = fopen(input_file_name.c_str(), "rb");

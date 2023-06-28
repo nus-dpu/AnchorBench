@@ -85,9 +85,7 @@ struct regex_ctx {
 };
 
 struct app_ctx {
-	char config_file[MAX_FILE_NAME];
-	// struct doca_pci_bdf *pci_address;		/* SHA PCI address to use */
-	// struct doca_dev *dev;				/* DOCA device */
+	struct doca_dev *dev;			/* DOCA work queue */
 	struct doca_workq *workq;			/* DOCA work queue */
 
 	struct sha_ctx sha_ctx;
@@ -97,12 +95,14 @@ struct app_ctx {
 /* Configuration struct */
 struct app_config {
 	char pci_address[MAX_ARG_SIZE];		/* SHA PCI address to use */
-	char data[MAX_FILE_NAME];		/* Data to scan file path */
+	char config_file[MAX_FILE_NAME];
     int nr_core;    /* Number of worker cores */
     double rate;    /* SHA request generation rate */
 	float sha_proportion;
 	float regex_proportion;
 	int queue_depth;	/* Work queue depth */
+	char * rules_buffer;			/* Buffer holds the RegEx rules */
+	size_t rules_buffer_len;		/* Rules buffer size */
 
 	struct doca_dev *dev;				/* DOCA device */
 	struct doca_sha *doca_sha;			/* DOCA SHA interface */
