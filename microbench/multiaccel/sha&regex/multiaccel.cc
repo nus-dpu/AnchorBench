@@ -61,7 +61,7 @@ double ran_expo(double mean) {
  * @return: number of the enqueued jobs or -1
  */
 static int sha_enq_job(struct sha_ctx * ctx) {
-	struct app_ctx * app_ctx = (struct app_ctx *)((char *)ctx - offsetof(struct app_ctx, struct sha_ctx));
+	struct app_ctx * app_ctx = (struct app_ctx *)((char *)ctx - offsetof(struct app_ctx, sha_ctx));
 	doca_error_t result;
 	struct sha_mempool_elt * buf;
 	char * src_buf, * dst_buf;
@@ -117,7 +117,7 @@ static int sha_enq_job(struct sha_ctx * ctx) {
 }
 
 static int regex_enq_job(struct regex_ctx * ctx) {
-	struct app_ctx * app_ctx = (struct app_ctx *)((char *)ctx - offsetof(struct app_ctx, struct regex_ctx));
+	struct app_ctx * app_ctx = (struct app_ctx *)((char *)ctx - offsetof(struct app_ctx, regex_ctx));
 	doca_error_t result;
 	char * data = ctx->input[ctx->index].line;
 	int data_len = ctx->input[ctx->index].len;

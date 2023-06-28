@@ -316,14 +316,14 @@ static doca_error_t multiaccel_init(struct app_config *app_cfg) {
 	}
 
 	/* Set the RegEx device as the main HW accelerator */
-	result = doca_ctx_dev_add(doca_regex_as_ctx(app_config->doca_regex), app_config->dev);
+	result = doca_ctx_dev_add(doca_regex_as_ctx(app_cfg->doca_regex), app_cfg->dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set RegEx device.Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
 	/* Size per workq memory pool */
-	result = doca_regex_set_workq_matches_memory_pool_size(app_config->doca_regex, mempool_size);
+	result = doca_regex_set_workq_matches_memory_pool_size(app_cfg->doca_regex, mempool_size);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable set matches mempool size. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -331,14 +331,14 @@ static doca_error_t multiaccel_init(struct app_config *app_cfg) {
 
 	/* Load compiled rules into the RegEx */
 	result = doca_regex_set_hardware_compiled_rules(
-		app_config->doca_regex, app_config->rules_buffer, app_config->rules_buffer_len);
+		app_cfg->doca_regex, app_cfg->rules_buffer, app_cfg->rules_buffer_len);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to program rules file. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
     /* Start DOCA RegEx */
-	result = doca_ctx_start(doca_regex_as_ctx(app_config->doca_regex));
+	result = doca_ctx_start(doca_regex_as_ctx(app_cfg->doca_regex));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start DOCA RegEx. [%s]", doca_get_error_string(result));
 		// regex_scan_destroy(&regex_cfg);
@@ -520,6 +520,7 @@ int main(int argc, char **argv) {
 
 		app_ctx = (struct app_ctx *)calloc(1, sizeof(struct app_ctx));
 
+        app_ctx->dev = cfg.dev;
         app_ctx->sha_ctx.doca_sha = cfg.doca_sha;
         app_ctx->regex_ctx.doca_regex = cfg.doca_regex;
 
