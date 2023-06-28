@@ -97,14 +97,14 @@ int load_sha_workload(struct sha_ctx * sha_ctx) {
 	char * input;
 	int input_size;
   	// std::string input_file_name;
-	// char * input_file_name;
+	char * input_file_name;
 
 	/* Init SHA input */
 	input = (char *)calloc(K_16, sizeof(char));
 	// input_file_name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
 	// input_file_name = GetSHAInput();
 
-    fp = fopen("REGEX.dat", "rb");
+    fp = fopen("REGEX.txt", "rb");
     if (fp == NULL) {
         return -1;
 	}
