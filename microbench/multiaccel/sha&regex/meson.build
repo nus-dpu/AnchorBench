@@ -23,7 +23,7 @@ machine_args = []
 default_cflags = machine_args
 cflags = default_cflags
 
-core_path = '../' + 'core'
+core_path = 'core'
 
 inc_dirs = [
 	include_directories(core_path),
