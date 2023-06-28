@@ -8,7 +8,7 @@
 #include "core/properties.h"
 
 Properties props;
-__thread Workload wl;
+__thread Workload wl = Workload();
 
 int InitProps(char * filename) {
     std::ifstream input(filename);
