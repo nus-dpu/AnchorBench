@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include <assert.h>
+#include <stddef.h>
 #include <rte_cycles.h>
 
 #include "workload.h"
@@ -242,7 +243,7 @@ int load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
 
 	/* Init SHA input */
 	input = (char *)calloc(K_16, sizeof(char));
-	input_file_name = props->GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
+	input_file_name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
 
     fp = fopen(input_file_name.c_str(), "rb");
     if (fp == NULL) {
@@ -272,11 +273,11 @@ int load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
     size_t len = 0;
     ssize_t read;
 	int nr_input = 0;
-	struct input_info * input;
+	struct regex_input * input;
   	std::string input_file_name;
 
 	/* Init RegEx input */
-	input = (struct input_info *)calloc(MAX_NR_RULE, sizeof(struct input_info));
+	input = (struct regex_input *)calloc(MAX_NR_RULE, sizeof(struct regex_input));
 	input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
 
 	fp = fopen(input_file_name.c_str(), "rb");
@@ -326,7 +327,7 @@ void * multiaccel_work_lcore(void * arg) {
 	struct doca_regex_search_result * res;
 	int res_index = 0;
 
-	ifstream input(app_ctx->config_file);
+	std::ifstream input(app_ctx->config_file);
 	try {
 		props.Load(input);
 	} catch (const std::string &message) {

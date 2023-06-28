@@ -15,7 +15,7 @@ int data_len = 64;
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t pci_address_callback(void *param, void *config) {
-	struct sha_config *sha_cfg = (struct sha_config *)config;
+	struct app_config *app_cfg = (struct app_config *)config;
 	char *pci_address = (char *)param;
 	int len;
 
@@ -24,7 +24,7 @@ static doca_error_t pci_address_callback(void *param, void *config) {
 		DOCA_LOG_ERR("PCI address is too long max %d", MAX_ARG_SIZE - 1);
 		return DOCA_ERROR_INVALID_VALUE;
 	}
-	strlcpy(sha_cfg->pci_address, pci_address, MAX_ARG_SIZE);
+	strlcpy(app_cfg->pci_address, pci_address, MAX_ARG_SIZE);
 	return DOCA_SUCCESS;
 }
 
@@ -45,7 +45,7 @@ static doca_error_t config_callback(void *param, void *config) {
 		DOCA_LOG_ERR("Data path is too long max %d", MAX_FILE_NAME - 1);
 		return DOCA_ERROR_INVALID_VALUE;
 	}
-	strlcpy(cfg->data, data_path, MAX_FILE_NAME);
+	strlcpy(cfg->config_file, data_path, MAX_FILE_NAME);
 	return DOCA_SUCCESS;
 }
 
@@ -57,10 +57,10 @@ static doca_error_t config_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t nr_core_callback(void *param, void *config) {
-	struct sha_config *sha_cfg = (struct sha_config *)config;
+	struct app_config *app_cfg = (struct app_config *)config;
 	char *nr_core_str = (char *)param;
     char *ptr;
-	sha_cfg->nr_core = strtol(nr_core_str, &ptr, 10);
+	app_cfg->nr_core = strtol(nr_core_str, &ptr, 10);
 	return DOCA_SUCCESS;
 }
 
@@ -72,10 +72,10 @@ static doca_error_t nr_core_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t rate_callback(void *param, void *config) {
-	struct sha_config *sha_cfg = (struct sha_config *)config;
+	struct app_config *app_cfg = (struct app_config *)config;
 	char *nr_core_str = (char *)param;
     char *ptr;
-	sha_cfg->rate = strtod(nr_core_str, &ptr);
+	app_cfg->rate = strtod(nr_core_str, &ptr);
 	return DOCA_SUCCESS;
 }
 
@@ -95,6 +95,21 @@ static doca_error_t len_callback(void *param, void *config) {
 }
 
 /*
+ * ARGP Callback - Handle RegEx rules path parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t rules_callback(void *param, void *config) {
+	struct app_config *app_cfg = (struct app_config *)app_cfg;
+	char *rules_path = (char *)param;
+
+	/* Read rules file into the rules buffer */
+	return read_file(rules_path, &app_cfg->rules_buffer, &app_cfg->rules_buffer_len);
+}
+
+/*
  * ARGP Callback - Handle data to scan path parameter
  *
  * @param [in]: Input parameter
@@ -102,10 +117,10 @@ static doca_error_t len_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t queuedepth_callback(void *param, void *config) {
-	struct sha_config *sha_cfg = (struct sha_config *)config;
+	struct app_config *app_cfg = (struct app_config *)config;
 	char *queue_depth = (char *)param;
     char *ptr;
-	sha_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
+	app_cfg->queue_depth = strtol(queue_depth, &ptr, 10);
 	return DOCA_SUCCESS;
 }
 
@@ -262,7 +277,7 @@ static doca_error_t multiaccel_init(struct app_config *app_cfg) {
     result = parse_pci_addr(app_cfg->pci_address, &pcie_dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to parse PCI address: %s", doca_get_error_string(result));
-		return EXIT_FAILURE;
+		return DOCA_ERROR_INVALID_VALUE;
 	}
 
 	/* Find doca_dev according to the PCI address */
@@ -273,28 +288,28 @@ static doca_error_t multiaccel_init(struct app_config *app_cfg) {
 	}
 
 	/* Create a DOCA SHA instance */
-	result = doca_sha_create(&(app_config->doca_sha));
+	result = doca_sha_create(&(app_cfg->doca_sha));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create SHA device.");
 		return result;
 	}
 
 	/* Set the SHA device as the main HW accelerator */
-	result = doca_ctx_dev_add(doca_sha_as_ctx(app_config->doca_sha), app_config->dev);
+	result = doca_ctx_dev_add(doca_sha_as_ctx(app_cfg->doca_sha), app_cfg->dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set SHA device.Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
     /* Start DOCA SHA */
-	result = doca_ctx_start(doca_sha_as_ctx(app_config->doca_sha));
+	result = doca_ctx_start(doca_sha_as_ctx(app_cfg->doca_sha));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start DOCA SHA. [%s]", doca_get_error_string(result));
 		return result;
 	}
 
 	/* Create a DOCA RegEx instance */
-	result = doca_regex_create(&(app_config->doca_regex));
+	result = doca_regex_create(&(app_cfg->doca_regex));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create RegEx device.");
 		return result;
@@ -347,16 +362,16 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 	}
 
 	/* Add workq to SHA */
-	result = doca_ctx_workq_add(doca_sha_as_ctx(ctx->doca_sha), ctx->workq);
+	result = doca_ctx_workq_add(doca_sha_as_ctx(sha_ctx->doca_sha), ctx->workq);
 	if (result != DOCA_SUCCESS) {
 		printf("Unable to attach work queue to SHA. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
 	/* Add workq to RegEx */
-	result = doca_ctx_workq_add(doca_sha_as_ctx(ctx->doca_sha), ctx->workq);
+	result = doca_ctx_workq_add(doca_regex_as_ctx(regex_ctx->doca_regex), ctx->workq);
 	if (result != DOCA_SUCCESS) {
-		printf("Unable to attach work queue to SHA. Reason: %s", doca_get_error_string(result));
+		printf("Unable to attach work queue to REGEX. Reason: %s", doca_get_error_string(result));
 		return result;
 	}
 
@@ -438,7 +453,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	result = doca_mmap_dev_add(regex_ctx->mmap, regex_ctx->dev);
+	result = doca_mmap_dev_add(regex_ctx->mmap, ctx->dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to add device to memory map. Reason: %s", doca_get_error_string(result));
 		return result;
