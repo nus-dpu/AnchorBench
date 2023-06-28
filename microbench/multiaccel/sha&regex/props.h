@@ -1,9 +1,12 @@
 #ifndef _PROPS_H_
 #define _PROPS_H_
 
-#include "core/workload.h"
-#include "core/properties.h"
+char * GetSHAInput();
+char * GetRegExInput();
 
-extern Properties props;
+int InitProps();
+int InitWorkload();
+
+int GetNextJob();
 
 #endif  /* _PROPS_H_ */

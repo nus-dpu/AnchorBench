@@ -6,15 +6,9 @@
 #include <rte_cycles.h>
 
 #include "props.h"
-#include "workload.h"
-
-extern "C" {
-	#include "multiaccel.h"
-}
+#include "multiaccel.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::CORE);
-
-Properties props;
 
 __thread int nr_latency = 0;
 __thread bool start_record = false;
@@ -80,17 +74,19 @@ static int deq_job(struct app_ctx * ctx) {
 
 #define NUM_WORKER	32
 
-int load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
+int load_sha_workload(struct sha_ctx * sha_ctx) {
     FILE * fp;
 	char * input;
 	int input_size;
-  	std::string input_file_name;
+  	// std::string input_file_name;
+	char * input_file_name;
 
 	/* Init SHA input */
 	input = (char *)calloc(K_16, sizeof(char));
-	input_file_name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
+	// input_file_name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
+	input_file_name = GetSHAInput();
 
-    fp = fopen(input_file_name.c_str(), "rb");
+    fp = fopen(input_file_name, "rb");
     if (fp == NULL) {
         return -1;
 	}
@@ -112,20 +108,22 @@ int load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
 	return 0;
 }
 
-int load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
+int load_regex_workload(struct regex_ctx * regex_ctx) {
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
     ssize_t read;
 	int nr_input = 0;
 	struct regex_input * input;
-  	std::string input_file_name;
+  	// std::string input_file_name;
+  	char * input_file_name;
 
 	/* Init RegEx input */
 	input = (struct regex_input *)calloc(MAX_NR_RULE, sizeof(struct regex_input));
-	input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
+	// input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
+	input_file_name = GetRegExInput();
 
-	fp = fopen(input_file_name.c_str(), "rb");
+	fp = fopen(input_file_name, "rb");
     if (fp == NULL) {
         return -1;
 	}
@@ -158,8 +156,6 @@ void * multiaccel_work_lcore(void * arg) {
 	struct sha_ctx * sha_ctx = &app_ctx->sha_ctx;
 	struct regex_ctx * regex_ctx = &app_ctx->regex_ctx;
 
-	Workload wl;
-
 	double mean;
 	struct worker worker[NUM_WORKER];
 	double interval;
@@ -181,8 +177,8 @@ void * multiaccel_work_lcore(void * arg) {
 		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
 	}
 
-	load_sha_workload(props, sha_ctx);
-	load_regex_workload(props, regex_ctx);
+	load_sha_workload(sha_ctx);
+	load_regex_workload(regex_ctx);
 
     list_for_each_entry(sha_elt, &sha_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer for this memory region */
@@ -212,7 +208,7 @@ void * multiaccel_work_lcore(void * arg) {
 
 	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
 
-	wl.Init(props);
+	InitWorkload();
 
     printf("CPU %02d| Work start!\n", sched_getcpu());
 
@@ -261,12 +257,12 @@ void * multiaccel_work_lcore(void * arg) {
 
 		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
-				Job next = wl.NextOperation();
+				int next = GetNextJob();
 				switch (next) {
-					case SHA:
+					case SHA_JOB:
 						ret = sha_enq_job(sha_ctx);
 						break;
-					case REGEX:
+					case REGEX_JOB:
 						ret = regex_enq_job(regex_ctx);
 						break;
 				}

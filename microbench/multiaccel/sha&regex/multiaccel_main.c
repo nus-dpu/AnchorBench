@@ -515,14 +515,7 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-	std::ifstream input(cfg.config_file);
-	try {
-		props.Load(input);
-	} catch (const std::string &message) {
-		std::cout << message << std::endl;
-		exit(0);
-	}
-	input.close();
+	InitProps(cfg.config_file);
 	
 	for (int i = 0; i < cfg.nr_core; i++) {
         CPU_ZERO(&cpu);
