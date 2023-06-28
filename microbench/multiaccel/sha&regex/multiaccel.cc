@@ -11,10 +11,6 @@
 
 DOCA_LOG_REGISTER(MULTIACCEL::CORE);
 
-#define NSEC_PER_SEC    1000000000L
-
-#define TIMESPEC_TO_NSEC(t)	(((t).tv_sec * NSEC_PER_SEC) + ((t).tv_nsec))
-
 Properties props;
 
 __thread int nr_latency = 0;

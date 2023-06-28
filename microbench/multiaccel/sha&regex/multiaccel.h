@@ -135,6 +135,9 @@ struct lat_info {
 #define REGEX_JOB	1
 #define SHA_JOB		2
 
+#define NSEC_PER_SEC    1000000000L
+#define TIMESPEC_TO_NSEC(t)	(((t).tv_sec * NSEC_PER_SEC) + ((t).tv_nsec))
+
 #define MAX_NR_LATENCY	(32 * 1024)
 
 extern __thread int nr_latency;

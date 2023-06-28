@@ -42,6 +42,8 @@ sources = files(
 	'regex_job.c',
 	'regex_mempool.c',
 	core_path + '/workload.cc',
+	common_path + '/common.c',
+	common_src_path + '/utils.c',
 )
 
 executable(project_name,
