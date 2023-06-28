@@ -1,8 +1,13 @@
 #include "core/properties.h"
 #include "multiaccel.h"
 
+#include <string>
+#include <iostream>
+
 #include <assert.h>
 #include <rte_cycles.h>
+
+#include "workload.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::CORE);
 
@@ -298,8 +303,8 @@ void load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
 void * multiaccel_work_lcore(void * arg) {
     int ret;
 	struct app_ctx * app_ctx = (struct app_ctx *)arg;
-	struct sha_ctx * sha_ctx = app_ctx->app_ctx;
-	struct regex_ctx * regex_ctx = app_ctx->regex_ctx;
+	struct sha_ctx * sha_ctx = &app_ctx->app_ctx;
+	struct regex_ctx * regex_ctx = &app_ctx->regex_ctx;
 
 	Workload wl;
 	Properties props;
@@ -354,10 +359,10 @@ void * multiaccel_work_lcore(void * arg) {
 	res = (struct doca_regex_search_result *)calloc(NB_BUF, sizeof(struct doca_regex_search_result));
 
 	list_for_each_entry(regex_elt, &regex_ctx->buf_mempool->elt_free_list, list) {
-		regex_elt->response = &res[i++];
+		regex_elt->response = &res[res_index++];
 
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(regex_ctx->buf_inv, regex_ctx->mmap, regex_elt->src_addr, REGEX_BUF_SIZE, &regex_elt->src_buf);
+		result = doca_buf_inventory_buf_by_addr(regex_ctx->buf_inv, regex_ctx->mmap, regex_elt->addr, REGEX_BUF_SIZE, &regex_elt->buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
