@@ -514,7 +514,16 @@ int main(int argc, char **argv) {
 
 	pthread_barrier_init(&barrier, NULL, cfg.nr_core);
 
-    for (int i = 0; i < cfg.nr_core; i++) {
+	std::ifstream input(app_ctx->config_file);
+	try {
+		props.Load(input);
+	} catch (const std::string &message) {
+		std::cout << message << std::endl;
+		exit(0);
+	}
+	input.close();
+	
+	for (int i = 0; i < cfg.nr_core; i++) {
         CPU_ZERO(&cpu);
         CPU_SET(i, &cpu);
 

@@ -24,6 +24,8 @@ struct lat_info {
 	uint64_t end;
 };
 
+Properties props;
+
 __thread int nr_latency = 0;
 __thread bool start_record = false;
 __thread struct lat_info * latency;
@@ -314,7 +316,6 @@ void * multiaccel_work_lcore(void * arg) {
 	struct regex_ctx * regex_ctx = &app_ctx->regex_ctx;
 
 	Workload wl;
-	Properties props;
 
 	double mean;
 	struct worker worker[NUM_WORKER];
@@ -326,15 +327,6 @@ void * multiaccel_work_lcore(void * arg) {
 	struct regex_mempool_elt * regex_elt;
 	struct doca_regex_search_result * res;
 	int res_index = 0;
-
-	std::ifstream input(app_ctx->config_file);
-	try {
-		props.Load(input);
-	} catch (const std::string &message) {
-		std::cout << message << std::endl;
-		exit(0);
-	}
-	input.close();
 
 	mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 
