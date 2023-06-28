@@ -232,7 +232,7 @@ static int deq_job(struct app_ctx * ctx) {
 
 #define NUM_WORKER	32
 
-void load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
+int load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
     FILE * fp;
 	char * input;
 	int input_size;
@@ -260,9 +260,11 @@ void load_sha_workload(Properties &props, struct sha_ctx * sha_ctx) {
 	sha_ctx->nb_enqueued = sha_ctx->nb_dequeued = 0;
 
 	fclose(fp);
+
+	return 0;
 }
 
-void load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
+int load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
@@ -298,6 +300,8 @@ void load_regex_workload(Properties &props, struct regex_ctx * regex_ctx) {
 	regex_ctx->nb_enqueued = regex_ctx->nb_dequeued = 0;
 
 	fclose(fp);
+
+	return 0;
 }
 
 void * multiaccel_work_lcore(void * arg) {
