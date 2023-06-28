@@ -29,9 +29,6 @@
 #include <regex_mempool.h>
 #include <sha_mempool.h>
 
-#include "core/workload.h"
-#include "core/properties.h"
-
 #define WORKQ_DEPTH 128
 
 #define MAX_NR_CORE 8

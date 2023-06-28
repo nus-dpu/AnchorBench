@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "core/workload.h"
+#include "core/properties.h"
 #include "multiaccel.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::MAIN);
