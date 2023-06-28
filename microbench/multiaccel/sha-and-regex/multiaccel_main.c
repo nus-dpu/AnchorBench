@@ -533,6 +533,8 @@ int main(int argc, char **argv) {
 	}
 
 	fclose(fp);
+
+	printf("Load config %s ==> sha: %.1f%%, regex: %.1f%%\n", cfg.config_file, cfg.sha_proportion * 100.0, cfg.regex_proportion * 100.0);
 	
 	for (int i = 0; i < cfg.nr_core; i++) {
         CPU_ZERO(&cpu);
