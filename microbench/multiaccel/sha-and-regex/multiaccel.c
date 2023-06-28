@@ -13,6 +13,11 @@ __thread struct lat_info * latency;
 __thread unsigned int seed;
 __thread struct drand48_data drand_buf;
 
+struct job_info {
+	int type;
+	double ratio;
+};
+
 uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
 	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
 	if (diff.tv_nsec < 0) {
@@ -28,22 +33,22 @@ double ran_expo(double mean) {
     return -log(1 - x) * mean;
 }
 
-int ran_discrete_gen(double ratios[], int size) {
+int ran_discrete_gen(struct job_info ratios[], int size) {
 	double x;
 	double ratio = 0.0;
     drand48_r(&drand_buf, &x);
 
 	for (int i = 0; i < size; i++) {
-		ratio += ratios[i];
+		ratio += ratios[i].ratio;
 		if (x < ratio) {
-			return i;
+			return ratios[i].type;
 		}
 	}
 
 	return -1;
 }
 
-int get_next_job(double ratios[], int size) {
+int get_next_job(struct job_info ratios[], int size) {
 	int x = ran_discrete_gen(ratios, size);
 	if (x < 0) {
 		perror("Discrete generation failed!\n");
@@ -185,15 +190,24 @@ void * multiaccel_work_lcore(void * arg) {
 	struct doca_regex_search_result * res;
 	int res_index = 0;
 
-	double job_ratio[2];
+	int job_index = 0;
+	int nr_job = 0;
+	struct job_info job_ratio[2];
 
 	mean = NUM_WORKER * cfg.nr_core * 1.0e6 / cfg.rate;
 
     srand48_r(time(NULL), &drand_buf);
     seed = (unsigned int) time(NULL);
 
-	job_ratio[0] = cfg.regex_proportion;
-	job_ratio[1] = cfg.sha_proportion;
+	if (cfg.regex_proportion > 0) {
+		job_ratio[job_index].type = REGEX_JOB;
+		job_ratio[job_index].ratio = cfg.regex_proportion;
+		job_index++;
+	} else {
+		job_ratio[job_index].type = SHA_JOB;
+		job_ratio[job_index].ratio = cfg.sha_proportion;
+		job_index++;
+	}
 
 	for (int i = 0; i < NUM_WORKER; i++) {
 		worker[i].interval = 0;
