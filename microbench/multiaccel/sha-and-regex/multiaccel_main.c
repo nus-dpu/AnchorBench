@@ -411,7 +411,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	sha_ctx->buf_mempool = sha_mempool_create(NB_BUF, SHA_BUF_SIZE);
+	sha_ctx->buf_mempool = sha_mempool_create(NB_BUF, data_len);
 
 	result = doca_mmap_populate(sha_ctx->mmap, sha_ctx->buf_mempool->addr, sha_ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {

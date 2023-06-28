@@ -205,13 +205,13 @@ void * multiaccel_work_lcore(void * arg) {
 
     list_for_each_entry(sha_elt, &sha_ctx->buf_mempool->elt_free_list, list) {
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, sha_elt->src_addr, SHA_BUF_SIZE, &sha_elt->src_buf);
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, sha_elt->src_addr, data_len, &sha_elt->src_buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
 
 		/* Create a DOCA buffer for this memory region */
-		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, sha_elt->dst_addr, SHA_BUF_SIZE, &sha_elt->dst_buf);
+		result = doca_buf_inventory_buf_by_addr(sha_ctx->buf_inv, sha_ctx->mmap, sha_elt->dst_addr, data_len, &sha_elt->dst_buf);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Failed to allocate DOCA buf");
 		}
