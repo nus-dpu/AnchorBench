@@ -49,11 +49,15 @@ int ran_discrete_gen(struct job_info ratios[], int size) {
 }
 
 int get_next_job(struct job_info ratios[], int size) {
+	if (size == 1) {
+		return ratios[0].type;
+	}
+
 	int x = ran_discrete_gen(ratios, size);
 	if (x < 0) {
 		perror("Discrete generation failed!\n");
 	}
-	return x + 1;
+	return x;
 }
 
 /*
@@ -190,7 +194,6 @@ void * multiaccel_work_lcore(void * arg) {
 	struct doca_regex_search_result * res;
 	int res_index = 0;
 
-	int job_index = 0;
 	int nr_job = 0;
 	struct job_info job_ratio[2];
 
@@ -202,11 +205,11 @@ void * multiaccel_work_lcore(void * arg) {
 	if (cfg.regex_proportion > 0) {
 		job_ratio[job_index].type = REGEX_JOB;
 		job_ratio[job_index].ratio = cfg.regex_proportion;
-		job_index++;
+		nr_job++;
 	} else {
 		job_ratio[job_index].type = SHA_JOB;
 		job_ratio[job_index].ratio = cfg.sha_proportion;
-		job_index++;
+		nr_job++;
 	}
 
 	for (int i = 0; i < NUM_WORKER; i++) {
@@ -306,7 +309,7 @@ void * multiaccel_work_lcore(void * arg) {
 		for (int i = 0; i < NUM_WORKER; i++) {
 			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
 				// int next = GetNextJob();
-				int next = get_next_job(job_ratio, sizeof(job_ratio) / sizeof(job_ratio[0]));
+				int next = get_next_job(job_ratio, nr_job);
 				switch (next) {
 					case SHA_JOB:
 						ret = sha_enq_job(sha_ctx);
