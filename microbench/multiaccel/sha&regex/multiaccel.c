@@ -104,7 +104,7 @@ int load_sha_workload(struct sha_ctx * sha_ctx) {
 	// input_file_name = props.GetProperty(Workload::SHA_INPUT_PROPERTY, Workload::SHA_INPUT_DEFAULT);
 	// input_file_name = GetSHAInput();
 
-    fp = fopen("REGEX.txt", "rb");
+	fp = fopen("SHA.dat", "rb");
     if (fp == NULL) {
         return -1;
 	}
@@ -141,7 +141,7 @@ int load_regex_workload(struct regex_ctx * regex_ctx) {
 	// input_file_name = props.GetProperty(Workload::REGEX_INPUT_PROPERTY, Workload::REGEX_INPUT_DEFAULT);
 	// input_file_name = GetRegExInput();
 
-	fp = fopen("SHA.dat", "rb");
+    fp = fopen("REGEX.txt", "rb");
     if (fp == NULL) {
         return -1;
 	}
