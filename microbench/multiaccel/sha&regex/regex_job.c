@@ -64,5 +64,6 @@ int regex_deq_job(struct regex_ctx * ctx, struct doca_event * event, struct time
 		latency[nr_latency].end = TIMESPEC_TO_NSEC(*now);
 		nr_latency++;
 	}
+	ctx->nb_dequeued++;
 	regex_mempool_put(ctx->buf_mempool, buf);
 }

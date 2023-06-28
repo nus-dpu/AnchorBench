@@ -75,5 +75,6 @@ int sha_deq_job(struct sha_ctx * ctx, struct doca_event * event, struct timespec
 		latency[nr_latency].end = TIMESPEC_TO_NSEC(*now);
 		nr_latency++;
 	}
+	ctx->nb_dequeued++;
 	sha_mempool_put(ctx->buf_mempool, buf);
 }
