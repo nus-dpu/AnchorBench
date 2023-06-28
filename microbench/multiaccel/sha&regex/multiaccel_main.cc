@@ -106,7 +106,7 @@ static doca_error_t len_callback(void *param, void *config) {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t rules_callback(void *param, void *config) {
-	struct app_config *app_cfg = (struct app_config *)app_cfg;
+	struct app_config *app_cfg = (struct app_config *)config;
 	char *rules_path = (char *)param;
 
 	/* Read rules file into the rules buffer */
