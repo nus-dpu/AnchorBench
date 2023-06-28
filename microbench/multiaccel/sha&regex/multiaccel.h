@@ -30,6 +30,7 @@
 #include <sha_mempool.h>
 
 #include "core/workload.h"
+#include "core/properties.h"
 
 #define WORKQ_DEPTH 128
 
@@ -127,5 +128,7 @@ extern void * multiaccel_work_lcore(void * arg);
 
 extern int data_len;
 extern pthread_barrier_t barrier;
+
+extern Properties props;
 
 #endif  /* _SHA_H_ */

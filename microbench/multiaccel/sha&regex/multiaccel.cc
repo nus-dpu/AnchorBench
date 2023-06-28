@@ -1,4 +1,3 @@
-#include "core/properties.h"
 #include "multiaccel.h"
 
 #include <string>
