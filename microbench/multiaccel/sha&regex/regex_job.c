@@ -57,7 +57,7 @@ int regex_deq_job(struct regex_ctx * ctx, struct doca_event * event, struct time
 	struct regex_mempool_elt * buf;
 	buf = (struct regex_mempool_elt *)event->user_data.ptr;
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
-		latency[nr_latency].type = REGEX;
+		latency[nr_latency].type = REGEX_JOB;
 		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
 		latency[nr_latency].end = TIMESPEC_TO_NSEC(*now);
 		nr_latency++;

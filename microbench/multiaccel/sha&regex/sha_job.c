@@ -68,7 +68,7 @@ int sha_deq_job(struct sha_ctx * ctx, struct doca_event * event, struct timespec
 	struct sha_mempool_elt * buf;
 	buf = (struct sha_mempool_elt *)event->user_data.ptr;
 	if (start_record && nr_latency < MAX_NR_LATENCY) {
-		latency[nr_latency].type = SHA;
+		latency[nr_latency].type = SHA_JOB;
 		latency[nr_latency].start = TIMESPEC_TO_NSEC(buf->ts);
 		latency[nr_latency].end = TIMESPEC_TO_NSEC(*now);
 		nr_latency++;

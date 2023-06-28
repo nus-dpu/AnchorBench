@@ -7,20 +7,13 @@
 
 #include "props.h"
 #include "workload.h"
+#include "multiaccel.h"
 
 DOCA_LOG_REGISTER(MULTIACCEL::CORE);
 
 #define NSEC_PER_SEC    1000000000L
 
 #define TIMESPEC_TO_NSEC(t)	(((t).tv_sec * NSEC_PER_SEC) + ((t).tv_nsec))
-
-#define MAX_NR_LATENCY	(32 * 1024)
-
-struct lat_info {
-	Job type;
-	uint64_t start;
-	uint64_t end;
-};
 
 Properties props;
 

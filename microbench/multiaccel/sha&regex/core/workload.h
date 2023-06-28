@@ -9,7 +9,7 @@
 #include "counter_generator.h"
 
 enum Job {
-    REGEX,
+    REGEX = 1,
     SHA,
 };
 
@@ -27,7 +27,7 @@ public:
     static const std::string REGEX_PROPORTION_PROPERTY;
     static const std::string REGEX_PROPORTION_DEFAULT;
 
-    virtual Job NextOperation() { return op_chooser_.Next(); }
+    Job NextOperation() { return op_chooser_.Next(); }
 
     virtual void Init(const Properties &p);
 

@@ -126,6 +126,20 @@ extern void * multiaccel_work_lcore(void * arg);
 extern int data_len;
 extern pthread_barrier_t barrier;
 
+struct lat_info {
+	Job type;
+	uint64_t start;
+	uint64_t end;
+};
+
+#define REGEX_JOB	1
+#define SHA_JOB		2
+
+#define MAX_NR_LATENCY	(32 * 1024)
+
+extern __thread bool start_record;
+extern __thread struct lat_info * latency;
+
 int sha_enq_job(struct sha_ctx * ctx);
 int sha_deq_job(struct sha_ctx * ctx, struct doca_event * event, struct timespec * now);
 int regex_enq_job(struct regex_ctx * ctx);
