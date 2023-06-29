@@ -374,7 +374,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 	}
 
     /* Create and start buffer inventory for SHA context */
-	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &sha_ctx->buf_inv);
+	result = doca_buf_inventory_create(NULL, SHA_NB_BUF, DOCA_BUF_EXTENSION_NONE, &sha_ctx->buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -393,7 +393,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	result = doca_mmap_set_max_num_chunks(sha_ctx->mmap, NB_BUF);
+	result = doca_mmap_set_max_num_chunks(sha_ctx->mmap, SHA_NB_BUF);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
 		return result;
@@ -411,7 +411,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	sha_ctx->buf_mempool = sha_mempool_create(NB_BUF, data_len);
+	sha_ctx->buf_mempool = sha_mempool_create(SHA_NB_BUF, data_len);
 
 	result = doca_mmap_populate(sha_ctx->mmap, sha_ctx->buf_mempool->addr, sha_ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {
@@ -420,7 +420,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 	}
 
     /* Create and start buffer inventory for RegEx context */
-	result = doca_buf_inventory_create(NULL, NB_BUF, DOCA_BUF_EXTENSION_NONE, &regex_ctx->buf_inv);
+	result = doca_buf_inventory_create(NULL, REGEX_NB_BUF, DOCA_BUF_EXTENSION_NONE, &regex_ctx->buf_inv);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create buffer inventory. Reason: %s", doca_get_error_string(result));
 		return result;
@@ -439,7 +439,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	result = doca_mmap_set_max_num_chunks(regex_ctx->mmap, NB_BUF);
+	result = doca_mmap_set_max_num_chunks(regex_ctx->mmap, REGEX_NB_BUF);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set memory map number of regions: %s", doca_get_error_string(result));
 		return result;
@@ -457,7 +457,7 @@ static doca_error_t multiaccel_init_lcore(struct app_ctx *ctx) {
 		return result;
 	}
 
-	regex_ctx->buf_mempool = regex_mempool_create(NB_BUF, REGEX_BUF_SIZE);
+	regex_ctx->buf_mempool = regex_mempool_create(REGEX_NB_BUF, REGEX_BUF_SIZE);
 
 	result = doca_mmap_populate(regex_ctx->mmap, regex_ctx->buf_mempool->addr, regex_ctx->buf_mempool->size, sysconf(_SC_PAGESIZE), NULL, NULL);
 	if (result != DOCA_SUCCESS) {

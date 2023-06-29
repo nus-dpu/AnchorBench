@@ -39,10 +39,12 @@
 #define NB_BUF			128
 
 /* SHA buffer size */
-#define SHA_BUF_SIZE	8192
+#define SHA_NB_BUF		256
+#define SHA_BUF_SIZE	128
 
 /* SHA buffer size */
-#define REGEX_BUF_SIZE	256
+#define REGEX_NB_BUF	128
+#define REGEX_BUF_SIZE	128
 
 #define K_16			(16 * 1024)
 #define M_1				(1024 * 1024)
