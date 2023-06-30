@@ -268,7 +268,7 @@ void * sha_work_lcore(void * arg) {
     pthread_barrier_wait(&barrier);
 
     clock_gettime(CLOCK_MONOTONIC, &begin);
-
+#if 0
 	while (1) {
     	clock_gettime(CLOCK_MONOTONIC, &current_time);
 		if (current_time.tv_sec - begin.tv_sec > 5) {
@@ -343,6 +343,6 @@ void * sha_work_lcore(void * arg) {
 	}
 
 	fclose(output_fp);
-
+#endif
     return NULL;
 }
