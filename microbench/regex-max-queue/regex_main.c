@@ -360,6 +360,8 @@ static doca_error_t regex_init(struct regex_config *regex_cfg) {
 	return result;
 }
 
+int total_workq = 0;
+
 static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
     doca_error_t result;
 
@@ -372,9 +374,11 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 
 	result = doca_ctx_workq_add(doca_regex_as_ctx(ctx->doca_regex), ctx->workq);
 	if (result != DOCA_SUCCESS) {
-		printf("Unable to attach work queue to RegEx. Reason: %s", doca_get_error_string(result));
+		printf("(Total workq num: %d) Unable to attach work queue to RegEx. Reason: %s", total_workq, doca_get_error_string(result));
 		// regex_scan_destroy(&rgx_cfg);
 		return result;
+	} else {
+		total_workq++;
 	}
 
     /* Create and start buffer inventory */

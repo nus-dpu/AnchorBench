@@ -277,6 +277,8 @@ static doca_error_t compress_init(struct compress_config *compress_cfg) {
 	return result;
 }
 
+int total_workq = 0;
+
 static doca_error_t compress_init_lcore(struct compress_ctx * ctx) {
     doca_error_t result;
     uint32_t nb_free, nb_total;
@@ -290,8 +292,10 @@ static doca_error_t compress_init_lcore(struct compress_ctx * ctx) {
 
 	result = doca_ctx_workq_add(doca_compress_as_ctx(ctx->doca_compress), ctx->workq);
 	if (result != DOCA_SUCCESS) {
-		printf("Unable to attach work queue to COMPRESS. Reason: %s", doca_get_error_string(result));
+		printf("(Total workq num: %d) Unable to attach work queue to COMPRESS. Reason: %s", total_workq, doca_get_error_string(result));
 		return result;
+	} else {
+		total_workq++;
 	}
 
     /* Create and start buffer inventory */
