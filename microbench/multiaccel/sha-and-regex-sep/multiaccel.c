@@ -204,11 +204,11 @@ void * multiaccel_work_lcore(void * arg) {
 
 	if (sched_getcpu() == 0) {
 		job_ratio[nr_job].type = REGEX_JOB;
-		job_ratio[nr_job].ratio = cfg.regex_proportion;
+		job_ratio[nr_job].ratio = 1.0;
 		nr_job++;
 	} else if (sched_getcpu() == 1) {
 		job_ratio[nr_job].type = SHA_JOB;
-		job_ratio[nr_job].ratio = cfg.sha_proportion;
+		job_ratio[nr_job].ratio = 1.0;
 		nr_job++;
 	}
 
