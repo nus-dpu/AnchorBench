@@ -501,19 +501,21 @@ int main(int argc, char **argv) {
         if (ret != 0) {
             printf("pthread_attr_setaffinity_np failed!(err: %d)\n", errno);
         }
-#endif
         ret = pthread_create(&pids[i], &pattr, &regex_work_lcore, (void *)rgx_ctx);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }
+#endif
     }
 
+#if 0
 	for (int i = 0; i < cfg.nr_core; i++) {
 		ret = pthread_join(pids[i], NULL);
         if (ret != 0) {
             printf("pthread_join failed!(err: %d)\n", errno);
         }
 	}
+#endif
 
     pthread_barrier_destroy(&barrier);
 
