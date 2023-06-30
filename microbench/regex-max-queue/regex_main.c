@@ -378,6 +378,7 @@ static doca_error_t regex_init_lcore(struct regex_ctx * ctx) {
 		// regex_scan_destroy(&rgx_cfg);
 		return result;
 	} else {
+		printf("Total workq num: %d\n", total_workq);
 		total_workq++;
 	}
 

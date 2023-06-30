@@ -295,6 +295,7 @@ static doca_error_t compress_init_lcore(struct compress_ctx * ctx) {
 		printf("(Total workq num: %d) Unable to attach work queue to COMPRESS. Reason: %s", total_workq, doca_get_error_string(result));
 		return result;
 	} else {
+		printf("Total workq num: %d\n", total_workq);
 		total_workq++;
 	}
 
