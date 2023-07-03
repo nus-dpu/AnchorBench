@@ -157,12 +157,6 @@ usage(char *progname)
 
 enum layer_name {
 	L2,
-	L3,
-	L4,
-	TUNNEL,
-	L2_INNER,
-	L3_INNER,
-	L4_INNER,
 	END
 };
 
