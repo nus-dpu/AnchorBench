@@ -948,10 +948,7 @@ main(int argc, char **argv)
 
 	init_port();
 
-	nb_lcores = rte_lcore_count();
-	if (nb_lcores <= 1) {
-		rte_exit(EXIT_FAILURE, "This app needs at least two cores\n");
-	}
+	sleep(20);
 
 	// init_lcore_info();
 	// rte_eal_mp_remote_launch(start_forwarding, NULL, CALL_MAIN);
