@@ -17,8 +17,143 @@
 #include <rte_ethdev.h>
 #include <rte_flow.h>
 
+#include "config.h"
+#include "flow.h"
+
+#define MAX_ITERATIONS             100
+#define DEFAULT_RULES_COUNT    4000000
+#define DEFAULT_RULES_BATCH     100000
+#define DEFAULT_GROUP                0
+
+struct rte_flow *flow;
+static uint8_t flow_group;
+
+static uint64_t encap_data;
+static uint64_t decap_data;
+
+static uint64_t flow_items[MAX_ITEMS_NUM];
+static uint64_t flow_actions[MAX_ACTIONS_NUM];
+static uint64_t flow_attrs[MAX_ATTRS_NUM];
+static uint8_t items_idx, actions_idx, attrs_idx;
+
+static uint64_t ports_mask;
+static volatile bool force_quit;
+static bool dump_iterations;
+static bool delete_flag;
+static bool dump_socket_mem_flag;
+static bool enable_fwd;
+
+static struct rte_mempool *mbuf_mp;
+static uint32_t nb_lcores;
+static uint32_t rules_count;
+static uint32_t rules_batch;
 static uint32_t hairpin_queues_num; /* total hairpin q number - default: 0 */
 static uint32_t nb_lcores;
+
+#define MAX_PKT_BURST    32
+#define LCORE_MODE_PKT    1
+#define LCORE_MODE_STATS  2
+#define MAX_STREAMS      64
+#define MAX_LCORES       64
+
+static void
+usage(char *progname)
+{
+	printf("\nusage: %s\n", progname);
+	printf("\nControl configurations:\n");
+	printf("  --rules-count=N: to set the number of needed"
+		" rules to insert, default is %d\n", DEFAULT_RULES_COUNT);
+	printf("  --rules-batch=N: set number of batched rules,"
+		" default is %d\n", DEFAULT_RULES_BATCH);
+	printf("  --dump-iterations: To print rates for each"
+		" iteration\n");
+	printf("  --deletion-rate: Enable deletion rate"
+		" calculations\n");
+	printf("  --dump-socket-mem: To dump all socket memory\n");
+	printf("  --enable-fwd: To enable packets forwarding"
+		" after insertion\n");
+	printf("  --portmask=N: hexadecimal bitmask of ports used\n");
+
+	printf("To set flow attributes:\n");
+	printf("  --ingress: set ingress attribute in flows\n");
+	printf("  --egress: set egress attribute in flows\n");
+	printf("  --transfer: set transfer attribute in flows\n");
+	printf("  --group=N: set group for all flows,"
+		" default is %d\n", DEFAULT_GROUP);
+
+	printf("To set flow items:\n");
+	printf("  --ether: add ether layer in flow items\n");
+	printf("  --vlan: add vlan layer in flow items\n");
+	printf("  --ipv4: add ipv4 layer in flow items\n");
+	printf("  --ipv6: add ipv6 layer in flow items\n");
+	printf("  --tcp: add tcp layer in flow items\n");
+	printf("  --udp: add udp layer in flow items\n");
+	printf("  --vxlan: add vxlan layer in flow items\n");
+	printf("  --vxlan-gpe: add vxlan-gpe layer in flow items\n");
+	printf("  --gre: add gre layer in flow items\n");
+	printf("  --geneve: add geneve layer in flow items\n");
+	printf("  --gtp: add gtp layer in flow items\n");
+	printf("  --meta: add meta layer in flow items\n");
+	printf("  --tag: add tag layer in flow items\n");
+	printf("  --icmpv4: add icmpv4 layer in flow items\n");
+	printf("  --icmpv6: add icmpv6 layer in flow items\n");
+
+	printf("To set flow actions:\n");
+	printf("  --port-id: add port-id action in flow actions\n");
+	printf("  --rss: add rss action in flow actions\n");
+	printf("  --queue: add queue action in flow actions\n");
+	printf("  --jump: add jump action in flow actions\n");
+	printf("  --mark: add mark action in flow actions\n");
+	printf("  --count: add count action in flow actions\n");
+	printf("  --set-meta: add set meta action in flow actions\n");
+	printf("  --set-tag: add set tag action in flow actions\n");
+	printf("  --drop: add drop action in flow actions\n");
+	printf("  --hairpin-queue=N: add hairpin-queue action in flow actions\n");
+	printf("  --hairpin-rss=N: add hairpin-rss action in flow actions\n");
+	printf("  --set-src-mac: add set src mac action to flow actions\n"
+		"Src mac to be set is random each flow\n");
+	printf("  --set-dst-mac: add set dst mac action to flow actions\n"
+		 "Dst mac to be set is random each flow\n");
+	printf("  --set-src-ipv4: add set src ipv4 action to flow actions\n"
+		"Src ipv4 to be set is random each flow\n");
+	printf("  --set-dst-ipv4 add set dst ipv4 action to flow actions\n"
+		"Dst ipv4 to be set is random each flow\n");
+	printf("  --set-src-ipv6: add set src ipv6 action to flow actions\n"
+		"Src ipv6 to be set is random each flow\n");
+	printf("  --set-dst-ipv6: add set dst ipv6 action to flow actions\n"
+		"Dst ipv6 to be set is random each flow\n");
+	printf("  --set-src-tp: add set src tp action to flow actions\n"
+		"Src tp to be set is random each flow\n");
+	printf("  --set-dst-tp: add set dst tp action to flow actions\n"
+		"Dst tp to be set is random each flow\n");
+	printf("  --inc-tcp-ack: add inc tcp ack action to flow actions\n"
+		"tcp ack will be increments by 1\n");
+	printf("  --dec-tcp-ack: add dec tcp ack action to flow actions\n"
+		"tcp ack will be decrements by 1\n");
+	printf("  --inc-tcp-seq: add inc tcp seq action to flow actions\n"
+		"tcp seq will be increments by 1\n");
+	printf("  --dec-tcp-seq: add dec tcp seq action to flow actions\n"
+		"tcp seq will be decrements by 1\n");
+	printf("  --set-ttl: add set ttl action to flow actions\n"
+		"L3 ttl to be set is random each flow\n");
+	printf("  --dec-ttl: add dec ttl action to flow actions\n"
+		"L3 ttl will be decrements by 1\n");
+	printf("  --set-ipv4-dscp: add set ipv4 dscp action to flow actions\n"
+		"ipv4 dscp value to be set is random each flow\n");
+	printf("  --set-ipv6-dscp: add set ipv6 dscp action to flow actions\n"
+		"ipv6 dscp value to be set is random each flow\n");
+	printf("  --flag: add flag action to flow actions\n");
+	printf("  --raw-encap=<data>: add raw encap action to flow actions\n"
+		"Data is the data needed to be encaped\n"
+		"Example: raw-encap=ether,ipv4,udp,vxlan\n");
+	printf("  --raw-decap=<data>: add raw decap action to flow actions\n"
+		"Data is the data needed to be decaped\n"
+		"Example: raw-decap=ether,ipv4,udp,vxlan\n");
+	printf("  --vxlan-encap: add vxlan-encap action to flow actions\n"
+		"Encapped data is fixed with pattern: ether,ipv4,udp,vxlan\n"
+		"With fixed values\n");
+	printf("  --vxlan-decap: add vxlan_decap action to flow actions\n");
+}
 
 static void
 init_port(void)
@@ -151,16 +286,16 @@ init_port(void)
 				ret, port_id);
 
 		printf(":: initializing port: %d done\n", port_id);
-#if 0
+
 		struct rte_flow_action action[2];
 		struct rte_flow_item pattern[2];
 		struct rte_flow_attr attr = {0};
 		struct rte_flow_error err;
 		struct rte_flow *flow;
 		int ret;
+		struct rte_flow_action_port_id peer_port_id;
 
-		if (!(rx_offloads & DEV_RX_OFFLOAD_SECURITY))
-			return;
+		peer_port_id.id = port_id ^ 1;
 
 		/* Add the default rte_flow to enable SECURITY for all ESP packets */
 
@@ -170,8 +305,8 @@ init_port(void)
 		pattern[0].last = NULL;
 		pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
 
-		action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
-		action[0].conf = &;
+		action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
+		action[0].conf = &peer_port_id;
 		action[1].type = RTE_FLOW_ACTION_TYPE_END;
 		action[1].conf = NULL;
 
@@ -186,8 +321,8 @@ init_port(void)
 		if (flow == NULL) {
 			return;
 		}
+
 	}
-#endif
 }
 
 static void
@@ -200,6 +335,329 @@ args_parse(int argc, char **argv)
 	int n, opt;
 	int opt_idx;
 	size_t i;
+
+	static const struct option_dict {
+		const char *str;
+		const uint64_t mask;
+		uint64_t *map;
+		uint8_t *map_idx;
+
+	} flow_options[] = {
+		{
+			.str = "ether",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_ETH),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "ipv4",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_IPV4),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "ipv6",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_IPV6),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "vlan",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_VLAN),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "tcp",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_TCP),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "udp",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_UDP),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "vxlan",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_VXLAN),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "vxlan-gpe",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_VXLAN_GPE),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "gre",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_GRE),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "geneve",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_GENEVE),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "gtp",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_GTP),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "meta",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_META),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "tag",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_TAG),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "icmpv4",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_ICMP),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "icmpv6",
+			.mask = FLOW_ITEM_MASK(RTE_FLOW_ITEM_TYPE_ICMP6),
+			.map = &flow_items[0],
+			.map_idx = &items_idx
+		},
+		{
+			.str = "ingress",
+			.mask = INGRESS,
+			.map = &flow_attrs[0],
+			.map_idx = &attrs_idx
+		},
+		{
+			.str = "egress",
+			.mask = EGRESS,
+			.map = &flow_attrs[0],
+			.map_idx = &attrs_idx
+		},
+		{
+			.str = "transfer",
+			.mask = TRANSFER,
+			.map = &flow_attrs[0],
+			.map_idx = &attrs_idx
+		},
+		{
+			.str = "port-id",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_PORT_ID),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "rss",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_RSS),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "queue",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_QUEUE),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "jump",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_JUMP),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "mark",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_MARK),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "count",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_COUNT),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-meta",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_SET_META),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-tag",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_SET_TAG),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "drop",
+			.mask = FLOW_ACTION_MASK(RTE_FLOW_ACTION_TYPE_DROP),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-src-mac",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_MAC_SRC
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-dst-mac",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_MAC_DST
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-src-ipv4",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_IPV4_SRC
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-dst-ipv4",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_IPV4_DST
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-src-ipv6",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_IPV6_SRC
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-dst-ipv6",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_IPV6_DST
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-src-tp",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_TP_SRC
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-dst-tp",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_TP_DST
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "inc-tcp-ack",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_INC_TCP_ACK
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "dec-tcp-ack",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_DEC_TCP_ACK
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "inc-tcp-seq",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_INC_TCP_SEQ
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "dec-tcp-seq",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_DEC_TCP_SEQ
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-ttl",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_TTL
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "dec-ttl",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_DEC_TTL
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-ipv4-dscp",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_IPV4_DSCP
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "set-ipv6-dscp",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_SET_IPV6_DSCP
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "flag",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_FLAG
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "vxlan-encap",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_VXLAN_ENCAP
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+		{
+			.str = "vxlan-decap",
+			.mask = FLOW_ACTION_MASK(
+				RTE_FLOW_ACTION_TYPE_VXLAN_DECAP
+			),
+			.map = &flow_actions[0],
+			.map_idx = &actions_idx
+		},
+	};
 
 	static const struct option lgopts[] = {
 		/* Control */

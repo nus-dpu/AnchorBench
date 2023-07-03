@@ -17,6 +17,10 @@ machine_args = []
 default_cflags = machine_args
 cflags = default_cflags
 
+inc_dirs = [
+	include_directories('../'),
+]
+
 sources = files(
     project_name + '.c',
 )
