@@ -304,7 +304,7 @@ init_port(void)
         pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
         pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
 
-        action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+        action[0].type = RTE_FLOW_ACTION_TYPE_DROP;
         action[1].type = RTE_FLOW_ACTION_TYPE_END;
 
 		/* Direct all flows to hairpin */
