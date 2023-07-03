@@ -288,7 +288,7 @@ hairpin_two_ports_flows_create(void)
 	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", pair_port_num);
 	} else {
-		printf("Create egress flow on port: %u\n", qi, pair_port_num);
+		printf("Create egress flow on port: %u\n", pair_port_num);
 	}
 
 	return flow;
