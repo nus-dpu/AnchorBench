@@ -721,6 +721,9 @@ args_parse(int argc, char **argv)
 		{ "vxlan-decap",                0, 0, 0 },
 	};
 
+	hairpin_queues_num = 0;
+	argvopt = argv;
+
 	while ((opt = getopt_long(argc, argvopt, "",
 				lgopts, &opt_idx)) != EOF) {
 		switch (opt) {
