@@ -309,9 +309,9 @@ init_port(void)
         */
         memset(&ip_spec, 0, sizeof(struct rte_flow_item_ipv4));
 		memset(&ip_mask, 0, sizeof(struct rte_flow_item_ipv4));
-		ip_spec.hdr.dst_addr = htonl(dest_ip);
+		ip_spec.hdr.dst_addr = 0x0;
 		ip_mask.hdr.dst_addr = dest_mask;
-		ip_spec.hdr.src_addr = htonl(src_ip);
+		ip_spec.hdr.src_addr = 0x0;
 		ip_mask.hdr.src_addr = src_mask;
 		pattern[1].type = RTE_FLOW_ITEM_TYPE_IPV4;
 		pattern[1].spec = &ip_spec;
