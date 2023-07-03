@@ -207,16 +207,11 @@ hairpin_one_port_flows_create(void)
 	struct rte_flow_action_queue queue;
 	struct rte_flow_action actions[] = {
 		[0] = {
-			.type = RTE_FLOW_ACTION_TYPE_RAW_DECAP,
-			.conf = &decap,
-		},
-		[1] = {
-			.type = RTE_FLOW_ACTION_TYPE_RAW_ENCAP,
-			.conf = &encap,
-		},
-		[2] = {
 			.type = RTE_FLOW_ACTION_TYPE_QUEUE,
 			.conf = &queue,
+		},
+		[1] = {
+			.type = RTE_FLOW_ACTION_TYPE_END,
 		},
 	};
 	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
