@@ -453,7 +453,7 @@ init_port(void)
 				if (ret != 0) {
 					rte_exit(EXIT_FAILURE, ":: Hairpin tx queue setup failed: err=%d, port=%u\n", ret, port_id);
 				} else {
-					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, std_queue + RXQ_NU, port_id);
+					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, std_queue + RXQ_NUM, port_id);
 				}
 			}
 #endif
