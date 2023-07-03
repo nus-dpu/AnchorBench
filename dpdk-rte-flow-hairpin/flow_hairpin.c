@@ -1170,6 +1170,12 @@ args_parse(int argc, char **argv)
 	printf("end_flow\n");
 }
 
+bool quit = false;
+
+static void sig_handler(int v __rte_unused) {
+	quit = true;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -1177,6 +1183,10 @@ main(int argc, char **argv)
 	uint16_t port;
 	struct rte_flow_error error;
 	int64_t alloc, last_alloc;
+
+	signal(SIGSEGV, sig_handler);
+	signal(SIGHUP, sig_handler);
+	signal(SIGPIPE, sig_handler);
 
 	ret = rte_eal_init(argc, argv);
 	if (ret < 0) {
@@ -1191,7 +1201,7 @@ main(int argc, char **argv)
 
 	init_port();
 
-	sleep(20);
+	while(!quit);
 
 	// init_lcore_info();
 	// rte_eal_mp_remote_launch(start_forwarding, NULL, CALL_MAIN);
