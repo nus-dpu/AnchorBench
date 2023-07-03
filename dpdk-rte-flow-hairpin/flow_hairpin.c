@@ -155,6 +155,74 @@ usage(char *progname)
 	printf("  --vxlan-decap: add vxlan_decap action to flow actions\n");
 }
 
+enum layer_name {
+	L2,
+	L3,
+	L4,
+	TUNNEL,
+	L2_INNER,
+	L3_INNER,
+	L4_INNER,
+	END
+};
+
+static struct rte_flow_item pattern[] = {
+	[L2] = { /* ETH type is set since we always start from ETH. */
+		.type = RTE_FLOW_ITEM_TYPE_ETH,
+		.spec = NULL,
+		.mask = NULL,
+		.last = NULL },
+	[END] = {
+		.type = RTE_FLOW_ITEM_TYPE_END,
+		.spec = NULL,
+		.mask = NULL,
+		.last = NULL },
+};
+
+struct rte_flow *
+hairpin_two_ports_flows_create(void)
+{
+	struct rte_flow *flow;
+	struct rte_flow_error error;
+	struct rte_flow_attr attr = { /* Holds the flow attributes. */
+				.group = 0, /* set the rule on the main group. */
+				.ingress = 1,/* Rx flow. */
+				.priority = 0, }; /* add priority to rule
+				to give the Decap rule higher priority since
+				it is more specific than RSS */
+
+	/* create flow on first port and first hairpin queue. */
+	uint16_t port_id = rte_eth_find_next_owned_by(0, RTE_ETH_DEV_NO_OWNER);
+	RTE_ASSERT(port_id != RTE_MAX_ETHPORTS);
+	struct rte_eth_dev_info dev_info;
+	int ret = rte_eth_dev_info_get(port_id, &dev_info);
+	if (ret) {
+		rte_exit(EXIT_FAILURE, "Cannot get device info");
+	}
+	uint16_t qi;
+	for (qi = 0; qi < dev_info.nb_rx_queues; qi++) {
+		struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi)) {
+			break;
+		}
+	}
+	struct rte_flow_action_queue queue;
+	struct rte_flow_action actions[] = {
+		[0] = {
+			.type = RTE_FLOW_ACTION_TYPE_QUEUE,
+			.conf = &queue,
+		},
+		[1] = {
+			.type = RTE_FLOW_ACTION_TYPE_END,
+		},
+	};
+	queue.index = qi; /* rx hairpin queue index. */
+
+	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
+	if (!flow)
+		printf("Can't create hairpin flows on port: %u\n", port_id);
+}
+
 static void
 init_port(void)
 {
@@ -286,42 +354,9 @@ init_port(void)
 				ret, port_id);
 
 		printf(":: initializing port: %d done\n", port_id);
-
-		struct rte_flow_action action[2];
-		struct rte_flow_item pattern[2];
-		struct rte_flow_attr attr = {0};
-		struct rte_flow_error err;
-		struct rte_flow *flow;
-		struct rte_flow_item_ipv4 ip_spec;
-		struct rte_flow_item_ipv4 ip_mask;
-		int ret;
-		struct rte_flow_action_port_id peer_port = { .id = port_id ^ 1 };
-		struct rte_flow_action_queue queue = { .index = 0 };
-
-		memset(pattern, 0, sizeof(pattern));
-        memset(action, 0, sizeof(action));
-
-        pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
-        pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
-
-        // action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
-        // action[0].conf = &peer_port;
-		action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
-        action[0].conf = &queue;
-        action[1].type = RTE_FLOW_ACTION_TYPE_END;
-
-		/* Direct all flows to hairpin */
-		if (rte_flow_validate(port_id, &attr, pattern, action, &err)) {
-			printf("Failed to validate flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
-		} else {
-			flow = rte_flow_create(port_id, &attr, pattern, action, &err);
-			if (flow == NULL) {
-				printf("Failed to create flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
-				return;
-			}
-			printf(":: Direct flows from port: %d to port: %d\n", port_id, peer_port.id);
-		}
 	}
+
+	hairpin_two_ports_flows_create();
 }
 
 static void
