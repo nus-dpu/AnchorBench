@@ -360,6 +360,29 @@ hairpin_two_ports_flows_create(void)
 	} else {
 		printf("Direct flows to hairpin queue: %u on port: %u\n", qi, port_id);
 	}
+
+	/* get peer port id. */
+	uint16_t pair_port_list[RTE_MAX_ETHPORTS];
+	int pair_port_num = rte_eth_hairpin_get_peer_ports(port_id,
+			pair_port_list, RTE_MAX_ETHPORTS, 0);
+	if (pair_port_num < 0)
+		rte_exit(EXIT_FAILURE, "Can't get pair port !");
+	RTE_ASSERT(pair_port_num == 1);
+	/* create pattern to match hairpin flow from hairpin RX queue. */
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
+	pattern[L2].spec = NULL;
+	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
+	/* create actions. */
+	actions[0].type = RTE_FLOW_ACTION_TYPE_END;
+	attr.egress = 1;
+	attr.ingress = 0;
+	flow = rte_flow_create(pair_port_list[0], &attr, pattern, actions,
+			&error);
+	if (!flow) {
+		printf("Can't create hairpin flows on pair port: %u, "
+			"error: %s\n", pair_port_list[0], error.message);
+	}
+	return flow;
 }
 
 static void
@@ -449,10 +472,6 @@ init_port(void)
 				":: promiscuous mode enable failed: err=%s, port=%u\n",
 				rte_strerror(-ret), port_id);
 
-		if (hairpin_queues_num != 0) {
-			hairpin_two_ports_setup(hairpin_queues_num);
-		}
-
 		ret = rte_eth_dev_start(port_id);
 		if (ret < 0)
 			rte_exit(EXIT_FAILURE,
@@ -462,7 +481,10 @@ init_port(void)
 		printf(":: initializing port: %d done\n", port_id);
 	}
 
-	hairpin_two_ports_flows_create();
+	if (hairpin_queues_num != 0) {
+		hairpin_two_ports_setup(hairpin_queues_num);
+		hairpin_two_ports_flows_create();
+	}
 }
 
 static void
