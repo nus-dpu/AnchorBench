@@ -198,13 +198,15 @@ hairpin_one_port_flows_create(void)
 	RTE_ASSERT(port_id != RTE_MAX_ETHPORTS);
 	struct rte_eth_dev_info dev_info;
 	int ret = rte_eth_dev_info_get(port_id, &dev_info);
-	if (ret)
+	if (ret) {
 		rte_exit(EXIT_FAILURE, "Cannot get device info");
+	}
 	uint16_t qi;
 	for (qi = 0; qi < dev_info.nb_rx_queues; qi++) {
 		struct rte_eth_dev *dev = &rte_eth_devices[port_id];
-		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi))
+		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi)) {
 			break;
+		}
 	}
 	struct rte_flow_action_queue queue;
 	struct rte_flow_action actions[] = {
@@ -216,13 +218,14 @@ hairpin_one_port_flows_create(void)
 			.type = RTE_FLOW_ACTION_TYPE_END,
 		},
 	};
-	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
-	pattern[L2].spec = NULL;
 	queue.index = qi; /* rx hairpin queue index. */
+
 	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
-	if (!flow)
+	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", port_id);
-	return flow;
+	} else {
+		printf("Direct ingress flows to hairpin queue: %u on port: %u\n", qi, port_id);
+	}
 }
 
 struct rte_flow *
