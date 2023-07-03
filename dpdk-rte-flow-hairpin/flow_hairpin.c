@@ -25,6 +25,8 @@
 #define DEFAULT_RULES_BATCH     100000
 #define DEFAULT_GROUP                0
 
+#define DUAL_PORT	0
+
 struct rte_flow *flow;
 static uint8_t flow_group;
 
