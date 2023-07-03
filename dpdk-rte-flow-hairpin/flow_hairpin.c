@@ -296,6 +296,9 @@ init_port(void)
 		struct rte_flow_item_ipv4 ip_mask;
 		int ret;
 
+		memset(pattern, 0, sizeof(pattern));
+        memset(action, 0, sizeof(action));
+
         attr.ingress = 1;
 
         pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
