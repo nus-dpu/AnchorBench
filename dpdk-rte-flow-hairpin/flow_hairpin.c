@@ -296,6 +296,7 @@ init_port(void)
 		struct rte_flow_item_ipv4 ip_mask;
 		int ret;
 		struct rte_flow_action_port_id peer_port = { .id = port_id ^ 1 };
+	 	struct rte_flow_action_queue queue_action = { .index = 1 };
 
 		memset(pattern, 0, sizeof(pattern));
         memset(action, 0, sizeof(action));
@@ -303,8 +304,8 @@ init_port(void)
         pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
         pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
 
-        action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
-        action[0].conf = &peer_port;
+        action[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+        action[0].conf = &queue_action;
         action[1].type = RTE_FLOW_ACTION_TYPE_END;
 
 		/* Direct all flows to hairpin */
