@@ -281,6 +281,8 @@ init_port(void)
 	uint16_t nr_queues;
 	struct rte_eth_hairpin_conf hairpin_conf = {
 		.peer_count = 1,
+		.manual_bind = 1,
+		.tx_explicit = 1,
 	};
 	struct rte_eth_conf port_conf = {
 		.rx_adv_conf = {
