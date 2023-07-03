@@ -288,27 +288,42 @@ init_port(void)
 		printf(":: initializing port: %d done\n", port_id);
 
 		struct rte_flow_action action[2];
-		struct rte_flow_item pattern[2];
+		struct rte_flow_item pattern[3];
 		struct rte_flow_attr attr = {0};
 		struct rte_flow_error err;
 		struct rte_flow *flow;
+		struct rte_flow_item_ipv4 ip_spec;
+		struct rte_flow_item_ipv4 ip_mask;
 		int ret;
 		struct rte_flow_action_port_id peer_port_id;
 
 		peer_port_id.id = port_id ^ 1;
 
-		/* Add the default rte_flow to enable SECURITY for all ESP packets */
+		/*
+        * set the first level of the pattern (ETH).
+        */
+        pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
 
-		pattern[0].type = RTE_FLOW_ITEM_TYPE_UDP;
-		pattern[0].spec = NULL;
-		pattern[0].mask = NULL;
-		pattern[0].last = NULL;
-		pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
+		/*
+        * setting the second level of the pattern (IP).
+        */
+        memset(&ip_spec, 0, sizeof(struct rte_flow_item_ipv4));
+		memset(&ip_mask, 0, sizeof(struct rte_flow_item_ipv4));
+		ip_spec.hdr.dst_addr = htonl(dest_ip);
+		ip_mask.hdr.dst_addr = dest_mask;
+		ip_spec.hdr.src_addr = htonl(src_ip);
+		ip_mask.hdr.src_addr = src_mask;
+		pattern[1].type = RTE_FLOW_ITEM_TYPE_IPV4;
+		pattern[1].spec = &ip_spec;
+		pattern[1].mask = &ip_mask;
 
-		// action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
-		// action[0].conf = &peer_port_id;
-		action[0].type = RTE_FLOW_ACTION_TYPE_DROP;
+		/* the final level must be always type end */
+		pattern[2].type = RTE_FLOW_ITEM_TYPE_END;
+
+		action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
+		action[0].conf = &peer_port_id;
 		action[1].type = RTE_FLOW_ACTION_TYPE_END;
+		action[1].conf = NULL;
 
 		/* Direct all flows to hairpin */
 		if (rte_flow_validate(port_id, &attr, pattern, action, &err)) {
