@@ -295,16 +295,16 @@ init_port(void)
 		struct rte_flow_item_ipv4 ip_spec;
 		struct rte_flow_item_ipv4 ip_mask;
 		int ret;
+		struct rte_flow_action_port_id peer_port = { .id = port_id ^ 1 };
 
 		memset(pattern, 0, sizeof(pattern));
         memset(action, 0, sizeof(action));
 
-        attr.ingress = 1;
-
         pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
         pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
 
-        action[0].type = RTE_FLOW_ACTION_TYPE_DROP;
+        action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
+        action[0].conf = &peer_port;
         action[1].type = RTE_FLOW_ACTION_TYPE_END;
 
 		/* Direct all flows to hairpin */
@@ -316,7 +316,7 @@ init_port(void)
 				printf("Failed to create flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
 				return;
 			}
-			// printf(":: Direct flows from port: %d to port: %d\n", port_id, peer_port_id.id);
+			printf(":: Direct flows from port: %d to port: %d\n", port_id, peer_port.id);
 		}
 	}
 }
