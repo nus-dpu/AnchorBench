@@ -435,10 +435,11 @@ init_port(void)
 				ret = rte_eth_rx_hairpin_queue_setup(
 						port_id, hairpin_queue,
 						NR_RXD, &hairpin_conf);
-				if (ret != 0)
-					rte_exit(EXIT_FAILURE,
-						":: Hairpin rx queue setup failed: err=%d, port=%u\n",
-						ret, port_id);
+				if (ret != 0) {
+					rte_exit(EXIT_FAILURE, ":: Hairpin rx queue setup failed: err=%d, port=%u\n", ret, port_id);
+				} else {
+					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, std_queue + TXQ_NUM, port_id);
+				}
 			}
 
 			for (hairpin_queue = TXQ_NUM, std_queue = 0;
@@ -449,10 +450,11 @@ init_port(void)
 				ret = rte_eth_tx_hairpin_queue_setup(
 						port_id, hairpin_queue,
 						NR_TXD, &hairpin_conf);
-				if (ret != 0)
-					rte_exit(EXIT_FAILURE,
-						":: Hairpin tx queue setup failed: err=%d, port=%u\n",
-						ret, port_id);
+				if (ret != 0) {
+					rte_exit(EXIT_FAILURE, ":: Hairpin tx queue setup failed: err=%d, port=%u\n", ret, port_id);
+				} else {
+					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, std_queue + RXQ_NU, port_id);
+				}
 			}
 #endif
 		}
