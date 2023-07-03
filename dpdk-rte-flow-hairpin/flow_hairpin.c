@@ -356,7 +356,9 @@ init_port(void)
 			rte_exit(EXIT_FAILURE,
 				":: promiscuous mode enable failed: err=%s, port=%u\n",
 				rte_strerror(-ret), port_id);
+	}
 
+	for (port_id = 0; port_id < nr_ports; port_id++) {
 		if (hairpin_queues_num != 0) {
 			/*
 			 * Configure peer which represents hairpin Tx.
