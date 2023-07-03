@@ -305,10 +305,10 @@ init_port(void)
 		pattern[0].last = NULL;
 		pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
 
-		action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
-		action[0].conf = &peer_port_id;
+		// action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
+		// action[0].conf = &peer_port_id;
+		action[0].type = RTE_FLOW_ACTION_TYPE_DROP;
 		action[1].type = RTE_FLOW_ACTION_TYPE_END;
-		action[1].conf = NULL;
 
 		/* Direct all flows to hairpin */
 		if (rte_flow_validate(port_id, &attr, pattern, action, &err)) {
