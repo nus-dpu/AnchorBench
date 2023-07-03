@@ -465,6 +465,10 @@ init_port(void)
 					ret, port_id);
 		}
 
+		if (hairpin_queues_num != 0) {
+			hairpin_two_ports_setup(hairpin_queues_num);
+		}
+
 		/* Catch all packets from traffic generator. */
 		ret = rte_eth_promiscuous_enable(port_id);
 		if (ret != 0)
@@ -481,10 +485,7 @@ init_port(void)
 		printf(":: initializing port: %d done\n", port_id);
 	}
 
-	if (hairpin_queues_num != 0) {
-		hairpin_two_ports_setup(hairpin_queues_num);
-		hairpin_two_ports_flows_create();
-	}
+	hairpin_two_ports_flows_create();
 }
 
 static void
