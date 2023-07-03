@@ -223,25 +223,6 @@ hairpin_one_port_flows_create(void)
 	return flow;
 }
 
-int
-hairpin_two_ports_setup(uint64_t nr_hairpin_queue)
-{
-	uint16_t port_id, prev_port_id = RTE_MAX_ETHPORTS;
-	uint16_t port_num = 0;
-	int ret = 0;
-
-	RTE_ETH_FOREACH_DEV(port_id) {
-		ret = setup_hairpin_queues(port_id, prev_port_id,
-				port_num, nr_hairpin_queue);
-		if (ret)
-			rte_exit(EXIT_FAILURE, "Error to setup hairpin queues"
-					" on port: %u", port_id);
-		port_num++;
-		prev_port_id = port_id;
-	}
-	return 0;
-}
-
 struct rte_flow *
 hairpin_two_ports_flows_create(void)
 {
