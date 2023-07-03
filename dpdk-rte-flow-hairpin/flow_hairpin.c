@@ -288,7 +288,8 @@ init_port(void)
 		printf(":: initializing port: %d done\n", port_id);
 
 		struct rte_flow_action action[2];
-		struct rte_flow_item pattern[3];
+		// struct rte_flow_item pattern[3];
+		struct rte_flow_item pattern[2];
 		struct rte_flow_attr attr = {0};
 		struct rte_flow_error err;
 		struct rte_flow *flow;
@@ -304,21 +305,21 @@ init_port(void)
         */
         pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
 
-		/*
-        * setting the second level of the pattern (IP).
-        */
-        memset(&ip_spec, 0, sizeof(struct rte_flow_item_ipv4));
-		memset(&ip_mask, 0, sizeof(struct rte_flow_item_ipv4));
-		ip_spec.hdr.dst_addr = 0x0;
-		ip_mask.hdr.dst_addr = 0x0;
-		ip_spec.hdr.src_addr = 0x0;
-		ip_mask.hdr.src_addr = 0x0;
-		pattern[1].type = RTE_FLOW_ITEM_TYPE_IPV4;
-		pattern[1].spec = &ip_spec;
-		pattern[1].mask = &ip_mask;
+		// /*
+        // * setting the second level of the pattern (IP).
+        // */
+        // memset(&ip_spec, 0, sizeof(struct rte_flow_item_ipv4));
+		// memset(&ip_mask, 0, sizeof(struct rte_flow_item_ipv4));
+		// ip_spec.hdr.dst_addr = 0x0;
+		// ip_mask.hdr.dst_addr = 0x0;
+		// ip_spec.hdr.src_addr = 0x0;
+		// ip_mask.hdr.src_addr = 0x0;
+		// pattern[1].type = RTE_FLOW_ITEM_TYPE_IPV4;
+		// pattern[1].spec = &ip_spec;
+		// pattern[1].mask = &ip_mask;
 
 		/* the final level must be always type end */
-		pattern[2].type = RTE_FLOW_ITEM_TYPE_END;
+		pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
 
 		action[0].type = RTE_FLOW_ACTION_TYPE_PORT_ID;
 		action[0].conf = &peer_port_id;
