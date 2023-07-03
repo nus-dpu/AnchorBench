@@ -180,6 +180,56 @@ static struct rte_flow_item pattern[] = {
 };
 
 struct rte_flow *
+hairpin_one_port_flows_create(void)
+{
+	struct rte_flow *flow;
+	struct rte_flow_error error;
+	struct rte_flow_attr attr = { /* Holds the flow attributes. */
+				.group = 0, /* set the rule on the main group. */
+				.ingress = 1,/* Rx flow. */
+				.priority = 0, }; /* add priority to rule
+				to give the Decap rule higher priority since
+				it is more specific than RSS */
+
+	/* create flow on first port and first hairpin queue. */
+	uint16_t port_id = rte_eth_find_next_owned_by(0, RTE_ETH_DEV_NO_OWNER);
+	RTE_ASSERT(port_id != RTE_MAX_ETHPORTS);
+	struct rte_eth_dev_info dev_info;
+	int ret = rte_eth_dev_info_get(port_id, &dev_info);
+	if (ret)
+		rte_exit(EXIT_FAILURE, "Cannot get device info");
+	uint16_t qi;
+	for (qi = 0; qi < dev_info.nb_rx_queues; qi++) {
+		struct rte_eth_dev *dev = &rte_eth_devices[port_id];
+		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi))
+			break;
+	}
+	struct rte_flow_action_queue queue;
+	struct rte_flow_action actions[] = {
+		[0] = {
+			.type = RTE_FLOW_ACTION_TYPE_RAW_DECAP,
+			.conf = &decap,
+		},
+		[1] = {
+			.type = RTE_FLOW_ACTION_TYPE_RAW_ENCAP,
+			.conf = &encap,
+		},
+		[2] = {
+			.type = RTE_FLOW_ACTION_TYPE_QUEUE,
+			.conf = &queue,
+		},
+	};
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
+	pattern[L2].spec = NULL;
+	queue.index = qi; /* rx hairpin queue index. */
+	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
+	if (!flow)
+		printf("Can't create hairpin flows on port: %u\n", port_id);
+	return flow;
+}
+
+
+struct rte_flow *
 hairpin_two_ports_flows_create(void)
 {
 	struct rte_flow *flow;
@@ -359,7 +409,7 @@ init_port(void)
 		printf(":: initializing port: %d done\n", port_id);
 	}
 
-	hairpin_two_ports_flows_create();
+	hairpin_one_port_flows_create();
 }
 
 static void
