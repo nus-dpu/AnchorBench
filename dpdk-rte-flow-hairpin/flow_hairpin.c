@@ -219,8 +219,11 @@ hairpin_two_ports_flows_create(void)
 	queue.index = qi; /* rx hairpin queue index. */
 
 	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
-	if (!flow)
+	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", port_id);
+	} else {
+		printf("Direct flows to hairpin queue: %u on port: %u\n", qi, port_id);
+	}
 }
 
 static void
