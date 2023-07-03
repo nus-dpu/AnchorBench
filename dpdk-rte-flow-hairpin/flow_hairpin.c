@@ -266,8 +266,32 @@ hairpin_two_ports_flows_create(void)
 	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", port_id);
 	} else {
-		printf("Direct flows to hairpin queue: %u on port: %u\n", qi, port_id);
+		printf("Direct ingress flows to hairpin queue: %u on port: %u\n", qi, port_id);
 	}
+
+	/* get peer port id. */
+	uint16_t pair_port_list[RTE_MAX_ETHPORTS];
+	int pair_port_num = rte_eth_hairpin_get_peer_ports(port_id,
+			pair_port_list, RTE_MAX_ETHPORTS, 0);
+	if (pair_port_num < 0)
+		rte_exit(EXIT_FAILURE, "Can't get pair port !");
+	RTE_ASSERT(pair_port_num == 1);
+	/* create pattern to match hairpin flow from hairpin RX queue. */
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
+	pattern[L2].spec = NULL;
+	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
+	/* create actions. */
+	actions[0].type = RTE_FLOW_ACTION_TYPE_END;
+	attr.egress = 1;
+	attr.ingress = 0;
+	flow = rte_flow_create(pair_port_list[0], &attr, pattern, actions, &error);
+	if (!flow) {
+		printf("Can't create hairpin flows on port: %u\n", pair_port_num);
+	} else {
+		printf("Create egress flow on port: %u\n", qi, pair_port_num);
+	}
+
+	return flow;
 }
 
 static void
