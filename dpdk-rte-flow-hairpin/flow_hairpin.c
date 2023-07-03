@@ -313,7 +313,7 @@ init_port(void)
 		attr.ingress = 1;
 
 		/* Direct all flows to hairpin */
-		if (rte_flow_validate(port_id, attr, pattern, action, &err)) {
+		if (rte_flow_validate(port_id, &attr, pattern, action, &err)) {
 			rte_exit("Failed to validate flow rule: port=%u\n", port_id);
 		}
 
