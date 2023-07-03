@@ -310,15 +310,13 @@ init_port(void)
 		action[1].type = RTE_FLOW_ACTION_TYPE_END;
 		action[1].conf = NULL;
 
-		attr.ingress = 1;
-
 		/* Direct all flows to hairpin */
 		if (rte_flow_validate(port_id, &attr, pattern, action, &err)) {
-			rte_exit("Failed to validate flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
+			printf("Failed to validate flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
 		} else {
 			flow = rte_flow_create(port_id, &attr, pattern, action, &err);
 			if (flow == NULL) {
-				rte_exit("Failed to create flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
+				printf("Failed to create flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
 				return;
 			}
 			printf(":: Direct flows from port: %d to port: %d\n", port_id, peer_port_id.id);
