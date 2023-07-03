@@ -313,7 +313,7 @@ init_port(void)
 				printf("Failed to create flow rule: port=%u, cause: %s\n", port_id, rte_strerror(rte_errno));
 				return;
 			}
-			printf(":: Direct flows from port: %d to port: %d\n", port_id, peer_port_id.id);
+			// printf(":: Direct flows from port: %d to port: %d\n", port_id, peer_port_id.id);
 		}
 	}
 }
