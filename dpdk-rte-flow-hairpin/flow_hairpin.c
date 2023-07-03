@@ -25,8 +25,6 @@
 #define DEFAULT_RULES_BATCH     100000
 #define DEFAULT_GROUP                0
 
-#define DUAL_PORT	0
-
 struct rte_flow *flow;
 static uint8_t flow_group;
 
@@ -159,6 +157,12 @@ usage(char *progname)
 
 enum layer_name {
 	L2,
+	L3,
+	L4,
+	TUNNEL,
+	L2_INNER,
+	L3_INNER,
+	L4_INNER,
 	END
 };
 
@@ -192,15 +196,13 @@ hairpin_one_port_flows_create(void)
 	RTE_ASSERT(port_id != RTE_MAX_ETHPORTS);
 	struct rte_eth_dev_info dev_info;
 	int ret = rte_eth_dev_info_get(port_id, &dev_info);
-	if (ret) {
+	if (ret)
 		rte_exit(EXIT_FAILURE, "Cannot get device info");
-	}
 	uint16_t qi;
 	for (qi = 0; qi < dev_info.nb_rx_queues; qi++) {
 		struct rte_eth_dev *dev = &rte_eth_devices[port_id];
-		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi)) {
+		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi))
 			break;
-		}
 	}
 	struct rte_flow_action_queue queue;
 	struct rte_flow_action actions[] = {
@@ -212,15 +214,15 @@ hairpin_one_port_flows_create(void)
 			.type = RTE_FLOW_ACTION_TYPE_END,
 		},
 	};
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
+	pattern[L2].spec = NULL;
 	queue.index = qi; /* rx hairpin queue index. */
-
 	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
-	if (!flow) {
+	if (!flow)
 		printf("Can't create hairpin flows on port: %u\n", port_id);
-	} else {
-		printf("Direct ingress flows to hairpin queue: %u on port: %u\n", qi, port_id);
-	}
+	return flow;
 }
+
 
 struct rte_flow *
 hairpin_two_ports_flows_create(void)
@@ -265,32 +267,8 @@ hairpin_two_ports_flows_create(void)
 	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", port_id);
 	} else {
-		printf("Direct ingress flows to hairpin queue: %u on port: %u\n", qi, port_id);
+		printf("Direct flows to hairpin queue: %u on port: %u\n", qi, port_id);
 	}
-
-	/* get peer port id. */
-	uint16_t pair_port_list[RTE_MAX_ETHPORTS];
-	int pair_port_num = rte_eth_hairpin_get_peer_ports(port_id,
-			pair_port_list, RTE_MAX_ETHPORTS, 0);
-	if (pair_port_num < 0)
-		rte_exit(EXIT_FAILURE, "Can't get pair port !");
-	RTE_ASSERT(pair_port_num == 1);
-	/* create pattern to match hairpin flow from hairpin RX queue. */
-	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
-	pattern[L2].spec = NULL;
-	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
-	/* create actions. */
-	actions[0].type = RTE_FLOW_ACTION_TYPE_END;
-	attr.egress = 1;
-	attr.ingress = 0;
-	flow = rte_flow_create(pair_port_list[0], &attr, pattern, actions, &error);
-	if (!flow) {
-		printf("Can't create hairpin flows on port: %u\n", pair_port_num);
-	} else {
-		printf("Create egress flow on port: %u\n", pair_port_num);
-	}
-
-	return flow;
 }
 
 static void
@@ -298,14 +276,12 @@ init_port(void)
 {
 	int ret;
 	uint16_t std_queue;
-	uint16_t hairpin_queue, peer_hairpin_queue;
+	uint16_t hairpin_queue;
 	uint16_t port_id;
 	uint16_t nr_ports;
 	uint16_t nr_queues;
 	struct rte_eth_hairpin_conf hairpin_conf = {
 		.peer_count = 1,
-		.manual_bind = 1,
-		.tx_explicit = 1,
 	};
 	struct rte_eth_conf port_conf = {
 		.rx_adv_conf = {
@@ -381,76 +357,42 @@ init_port(void)
 			rte_exit(EXIT_FAILURE,
 				":: promiscuous mode enable failed: err=%s, port=%u\n",
 				rte_strerror(-ret), port_id);
-	}
 
-	for (port_id = 0; port_id < nr_ports; port_id++) {
 		if (hairpin_queues_num != 0) {
-#if DUAL_PORT
 			/*
 			 * Configure peer which represents hairpin Tx.
 			 * Hairpin queue numbers start after standard queues
 			 * (RXQ_NUM and TXQ_NUM).
 			 */
-			for (hairpin_queue = RXQ_NUM, peer_hairpin_queue = TXQ_NUM;
-					hairpin_queue < nr_queues;
-					hairpin_queue++, std_queue++) {
-				hairpin_conf.peers[0].port = port_id ^ 1;
-				hairpin_conf.peers[0].queue = peer_hairpin_queue;
-				ret = rte_eth_rx_hairpin_queue_setup(
-						port_id, hairpin_queue,
-						NR_RXD, &hairpin_conf);
-				if (ret != 0) {
-					rte_exit(EXIT_FAILURE, ":: Hairpin rx queue setup failed: err=%d, port=%u\n", ret, port_id);
-				} else {
-					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, peer_hairpin_queue, port_id ^ 1);
-				}
-			}
-
-			for (hairpin_queue = TXQ_NUM, peer_hairpin_queue = RXQ_NUM;
-					hairpin_queue < nr_queues;
-					hairpin_queue++, std_queue++) {
-				hairpin_conf.peers[0].port = port_id ^ 1;
-				hairpin_conf.peers[0].queue = peer_hairpin_queue;
-				ret = rte_eth_tx_hairpin_queue_setup(
-						port_id, hairpin_queue,
-						NR_TXD, &hairpin_conf);
-				if (ret != 0) {
-					rte_exit(EXIT_FAILURE, ":: Hairpin tx queue setup failed: err=%d, port=%u\n", ret, port_id);
-				} else {
-					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, peer_hairpin_queue, port_id ^ 1);
-				}
-			}
-#else
 			for (hairpin_queue = RXQ_NUM, std_queue = 0;
 					hairpin_queue < nr_queues;
 					hairpin_queue++, std_queue++) {
 				hairpin_conf.peers[0].port = port_id;
-				hairpin_conf.peers[0].queue = std_queue + TXQ_NUM;
+				hairpin_conf.peers[0].queue =
+					std_queue + TXQ_NUM;
 				ret = rte_eth_rx_hairpin_queue_setup(
 						port_id, hairpin_queue,
 						NR_RXD, &hairpin_conf);
-				if (ret != 0) {
-					rte_exit(EXIT_FAILURE, ":: Hairpin rx queue setup failed: err=%d, port=%u\n", ret, port_id);
-				} else {
-					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, std_queue + TXQ_NUM, port_id);
-				}
+				if (ret != 0)
+					rte_exit(EXIT_FAILURE,
+						":: Hairpin rx queue setup failed: err=%d, port=%u\n",
+						ret, port_id);
 			}
 
 			for (hairpin_queue = TXQ_NUM, std_queue = 0;
 					hairpin_queue < nr_queues;
 					hairpin_queue++, std_queue++) {
 				hairpin_conf.peers[0].port = port_id;
-				hairpin_conf.peers[0].queue = std_queue + RXQ_NUM;
+				hairpin_conf.peers[0].queue =
+					std_queue + RXQ_NUM;
 				ret = rte_eth_tx_hairpin_queue_setup(
 						port_id, hairpin_queue,
 						NR_TXD, &hairpin_conf);
-				if (ret != 0) {
-					rte_exit(EXIT_FAILURE, ":: Hairpin tx queue setup failed: err=%d, port=%u\n", ret, port_id);
-				} else {
-					printf("Connect hairpin RX queue %u on port %u to hairpin TX queue %u on port %u\n", hairpin_queue, port_id, std_queue + RXQ_NUM, port_id);
-				}
+				if (ret != 0)
+					rte_exit(EXIT_FAILURE,
+						":: Hairpin tx queue setup failed: err=%d, port=%u\n",
+						ret, port_id);
 			}
-#endif
 		}
 
 		ret = rte_eth_dev_start(port_id);
@@ -460,15 +402,9 @@ init_port(void)
 				ret, port_id);
 
 		printf(":: initializing port: %d done\n", port_id);
-
-#if !DUAL_PORT
-		hairpin_one_port_flows_create();
-#endif
 	}
 
-#if DUAL_PORT
-	hairpin_two_ports_flows_create();
-#endif
+	hairpin_one_port_flows_create();
 }
 
 static void
