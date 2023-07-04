@@ -482,6 +482,7 @@ init_port(void)
 	struct rte_eth_txconf txq_conf;
 	struct rte_eth_rxconf rxq_conf;
 	struct rte_eth_dev_info dev_info;
+	char name[RTE_MEMPOOL_NAMESIZE];
 
 	nr_queues = RXQ_NUM;
 	if (hairpin_queues_num != 0)
@@ -490,13 +491,6 @@ init_port(void)
 	nr_ports = rte_eth_dev_count_avail();
 	if (nr_ports == 0)
 		rte_exit(EXIT_FAILURE, "Error: no port detected\n");
-
-	mbuf_mp = rte_pktmbuf_pool_create("mbuf_pool",
-					TOTAL_MBUF_NUM, MBUF_CACHE_SIZE,
-					0, MBUF_SIZE,
-					rte_socket_id());
-	if (mbuf_mp == NULL)
-		rte_exit(EXIT_FAILURE, "Error: can't init mbuf pool\n");
 
 	for (port_id = 0; port_id < nr_ports; port_id++) {
 		ret = rte_eth_dev_info_get(port_id, &dev_info);
@@ -520,6 +514,14 @@ init_port(void)
 
 		rxq_conf = dev_info.default_rxconf;
 		for (std_queue = 0; std_queue < RXQ_NUM; std_queue++) {
+			sprintf(name, "mbuf_pool_%d", std_queue);
+			mbuf_mp = rte_pktmbuf_pool_create(name,
+					TOTAL_MBUF_NUM, MBUF_CACHE_SIZE,
+					0, MBUF_SIZE,
+					rte_socket_id());
+			if (mbuf_mp == NULL)
+				rte_exit(EXIT_FAILURE, "Error: can't init mbuf pool\n");
+				
 			ret = rte_eth_rx_queue_setup(port_id, std_queue, NR_RXD,
 					rte_eth_dev_socket_id(port_id),
 					&rxq_conf,

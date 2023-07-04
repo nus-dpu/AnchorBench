@@ -10,13 +10,13 @@
 #define GET_RSS_HF() (ETH_RSS_IP | ETH_RSS_TCP)
 
 /* Configuration */
-#define RXQ_NUM 4
-#define TXQ_NUM 4
-#define TOTAL_MBUF_NUM 32000
-#define MBUF_SIZE 2048
+#define RXQ_NUM 8
+#define TXQ_NUM 8
+#define TOTAL_MBUF_NUM 4096
+#define MBUF_SIZE 1600
 #define MBUF_CACHE_SIZE 512
 #define NR_RXD  256
-#define NR_TXD  256
+#define NR_TXD  512
 
 /* This is used for encap/decap & header modify actions.
  * When it's 1: it means all actions have fixed values.
