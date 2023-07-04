@@ -258,35 +258,18 @@ hairpin_two_ports_flows_create(int nr_hairpin)
 	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
 	queue.index = qi; /* rx hairpin queue index. */
 #endif
-	int i, hairpin_queue;
-	struct rte_flow_action_rss *rss_action;
-	struct action_rss_data *rss_data;
+	uint16_t queues[] = {8};
 
-	uint16_t queue;
-
-	*rss_data = (struct action_rss_data){
-		.conf = (struct rte_flow_action_rss){
-			.func = RTE_ETH_HASH_FUNCTION_DEFAULT,
-			.level = 0,
-			.types = GET_RSS_HF(),
-			.key_len = sizeof(rss_data->key),
-			.queue_num = nr_hairpin,
-			.key = NULL,
-			.queue = rss_data->queue,
-		},
-		.queue = { 0 },
-	};
-
-	for (i = 0, hairpin_queue = RXQ_NUM; hairpin_queue < RXQ_NUM + nr_hairpin; i++, hairpin_queue++) {
-		rss_data->queue[i] = hairpin_queue;
-	}
-
-	rss_action = &rss_data->conf;
+	struct rte_flow_action_rss rss = {
+			.level = 2, /* RSS should be done on inner header. */
+			.queue = queues, /* Set the selected target queues. */
+			.queue_num = 1, /* The number of queues. */
+			.types =  ETH_RSS_IP | ETH_RSS_UDP };
 
 	struct rte_flow_action actions[] = {
 		[0] = {
 			.type = RTE_FLOW_ACTION_TYPE_RSS,
-			.conf = &rss_action,
+			.conf = &rss,
 		},
 		[1] = {
 			.type = RTE_FLOW_ACTION_TYPE_END,
