@@ -218,7 +218,7 @@ hairpin_one_port_flows_create(void)
 }
 
 struct rte_flow *
-hairpin_two_ports_flows_create(void)
+hairpin_two_ports_flows_create(int nr_hairpin)
 {
 	struct rte_flow *flow;
 	struct rte_flow_error error;
@@ -237,6 +237,7 @@ hairpin_two_ports_flows_create(void)
 	if (ret)
 		rte_exit(EXIT_FAILURE, "Cannot get device info");
 	uint16_t qi;
+#if 0
 	for (qi = 0; qi < dev_info.nb_rx_queues; qi++) {
 		struct rte_eth_dev *dev = &rte_eth_devices[port_id];
 		if (rte_eth_dev_is_rx_hairpin_queue(dev, qi))
@@ -256,6 +257,44 @@ hairpin_two_ports_flows_create(void)
 	pattern[L2].spec = NULL;
 	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
 	queue.index = qi; /* rx hairpin queue index. */
+#endif
+	int hairpin_queue;
+	struct rte_flow_action_rss *rss_action;
+	struct action_rss_data *rss_data;
+
+	uint16_t queue;
+
+	*rss_data = (struct action_rss_data){
+		.conf = (struct rte_flow_action_rss){
+			.func = RTE_ETH_HASH_FUNCTION_DEFAULT,
+			.level = 0,
+			.types = GET_RSS_HF(),
+			.key_len = sizeof(rss_data->key),
+			.queue_num = nr_hairpin,
+			.key = NULL,
+			.queue = rss_data->queue,
+		},
+		.queue = { 0 },
+	};
+
+	for (hairpin_queue = RXQ_NUM, std_queue = RXQ_NUM + nr_hairpin;
+					hairpin_queue < nr_queues;
+					hairpin_queue++, std_queue++) {
+		rss_data->queue[queue] = hairpin_queue;
+	}
+
+	rss_action = &rss_data->conf;
+
+	struct rte_flow_action actions[] = {
+		[0] = {
+			.type = RTE_FLOW_ACTION_TYPE_RSS,
+			.conf = &rss_action,
+		},
+		[1] = {
+			.type = RTE_FLOW_ACTION_TYPE_END,
+		},
+	};
+
 	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
 	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", port_id);
