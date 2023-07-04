@@ -13,7 +13,7 @@
 #define RXQ_NUM 8
 #define TXQ_NUM 8
 #define TOTAL_MBUF_NUM 4096
-#define MBUF_SIZE 1600
+#define MBUF_SIZE 2048
 #define MBUF_CACHE_SIZE 512
 #define NR_RXD  256
 #define NR_TXD  512
