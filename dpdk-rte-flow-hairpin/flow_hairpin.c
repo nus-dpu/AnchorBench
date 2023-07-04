@@ -293,6 +293,10 @@ hairpin_two_ports_flows_create(int nr_hairpin)
 		},
 	};
 
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
+	pattern[L2].spec = NULL;
+	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
+
 	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
 	if (!flow) {
 		printf("Can't create hairpin flows on port: %u\n", port_id);
