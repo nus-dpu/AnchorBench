@@ -514,7 +514,7 @@ init_port(void)
 
 		rxq_conf = dev_info.default_rxconf;
 		for (std_queue = 0; std_queue < RXQ_NUM; std_queue++) {
-			sprintf(name, "mbuf_pool_%d", std_queue);
+			sprintf(name, "port_%d_mbuf_pool_%d", port_id, std_queue);
 			mbuf_mp = rte_pktmbuf_pool_create(name,
 					TOTAL_MBUF_NUM, MBUF_CACHE_SIZE,
 					0, MBUF_SIZE,
