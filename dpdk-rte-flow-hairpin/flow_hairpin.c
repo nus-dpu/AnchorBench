@@ -642,7 +642,7 @@ init_port(void)
 		rte_exit(EXIT_FAILURE, "Cannot bind two hairpin ports");
 	}
 
-	hairpin_two_ports_flows_create();
+	hairpin_two_ports_flows_create(hairpin_queues_num);
 }
 #endif
 
