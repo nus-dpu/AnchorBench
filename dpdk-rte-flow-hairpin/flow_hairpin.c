@@ -258,7 +258,7 @@ hairpin_two_ports_flows_create(int nr_hairpin)
 	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
 	queue.index = qi; /* rx hairpin queue index. */
 #endif
-	int hairpin_queue, std_queue;
+	int hairpin_queue;
 	struct rte_flow_action_rss *rss_action;
 	struct action_rss_data *rss_data;
 
@@ -277,9 +277,7 @@ hairpin_two_ports_flows_create(int nr_hairpin)
 		.queue = { 0 },
 	};
 
-	for (hairpin_queue = RXQ_NUM, std_queue = RXQ_NUM + nr_hairpin;
-					hairpin_queue < nr_queues;
-					hairpin_queue++, std_queue++) {
+	for (hairpin_queue = RXQ_NUM; hairpin_queue < RXQ_NUM + nr_hairpin; hairpin_queue++) {
 		rss_data->queue[queue] = hairpin_queue;
 	}
 
