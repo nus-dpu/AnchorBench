@@ -261,7 +261,7 @@ hairpin_two_ports_flows_create(int nr_hairpin)
 	uint16_t queues[] = {8};
 
 	struct rte_flow_action_rss rss = {
-			.level = 2, /* RSS should be done on inner header. */
+			.level = 0, /* RSS should be done on inner header. */
 			.queue = queues, /* Set the selected target queues. */
 			.queue_num = 1, /* The number of queues. */
 			.types =  ETH_RSS_IP | ETH_RSS_UDP };
