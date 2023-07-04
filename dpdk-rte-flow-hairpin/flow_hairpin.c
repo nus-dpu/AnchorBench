@@ -520,7 +520,7 @@ init_port(void)
 					0, MBUF_SIZE,
 					rte_socket_id());
 			if (mbuf_mp == NULL)
-				rte_exit(EXIT_FAILURE, "Error: can't init mbuf pool\n");
+				rte_exit(EXIT_FAILURE, "Error: can't init mbuf pool for queue %d\n", std_queue);
 				
 			ret = rte_eth_rx_queue_setup(port_id, std_queue, NR_RXD,
 					rte_eth_dev_socket_id(port_id),
