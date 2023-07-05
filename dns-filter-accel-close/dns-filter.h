@@ -32,7 +32,4 @@
 #include <rte_udp.h>
 #include <rte_tcp.h>
 
-extern __thread int nb_enqueued;
-extern __thread int nb_dequeued;
-
 #endif  /* _DNS_FILTER_H_*/

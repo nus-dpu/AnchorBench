@@ -57,6 +57,9 @@ extern __thread struct timeval start;
 extern __thread int nr_latency;
 extern __thread uint64_t latency[MAX_NR_LATENCY];
 
+extern __thread int nb_enqueued;
+extern __thread int nb_dequeued;
+
 int handle_packets_received(int pid, struct dns_worker_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 int regex_scan_deq_job(int pid, struct dns_worker_ctx *ctx);
 uint32_t dpdk_send_pkts(int pid, int qid);
