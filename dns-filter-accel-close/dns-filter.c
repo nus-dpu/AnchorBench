@@ -33,6 +33,8 @@ __thread int start_flag = 0;
 __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
+__thread int nb_enqueued = 0;
+__thread int nb_dequeued = 0;
 
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
@@ -334,7 +336,7 @@ int dns_filter_worker(void *arg) {
 	FILE * output_fp;
 	char name[32];
 
-	sprintf(name, "thp-%d.txt", sched_getcpu());
+	sprintf(name, "network-thp-%d.txt", sched_getcpu());
 	output_fp = fopen(name, "w");
 	if (!output_fp) {
 		printf("Error opening throughput output file!\n");
@@ -342,6 +344,20 @@ int dns_filter_worker(void *arg) {
 	}
 
 	fprintf(output_fp, "%6.2lf\t%6.2lf\n", tot_recv_rate, tot_send_rate);
+
+	fclose(output_fp);
+
+	sprintf(name, "thp-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening throughput output file!\n");
+		return;
+	}
+
+	tot_enqueue_rate = (float)nb_enqueued / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
+	tot_dequeue_rate = (float)nb_dequeued / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
+
+	fprintf(output_fp, "%6.2lf\t%6.2lf\n", tot_enqueue_rate, tot_dequeue_rate);
 
 	fclose(output_fp);
 

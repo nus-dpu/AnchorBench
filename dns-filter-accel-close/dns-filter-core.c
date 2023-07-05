@@ -258,6 +258,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 			if (result == DOCA_SUCCESS) {
 				worker_ctx->buffers[tx_count] = buf;
 				++tx_count;
+				nb_enqueued++;
 			} else {
 				DOCA_LOG_ERR("Failed to enqueue RegEx job (%s)", doca_get_error_string(result));
 				ret = -1;
@@ -281,6 +282,7 @@ regex_processing(struct dns_worker_ctx *worker_ctx, uint16_t packets_received, s
 				// }
 				stamp_dns_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
 				++rx_count;
+				nb_dequeued++;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
 				// printf("Wait for job to complete\n");
