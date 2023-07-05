@@ -274,6 +274,7 @@ int dns_filter_worker(void *arg) {
     uint8_t idx, txcnt, rxcnt;
 	struct timeval curr;
 	float tot_recv_rate, tot_send_rate;
+	float tot_enqueue_rate, tot_dequeue_rate;
 	unsigned long tot_recv, tot_send;
 	float sec_recv, sec_send;
 	float max_recv, max_send;
