@@ -308,7 +308,7 @@ int dns_filter_worker(void *arg) {
 			nr_recv = nr_send = 0;
 			last_log = curr;
 		}
-		if (start_flag & (curr.tv_sec - start.tv_sec > 10)) {
+		if (start_flag & (curr.tv_sec - start.tv_sec > 20)) {
 			break;
 		}
 		for (idx = 0; idx < rxcnt; idx++) {
