@@ -12,7 +12,7 @@ for len in "${data_size[@]}"; do
 		dir=${len}B-full-batch=${size}-result
 		mkdir ${dir}
 		
-		for nr_core in $(seq 1 1 8); done
+		for nr_core in $(seq 1 1 8); do
             mkdir ${dir}/thp-$nr_core/
 			mkdir ${dir}/lat-$nr_core/
 
