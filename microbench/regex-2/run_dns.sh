@@ -17,13 +17,13 @@ for len in "${data_size[@]}"; do
 			mkdir ${dir}/lat-$nr_core/
 
 			for rate in $(seq 10 100 5000); do
-                mkdir ${dir}/thp-$nr_core/rate-$nr_core/
-			    mkdir ${dir}/lat-$nr_core/rate-$nr_core/
+                mkdir ${dir}/thp-$nr_core/rate-$rate/
+			    mkdir ${dir}/lat-$nr_core/rate-$rate/
 
                 echo "  >> Test input $rate (Kops) with data size $size Bytes"
     			./build/regex -l 50 -p 03:00.0 -r /tmp/full_url_regex_rules.rof2.binary -d $(pwd)/input.txt -c $nr_core -s $rate -q ${queue_depth} -a ${size}
-                mv thp-*.txt		${dir}/thp-$nr_core/rate-$nr_core/
-                mv latency-*.txt 	${dir}/lat-$nr_core/rate-$nr_core/
+                mv thp-*.txt		${dir}/thp-$nr_core/rate-$rate/
+                mv latency-*.txt 	${dir}/lat-$nr_core/rate-$rate/
                 echo "  >> Test done!"
                 sleep 2
             done
