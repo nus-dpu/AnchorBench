@@ -39,6 +39,13 @@ __thread int nb_dequeued = 0;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
+enum layer_name {
+	L2,
+	L3,
+	L4,
+	END
+};
+
 /*
  * RegEx context initialization
  *
@@ -757,6 +764,7 @@ int main(int argc, char **argv) {
 	int32_t ret;
 	doca_error_t result;
 	struct dns_filter_config app_cfg = {0};
+	int lcore_id, nr_cores = 0;
 
 	/* initialize EAL */
 	ret = rte_eal_init(argc, argv);
