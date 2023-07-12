@@ -402,10 +402,10 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			goto worker_cleanup;
 		}
 
-		for (int i = 0; i < PACKET_BURST; i += 2) {
+		for (int i = 0, int index = 0; i < PACKET_BURST; i++, index += 2) {
 			/* Create array of pointers (char*) to hold the queries */
-			worker_ctx->query_buf[i] = &buf[i];
-			worker_ctx->result_buf[i] = &buf[i+1];
+			worker_ctx->query_buf[i] = &buf[index];
+			worker_ctx->result_buf[i] = &buf[index+1];
 
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, &worker_ctx->src_buf[i]);
