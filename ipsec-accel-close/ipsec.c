@@ -399,7 +399,7 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 		result = doca_mmap_populate(worker_ctx->mmap, buf, 2 * PACKET_BURST * BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
-			goto queries_cleanup;
+			goto worker_cleanup;
 		}
 
 		for (int i = 0; i < PACKET_BURST; i += 2) {
@@ -411,14 +411,14 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, &worker_ctx->src_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-				goto queries_cleanup;
+				goto worker_cleanup;
 			}
 
 			/* build doca_buf */
 			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->result_buf[i], BUF_SIZE, &worker_ctx->dst_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
-				goto queries_cleanup;
+				goto worker_cleanup;
 			}
 		}
 
