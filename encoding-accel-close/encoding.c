@@ -601,7 +601,7 @@ int dpdk_setup_rss(int nr_queues) {
 
 	struct rte_flow_item_udp udp_spec = {
 		.hdr = {
-		.dst_port = RTE_BE16(4321)}
+		.dst_port = RTE_BE16(UDP_PORT)}
 	};
 	struct rte_flow_item_udp udp_mask = {
 		.hdr = {
