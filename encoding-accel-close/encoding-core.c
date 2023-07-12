@@ -134,6 +134,8 @@ extract_encoding_payload(struct rte_mbuf *pkt, char **encoding_data, int *encodi
 	}
 	len = rte_pktmbuf_data_len(&mbuf);
 
+	printf("%s > Data to compress: %d, len: %d\n", __func__, data_begin, data_len);
+
 	/* Get DNS query start from handle field */
 	*encoding_data = (char *)(data + 2 * sizeof(uint64_t));
 	*encoding_data_len = len - 2 * sizeof(uint64_t);
@@ -270,7 +272,7 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 
 			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
-			printf("Data to compress: %d, len: %d\n", data_begin, data_len);
+			printf("%s > Data to compress: %d, len: %d\n", __func__, data_begin, data_len);
 
 			struct doca_compress_job const compress_job = {
 				.base = (struct doca_job) {
