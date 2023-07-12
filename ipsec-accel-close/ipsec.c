@@ -393,7 +393,7 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			goto worker_cleanup;
 		}
 
-		char * buf = (char *)malloc(PACKET_BURST, BUF_SIZE);
+		char * buf = rte_zmalloc(NULL, PACKET_BURST * BUF_SIZE, 0);
 
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* Create array of pointers (char*) to hold the queries */
