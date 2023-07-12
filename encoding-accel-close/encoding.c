@@ -580,7 +580,7 @@ int main(int argc, char **argv) {
 	}
 
 	/* DOCA Compress initialization */
-	result = doca_compress_init(&app_cfg);
+	result = compress_init(&app_cfg);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_INFO("Failed to init DOCA RegEx");
 		return result;
