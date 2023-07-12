@@ -274,11 +274,11 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 				.base = (struct doca_job) {
 					.type = DOCA_COMPRESS_DEFLATE_JOB,
 					.flags = DOCA_JOB_FLAGS_NONE,
-				.ctx = doca_compress_as_ctx(worker_ctx->doca_compress),
+				.ctx = doca_compress_as_ctx(worker_ctx->app_cfg->doca_compress),
 					.user_data = {.u64 = tx_count },
 				},
-				.resp_buf = dst_buf,
-				.req_buf = src_buf,
+				.dst_buff = dst_buf,
+				.src_buff = src_buf,
 			};
 
 			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&compress_job);
@@ -313,7 +313,7 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 				dst_buf = worker_ctx->dst_buf[index];
 				doca_buf_get_data(dst_buf, (void **)&resp);
 				doca_buf_get_data_len(dst_buf, &resp_len);
-				update_packet_payload(packets[index], resp);
+				update_packet_payload(packets[index], resp, resp_len);
 
 				stamp_encoding_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
 				++rx_count;
