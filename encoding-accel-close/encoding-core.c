@@ -21,7 +21,7 @@
 #include <doca_mmap.h>
 #include <doca_compress.h>
 
-#include "compress-core.h"
+#include "encoding-core.h"
 
 DOCA_LOG_REGISTER(IPSEC::Core);
 
