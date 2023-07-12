@@ -97,7 +97,7 @@ static void pkt_burst_forward(struct ipsec_ctx *worker_ctx, int pid, int qid) {
 	/*
 	 * Receive a burst of packets and forward them.
 	 */
-	nb_rx = rte_eth_rx_burst(pid, qid, pkts_burst, DEFAULT_RX_PKT_BURST);
+	nb_rx = rte_eth_rx_burst(pid, qid, pkts_burst, DEFAULT_PKT_BURST);
 	if (unlikely(nb_rx == 0)) {
 		return;
 	}
