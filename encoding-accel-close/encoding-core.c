@@ -134,8 +134,6 @@ extract_encoding_payload(struct rte_mbuf *pkt, char **encoding_data, int *encodi
 	}
 	len = rte_pktmbuf_data_len(&mbuf);
 
-	printf("%s > Data to compress: %d, len: %d\n", __func__, data, len);
-
 	/* Get DNS query start from handle field */
 	*encoding_data = (char *)(data + 2 * sizeof(uint64_t));
 	*encoding_data_len = len - 2 * sizeof(uint64_t);
@@ -158,8 +156,6 @@ check_packets_marking(struct encoding_ctx *worker_ctx, struct rte_mbuf **packets
 		p += ETH_HEADER_SIZE;
 		p += IP_HEADER_SIZE;
 		u = (struct udphdr *)p;
-
-		printf("UDP dport: %u\n", ntohs(u->dest));
 
 		if (ntohs(u->dest) == 1234) {
 			if (!start_flag) {
@@ -273,8 +269,6 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 			doca_buf_set_data(src_buf, mbuf_data, data_len);
 
 			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
-
-			printf("%s > Data to compress: %d, len: %d\n", __func__, data_begin, data_len);
 
 			struct doca_compress_job const compress_job = {
 				.base = (struct doca_job) {
