@@ -178,11 +178,11 @@ check_packets_marking(struct ipsec_ctx *worker_ctx, struct rte_mbuf **packets, u
 }
 
 static void
-update_packet_payload(struct rte_mbuf * packet, char * result, int len) {
+update_packet_payload(struct rte_mbuf * packet, char * result) {
 	char * p;
 	struct iphdr * ip;
 	struct udphdr * u;
-	int udp_len = sizeof(struct udphdr) + 2 * sizeof(uint64_t) + len;
+	int udp_len = sizeof(struct udphdr) + 2 * sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 	int tot_len = sizeof(struct iphdr) + udp_len;
 
 	p = rte_pktmbuf_mtod(packet, char *);
@@ -196,10 +196,10 @@ update_packet_payload(struct rte_mbuf * packet, char * result, int len) {
 
 	u->len = htons(udp_len);
 
-	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + 2 * sizeof(uint64_t) + len;
+	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + 2 * sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 
 	p += UDP_HEADER_SIZE + 2 * sizeof(uint64_t);
-	memcpy(p, result, len);
+	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
 }
 
 static void

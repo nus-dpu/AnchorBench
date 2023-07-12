@@ -178,11 +178,11 @@ check_packets_marking(struct encoding_ctx *worker_ctx, struct rte_mbuf **packets
 }
 
 static void
-update_packet_payload(struct rte_mbuf * packet, char * result) {
+update_packet_payload(struct rte_mbuf * packet, char * result, int len) {
 	char * p;
 	struct iphdr * ip;
 	struct udphdr * u;
-	int udp_len = sizeof(struct udphdr) + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	int udp_len = sizeof(struct udphdr) + 2 * sizeof(uint64_t) + len;
 	int tot_len = sizeof(struct iphdr) + udp_len;
 
 	p = rte_pktmbuf_mtod(packet, char *);
@@ -196,10 +196,10 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
 
 	u->len = htons(udp_len);
 
-	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + 2 * sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + 2 * sizeof(uint64_t) + len;
 
-	p += UDP_HEADER_SIZE + sizeof(uint64_t);
-	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
+	p += UDP_HEADER_SIZE + 2 * sizeof(uint64_t);
+	memcpy(p, result, len);
 }
 
 static void
@@ -274,11 +274,11 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 				.base = (struct doca_job) {
 					.type = DOCA_COMPRESS_DEFLATE_JOB,
 					.flags = DOCA_JOB_FLAGS_NONE,
-				.ctx = doca_compress_as_ctx(ctx->doca_compress),
+				.ctx = doca_compress_as_ctx(worker_ctx->doca_compress),
 					.user_data = {.u64 = tx_count },
 				},
-				.resp_buf = buf->dst_buf,
-				.req_buf = buf->src_buf,
+				.resp_buf = dst_buf,
+				.req_buf = src_buf,
 			};
 
 			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&compress_job);
