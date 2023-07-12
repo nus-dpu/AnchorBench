@@ -135,8 +135,8 @@ extract_sha_payload(struct rte_mbuf *pkt, char **sha_data, int *sha_data_len)
 	len = rte_pktmbuf_data_len(&mbuf);
 
 	/* Get DNS query start from handle field */
-	*sha_data = (char *)(data + sizeof(uint64_t));
-	*sha_data_len = len - sizeof(uint64_t);
+	*sha_data = (char *)(data + 2 * sizeof(uint64_t));
+	*sha_data_len = len - 2 * sizeof(uint64_t);
 
 	return 0;
 }
@@ -196,10 +196,45 @@ update_packet_payload(struct rte_mbuf * packet, char * result) {
 
 	u->len = htons(udp_len);
 
-	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
+	packet->pkt_len = packet->data_len = ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE + 2 * sizeof(uint64_t) + DOCA_SHA256_BYTE_COUNT;
 
 	p += UDP_HEADER_SIZE + sizeof(uint64_t);
 	memcpy(p, result, DOCA_SHA256_BYTE_COUNT);
+}
+
+static void
+stamp_ipsec_ts(struct rte_mbuf *pkt, uint64_t latency)
+{
+	int len, result;
+	struct rte_mbuf mbuf = *pkt;
+	struct rte_sft_error error;
+	struct rte_sft_mbuf_info mbuf_info;
+	uint32_t payload_offset = 0;
+	const unsigned char *data;
+	uint64_t * ptr;
+
+	/* Parse mbuf, and extract the query */
+	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
+	if (result) {
+		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
+		return result;
+	}
+
+	/* Calculate the offset of UDP header start */
+	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
+
+	/* Skip UDP header to get DNS (query) start */
+	payload_offset += UDP_HEADER_SIZE;
+
+	/* Get a pointer to start of packet payload */
+	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
+	if (data == NULL) {
+		DOCA_LOG_ERR("Error in pkt mbuf adj");
+		return -1;
+	}
+
+	ptr = (uint64_t *)(data + sizeof(uint64_t));
+	*ptr = latency;
 }
 
 /*
@@ -222,8 +257,6 @@ sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct r
 	rx_count = tx_count = 0;
 
 	while (tx_count < packets_received) {
-		struct timespec enq_start, enq_end, deq_end;
-		clock_gettime(CLOCK_MONOTONIC, &enq_start);
 		for (; tx_count != packets_received;) {
 			struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
 			struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
@@ -276,12 +309,7 @@ sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct r
 				/* Handle the completed jobs */
 				index = event.user_data.u64;
 				clock_gettime(CLOCK_MONOTONIC, &now);
-				if (nr_latency < MAX_NR_LATENCY) {
-					latency[nr_latency++] = diff_timespec(&worker_ctx->ts[index], &now);
-				}
-				dst_buf = worker_ctx->dst_buf[index];
-				doca_buf_get_data(dst_buf, (void **)&resp);
-				update_packet_payload(packets[index], resp);
+				stamp_ipsec_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 				/* Wait for the job to complete */
