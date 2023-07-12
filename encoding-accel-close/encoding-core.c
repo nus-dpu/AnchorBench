@@ -134,7 +134,7 @@ extract_encoding_payload(struct rte_mbuf *pkt, char **encoding_data, int *encodi
 	}
 	len = rte_pktmbuf_data_len(&mbuf);
 
-	printf("%s > Data to compress: %d, len: %d\n", __func__, data_begin, data_len);
+	printf("%s > Data to compress: %d, len: %d\n", __func__, data, len);
 
 	/* Get DNS query start from handle field */
 	*encoding_data = (char *)(data + 2 * sizeof(uint64_t));
