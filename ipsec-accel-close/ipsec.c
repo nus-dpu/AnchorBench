@@ -408,25 +408,18 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			worker_ctx->result_buf[i] = &buf[i+1];
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, &worker_ctx->buf[i]);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, &worker_ctx->src_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto queries_cleanup;
 			}
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->result_buf[i], BUF_SIZE, &worker_ctx->buf[i]);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->result_buf[i], BUF_SIZE, &worker_ctx->dst_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto queries_cleanup;
 			}
-		}
-
-		/* Launch the worker to start process packets */
-		if (rte_eal_remote_launch((void *)dns_filter_worker, (void *)worker_ctx, lcore_id) != 0) {
-			DOCA_LOG_ERR("Remote launch failed");
-			result = DOCA_ERROR_DRIVER;
-			goto queries_cleanup;
 		}
 
 		/* Launch the worker to start process packets */
