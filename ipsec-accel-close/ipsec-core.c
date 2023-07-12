@@ -343,6 +343,8 @@ sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct r
 	rx_count = tx_count = 0;
 
 	for (int i = 0; i < packets_received; i++) {
+		char * p;
+		struct udphdr * u;
 		packet = packets[i];
 		p = rte_pktmbuf_mtod(packet, char *);
 		/* Skip UDP and DNS header to get DNS (query) start */
