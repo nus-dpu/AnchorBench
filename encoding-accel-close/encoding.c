@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "utils.h"
-#include "ipsec.h"
+#include "encoding.h"
 #include "encoding-core.h"
 #include "encoding-l2p.h"
 #include "encoding-constants.h"
