@@ -354,10 +354,10 @@ handle_packets_received(int pid, struct encoding_ctx *worker_ctx, struct rte_mbu
 {
 	int ret;
 
-	// check_packets_marking(worker_ctx, packets, &packets_received);
-	// if (packets_received == 0) {
-	// 	return packets_received;
-	// }
+	check_packets_marking(worker_ctx, packets, &packets_received);
+	if (packets_received == 0) {
+		return packets_received;
+	}
 
 	/* Start SHA jobs */
 	ret = compress_processing(worker_ctx, packets_received, packets);
