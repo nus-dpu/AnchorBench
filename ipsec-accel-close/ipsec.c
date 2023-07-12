@@ -26,6 +26,8 @@ DOCA_LOG_REGISTER(IPCSEC);
 #define USEC_PER_MSEC   1000L
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
+#define BUF_SIZE	256
+
 int delay_cycles = 0;
 
 __thread struct timeval last_log;
@@ -391,31 +393,28 @@ ipsec_lcores_run(struct ipsec_config *app_cfg)
 			goto worker_cleanup;
 		}
 
+		char * buf = (char *)malloc(PACKET_BURST, BUF_SIZE);
+
 		for (int i = 0; i < PACKET_BURST; i++) {
 			/* Create array of pointers (char*) to hold the queries */
-			worker_ctx->query_buf[i] = rte_zmalloc(NULL, 1200, 0);
-			if (worker_ctx->query_buf[i] == NULL) {
-				DOCA_LOG_ERR("Dynamic allocation failed");
-				result = DOCA_ERROR_NO_MEMORY;
-				goto worker_cleanup;
-			}
+			worker_ctx->query_buf[i] = &buf[i];
 
 			/* register packet in mmap */
-			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], 1200, sysconf(_SC_PAGESIZE), NULL, NULL);
+			result = doca_mmap_populate(worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, sysconf(_SC_PAGESIZE), NULL, NULL);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to populate memory map (input): %s", doca_get_error_string(result));
 				goto worker_cleanup;
 			}
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 1200, &worker_ctx->src_buf[i]);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, &worker_ctx->src_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto worker_cleanup;
 			}
 
 			/* build doca_buf */
-			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], 1200, &worker_ctx->dst_buf[i]);
+			result = doca_buf_inventory_buf_by_addr(worker_ctx->buf_inventory, worker_ctx->mmap, worker_ctx->query_buf[i], BUF_SIZE, &worker_ctx->dst_buf[i]);
 			if (result != DOCA_SUCCESS) {
 				DOCA_LOG_ERR("Unable to acquire DOCA buffer for job data: %s", doca_get_error_string(result));
 				goto worker_cleanup;
