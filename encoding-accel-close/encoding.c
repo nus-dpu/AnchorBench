@@ -39,6 +39,13 @@ __thread uint64_t nr_send;
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
 
+enum layer_name {
+	L2,
+	L3,
+	L4,
+	END
+};
+
 /*
  * RegEx context initialization
  *
@@ -530,6 +537,23 @@ register_encoding_filter_params(void)
 }
 
 int dpdk_setup_rss(int nr_queues) {
+	struct rte_flow *flow;
+	struct rte_flow_error error;
+	struct rte_flow_attr attr = { /* Holds the flow attributes. */
+				.group = 0, /* set the rule on the main group. */
+				.ingress = 1,/* Rx flow. */
+				.priority = 0, }; /* add priority to rule
+				to give the Decap rule higher priority since
+				it is more specific than RSS */
+	/* create flow on first port and first hairpin queue. */
+	uint16_t port_id = rte_eth_find_next_owned_by(0, RTE_ETH_DEV_NO_OWNER);
+	RTE_ASSERT(port_id != RTE_MAX_ETHPORTS);
+	struct rte_eth_dev_info dev_info;
+	int ret = rte_eth_dev_info_get(port_id, &dev_info);
+	if (ret) {
+		rte_exit(EXIT_FAILURE, "Cannot get device info");
+	}
+
 	static struct rte_flow_item pattern[] = {
 		[L2] = { /* ETH type is set since we always start from ETH. */
 			.type = RTE_FLOW_ITEM_TYPE_ETH,
