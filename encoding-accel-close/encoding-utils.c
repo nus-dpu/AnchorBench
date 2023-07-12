@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "ipsec-utils.h"
+#include "encoding-utils.h"
 
 #define MAX_PARSE_SIZE      256
 

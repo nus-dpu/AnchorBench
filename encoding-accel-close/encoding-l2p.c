@@ -1,5 +1,5 @@
-#include "ipsec-l2p.h"
-#include "ipsec-utils.h"
+#include "encoding-l2p.h"
+#include "encoding-utils.h"
 
 #define countof(t)      (sizeof(t) / sizeof(t[0]))
 

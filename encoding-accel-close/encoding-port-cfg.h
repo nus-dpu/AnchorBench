@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ipsec-constants.h"
+#include "encoding-constants.h"
 
 struct mbuf_table {
 	uint16_t len;

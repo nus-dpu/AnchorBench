@@ -13,10 +13,10 @@
 #include "common.h"
 #include "utils.h"
 #include "ipsec.h"
-#include "ipsec-core.h"
-#include "ipsec-l2p.h"
-#include "ipsec-constants.h"
-#include "ipsec-port-cfg.h"
+#include "encoding-core.h"
+#include "encoding-l2p.h"
+#include "encoding-constants.h"
+#include "encoding-port-cfg.h"
 
 DOCA_LOG_REGISTER(IPCSEC);
 

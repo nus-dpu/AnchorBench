@@ -16,8 +16,8 @@
 #include <rte_ethdev.h>
 #include <rte_mempool.h>
 
-#include "ipsec-port-cfg.h"
-#include "ipsec-l2p.h"
+#include "encoding-port-cfg.h"
+#include "encoding-l2p.h"
 
 // #define SG_MEMPOOL
 
@@ -65,8 +65,8 @@ struct rte_eth_conf port_conf = {
     },
 };
 
-#include "ipsec-constants.h"
-#include "ipsec-port-cfg.h"
+#include "encoding-constants.h"
+#include "encoding-port-cfg.h"
 
 static struct rte_mempool * encoding_mempool_create(const char *type, uint8_t pid, uint8_t queue_id,
 			uint32_t nb_mbufs, int socket_id, int cache_size){
