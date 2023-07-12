@@ -529,11 +529,86 @@ register_encoding_filter_params(void)
 	return result;
 }
 
+int dpdk_setup_rss(int nr_queues) {
+	static struct rte_flow_item pattern[] = {
+		[L2] = { /* ETH type is set since we always start from ETH. */
+			.type = RTE_FLOW_ITEM_TYPE_ETH,
+			.spec = NULL,
+			.mask = NULL,
+			.last = NULL },
+		[L3] = { /* ETH type is set since we always start from ETH. */
+			.type = RTE_FLOW_ITEM_TYPE_ETH,
+			.spec = NULL,
+			.mask = NULL,
+			.last = NULL },
+		[L4] = { /* ETH type is set since we always start from ETH. */
+			.type = RTE_FLOW_ITEM_TYPE_ETH,
+			.spec = NULL,
+			.mask = NULL,
+			.last = NULL },
+		[END] = {
+			.type = RTE_FLOW_ITEM_TYPE_END,
+			.spec = NULL,
+			.mask = NULL,
+			.last = NULL },
+	};
+
+	uint16_t queues[16];
+	for (int i = 0; i < nr_queues; i++) {
+		queues[i] = i;
+	}
+
+	struct rte_flow_action_rss rss = {
+			.level = 0, /* RSS should be done on inner header. */
+			.queue = queues, /* Set the selected target queues. */
+			.queue_num = nr_queues, /* The number of queues. */
+			.types = ETH_RSS_IP | ETH_RSS_UDP
+	};
+
+	struct rte_flow_action actions[] = {
+		[0] = {
+			.type = RTE_FLOW_ACTION_TYPE_RSS,
+			.conf = &rss,
+		},
+		[1] = {
+			.type = RTE_FLOW_ACTION_TYPE_END,
+		},
+	};
+
+	struct rte_flow_item_udp udp_spec = {
+		.hdr = {
+		.dst_port = RTE_BE16(4321)}
+	};
+	struct rte_flow_item_udp udp_mask = {
+		.hdr = {
+		.dst_port = RTE_BE16(0xFFFF)}
+	};
+
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
+	pattern[L2].spec = NULL;
+
+	pattern[L2].type = RTE_FLOW_ITEM_TYPE_IPV4;
+	pattern[L3].spec = NULL;
+	pattern[L3].mask = NULL;
+
+	pattern[L4].type = RTE_FLOW_ITEM_TYPE_UDP;
+	pattern[L4].spec = &udp_spec;
+	pattern[L4].mask = &udp_mask;
+
+	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
+
+	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
+	if (!flow) {
+		printf("Can't create hairpin flows on port: %u\n", port_id);
+	}
+}
+
 int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
 	doca_error_t result;
 	struct encoding_cfg app_cfg = {0};
+	int lcore_id, nr_cores = 0;
 
 	/* initialize EAL */
 	ret = rte_eal_init(argc, argv);
@@ -585,6 +660,13 @@ int main(int argc, char **argv) {
 		DOCA_LOG_INFO("Failed to init DOCA RegEx");
 		return result;
 	}
+
+	/* Init DNS workers to start processing packets */
+	RTE_LCORE_FOREACH_WORKER(lcore_id) {
+		nr_cores++;
+	}
+
+	dpdk_setup_rss(nr_cores);
 
 	result = encoding_lcores_run(&app_cfg);
 

@@ -32,4 +32,11 @@
 #include <rte_udp.h>
 #include <rte_tcp.h>
 
+/* Storage for struct rte_flow_action_rss including external data. */
+struct action_rss_data {
+	struct rte_flow_action_rss conf;
+	uint8_t key[40];
+	uint16_t queue[128];
+};
+
 #endif  /* _COMPRESS_H_*/
