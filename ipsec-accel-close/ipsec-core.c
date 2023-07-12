@@ -246,6 +246,7 @@ stamp_ipsec_ts(struct rte_mbuf *pkt, uint64_t latency)
  * @packets [in]: mbufs array
  * @return: 0 on success and negative value otherwise
  */
+#if 0
 static int
 sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
 {
@@ -328,6 +329,106 @@ sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct r
 doca_buf_cleanup:
 	return ret;
 }
+#endif
+static int
+sha_processing(struct ipsec_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
+{
+	size_t tx_count, rx_count;
+	doca_error_t result;
+	int ret = 0;
+	struct rte_mbuf *packet;
+	int nr_submit = 0;
+
+	/* Enqueue jobs to DOCA RegEx*/
+	rx_count = tx_count = 0;
+
+	for (int i = 0; i < packets_received; i++) {
+		packet = packets[i];
+		p = rte_pktmbuf_mtod(packet, char *);
+		/* Skip UDP and DNS header to get DNS (query) start */
+		p += (ETH_HEADER_SIZE + IP_HEADER_SIZE);
+		u = (struct udphdr *)p;
+
+		if (ntohs(u->dest) != 1234) {
+			continue;
+		}
+
+		if (!start_flag) {
+			start_flag = 1;
+			gettimeofday(&start, NULL);
+		}
+
+		struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
+		struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
+		void *mbuf_data;
+		void *data_begin = (void *)worker_ctx->queries[tx_count];
+		size_t data_len = worker_ctx->query_len[tx_count];
+		memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
+
+		doca_buf_get_data(src_buf, &mbuf_data);
+		doca_buf_set_data(src_buf, mbuf_data, data_len);
+
+		clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
+
+		struct doca_sha_job const sha_job = {
+			.base = (struct doca_job) {
+				.type = DOCA_SHA_JOB_SHA256,
+				.flags = DOCA_JOB_FLAGS_NONE,
+				.ctx = doca_sha_as_ctx(worker_ctx->app_cfg->doca_sha),
+				.user_data = {.u64 = tx_count },
+			},
+			.resp_buf = dst_buf,
+			.req_buf = src_buf,
+			.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
+		};
+
+		result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&sha_job);
+		if (result == DOCA_ERROR_NO_MEMORY) {
+			break;
+		}
+
+		if (result == DOCA_SUCCESS) {
+			++tx_count;
+		} else {
+			DOCA_LOG_ERR("Failed to enqueue SHA job (%s)", doca_get_error_string(result));
+			ret = -1;
+			goto doca_buf_cleanup;
+		}
+
+		nr_submit++;
+	}
+
+	for (; rx_count != nr_submit;) {
+		/* dequeue one */
+		struct doca_event event = {0};
+		struct timespec now;
+		int index;
+		uint8_t * resp;
+		struct doca_buf *dst_buf;
+		
+		result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+		if (result == DOCA_SUCCESS) {
+			/* Handle the completed jobs */
+			index = event.user_data.u64;
+			clock_gettime(CLOCK_MONOTONIC, &now);
+			stamp_ipsec_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
+			++rx_count;
+		} else if (result == DOCA_ERROR_AGAIN) {
+			/* Wait for the job to complete */
+			// printf("Wait for job to complete\n");
+			// ts.tv_sec = 0;
+			// ts.tv_nsec = 20;
+			// nanosleep(&ts, &ts);
+		} else {
+			DOCA_LOG_ERR("Failed to dequeue RegEx job response");
+			ret = -1;
+			goto doca_buf_cleanup;
+		}
+	}
+	
+doca_buf_cleanup:
+	return ret;
+}
 
 /*
  * The main function for handling the new received packets
@@ -342,10 +443,10 @@ handle_packets_received(int pid, struct ipsec_ctx *worker_ctx, struct rte_mbuf *
 {
 	int ret;
 
-	check_packets_marking(worker_ctx, packets, &packets_received);
-	if (packets_received == 0) {
-		return packets_received;
-	}
+	// check_packets_marking(worker_ctx, packets, &packets_received);
+	// if (packets_received == 0) {
+	// 	return packets_received;
+	// }
 
 	/* Start SHA jobs */
 	ret = sha_processing(worker_ctx, packets_received, packets);
