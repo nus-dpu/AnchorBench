@@ -23,7 +23,7 @@
 
 #include "encoding-core.h"
 
-DOCA_LOG_REGISTER(IPSEC::Core);
+DOCA_LOG_REGISTER(ENCODING::Core);
 
 __thread int nr_latency = 0;
 __thread uint64_t latency[MAX_NR_LATENCY];
@@ -270,11 +270,13 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 
 			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
+			printf("Data to compress: %d, len: %d\n", data_begin, data_len);
+
 			struct doca_compress_job const compress_job = {
 				.base = (struct doca_job) {
 					.type = DOCA_COMPRESS_DEFLATE_JOB,
 					.flags = DOCA_JOB_FLAGS_NONE,
-				.ctx = doca_compress_as_ctx(worker_ctx->app_cfg->doca_compress),
+					.ctx = doca_compress_as_ctx(worker_ctx->app_cfg->doca_compress),
 					.user_data = {.u64 = tx_count },
 				},
 				.dst_buff = dst_buf,
@@ -324,7 +326,7 @@ compress_processing(struct encoding_ctx *worker_ctx, uint16_t packets_received, 
 				// ts.tv_nsec = 20;
 				// nanosleep(&ts, &ts);
 			} else {
-				DOCA_LOG_ERR("Failed to dequeue RegEx job response");
+				DOCA_LOG_ERR("Failed to dequeue Compress job response");
 				ret = -1;
 				goto doca_buf_cleanup;
 			}

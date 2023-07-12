@@ -18,7 +18,7 @@
 #include "encoding-constants.h"
 #include "encoding-port-cfg.h"
 
-DOCA_LOG_REGISTER(IPCSEC);
+DOCA_LOG_REGISTER(ENCODING);
 
 #define BURST_TX_RETRIES 	16
 
