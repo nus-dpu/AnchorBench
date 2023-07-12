@@ -11,7 +11,7 @@
 #include <doca_compress.h>
 
 #define PACKET_BURST 32			/* The number of packets in the rx queue */
-#define UDP_PORT 1234				/* DNS packet dst port */
+#define UDP_PORT 4321				/* DNS packet dst port */
 #define UDP_HEADER_SIZE 8			/* UDP header size = 8 bytes (64 bits) */
 #define MAX_PORT_STR_LEN 128			/* Maximal length of port name */
 #define MAX_DNS_QUERY_LEN 512			/* Maximal length of DNS query */

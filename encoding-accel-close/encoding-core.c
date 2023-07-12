@@ -157,7 +157,7 @@ check_packets_marking(struct encoding_ctx *worker_ctx, struct rte_mbuf **packets
 		p += IP_HEADER_SIZE;
 		u = (struct udphdr *)p;
 
-		if (ntohs(u->dest) == 1234) {
+		if (ntohs(u->dest) == UDP_PORT) {
 			if (!start_flag) {
 				start_flag = 1;
 				gettimeofday(&start, NULL);
