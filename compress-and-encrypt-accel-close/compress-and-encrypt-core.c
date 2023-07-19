@@ -302,6 +302,7 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 				doca_buf_get_data_len(dst_buf, &resp_len);
 				update_packet_payload(packets[index], resp, resp_len);
 				stamp_compress_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
+				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
 
 			} else {
@@ -372,7 +373,7 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 			}
 		}
 	}
-
+	
 doca_buf_cleanup:
 	return ret;
 }
