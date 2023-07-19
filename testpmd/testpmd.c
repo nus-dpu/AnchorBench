@@ -61,19 +61,22 @@ static void pkt_burst_forward(int pid, int qid) {
 	}
 
 	nb_tx = rte_eth_tx_burst(pid, qid, pkts_burst, nb_rx);
-	if (unlikely(nb_tx < nb_rx)) {
-		retry = 0;
-		while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
-			nb_tx += rte_eth_tx_burst(pid, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
-		}
+	while (nb_tx < nb_rx) {
+		nb_tx += rte_eth_tx_burst(pid, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
 	}
-	nr_send += nb_tx;
-	if (unlikely(nb_tx < nb_rx)) {
-		do {
-			rte_pktmbuf_free(pkts_burst[nb_tx]);
-			RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[nb_tx+1]);
-		} while (++nb_tx < nb_rx);
-	}
+	// if (unlikely(nb_tx < nb_rx)) {
+	// 	retry = 0;
+	// 	while (nb_tx < nb_rx && retry++ < BURST_TX_RETRIES) {
+	// 		nb_tx += rte_eth_tx_burst(pid, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
+	// 	}
+	// }
+	// nr_send += nb_tx;
+	// if (unlikely(nb_tx < nb_rx)) {
+	// 	do {
+	// 		rte_pktmbuf_free(pkts_burst[nb_tx]);
+	// 		RTE_MBUF_PREFETCH_TO_FREE(pkts_burst[nb_tx+1]);
+	// 	} while (++nb_tx < nb_rx);
+	// }
 	return;
 }
 
