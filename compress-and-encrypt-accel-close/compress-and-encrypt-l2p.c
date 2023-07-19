@@ -1,5 +1,5 @@
-#include "encoding-l2p.h"
-#include "encoding-utils.h"
+#include "compress-and-encrypt-l2p.h"
+#include "compress-and-encrypt-utils.h"
 
 #define countof(t)      (sizeof(t) / sizeof(t[0]))
 

@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "encoding-utils.h"
+#include "compress-and-encrypt-utils.h"
 
 #define MAX_PARSE_SIZE      256
 

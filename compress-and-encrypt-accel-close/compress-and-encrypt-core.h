@@ -9,6 +9,7 @@
 #include <doca_dev.h>
 #include <doca_flow.h>
 #include <doca_compress.h>
+#include <doca_sha.h>
 
 #define PACKET_BURST 32			/* The number of packets in the rx queue */
 #define UDP_PORT 4321				/* DNS packet dst port */
@@ -25,19 +26,20 @@
 #define COMPRESS_MAX_FLOWS 1024	/* Maximal number of FLOWS in application pipes */
 
 /* IP security configuration structure */
-struct encoding_cfg {
+struct compress_and_encrypt_cfg {
 	struct application_dpdk_config *dpdk_cfg;	/* App DPDK configuration struct */
 	struct doca_pci_bdf pci_address;		/* RegEx PCI address to use */
 	char rules_file_path[MAX_FILE_NAME];		/* Path to RegEx rules file */
 	struct doca_dev *dev;				/* DOCA device */
 	struct doca_compress *doca_compress;			/* DOCA Compress interface */
+	struct doca_sha *doca_sha;			/* DOCA SHA interface */
 };
 
 /* Context structure per DPDK thread */
-struct encoding_ctx {
+struct compress_and_encrypt_ctx {
 	int queue_id;								/* Queue ID */
 	char **queries;								/* Holds DNS queries */
-	struct encoding_cfg *app_cfg;					/* App config struct */
+	struct compress_and_encrypt_cfg *app_cfg;					/* App config struct */
 	struct doca_mmap *mmap;
 	struct doca_buf_inventory *buf_inventory;				/* DOCA buffer inventory */
 	struct doca_workq *workq;						/* DOCA work queue */
@@ -58,7 +60,7 @@ extern __thread struct timeval start;
 extern __thread int nr_latency;
 extern __thread uint64_t latency[MAX_NR_LATENCY];
 
-int handle_packets_received(int pid, struct encoding_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
+int handle_packets_received(int pid, struct compress_and_encrypt_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received);
 uint32_t dpdk_send_pkts(int pid, int qid);
 
 #endif  /* _COMPRESS_CORE_H_ */
