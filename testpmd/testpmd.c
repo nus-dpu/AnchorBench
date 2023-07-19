@@ -70,7 +70,7 @@ static void pkt_burst_forward(int pid, int qid) {
 	// 		nb_tx += rte_eth_tx_burst(pid, qid, &pkts_burst[nb_tx], nb_rx - nb_tx);
 	// 	}
 	// }
-	// nr_send += nb_tx;
+	nr_send += nb_tx;
 	// if (unlikely(nb_tx < nb_rx)) {
 	// 	do {
 	// 		rte_pktmbuf_free(pkts_burst[nb_tx]);
