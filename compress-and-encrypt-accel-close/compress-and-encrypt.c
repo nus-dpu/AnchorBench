@@ -26,8 +26,6 @@ DOCA_LOG_REGISTER(COMPRESS_AND_ENCRYPT);
 #define USEC_PER_MSEC   1000L
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
-#define BUF_SIZE	8192
-
 int delay_cycles = 0;
 
 __thread struct timeval last_log;
@@ -40,7 +38,6 @@ __thread char * cur_ptr;
 
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
-#define M_4				(4 * 1024 * 1024 * 1024)
 
 enum layer_name {
 	L2,
