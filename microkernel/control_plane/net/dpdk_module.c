@@ -18,7 +18,6 @@
 
 #include "core.h"
 #include "ipc.h"
-#include "eth.h"
 #include "etharp.h"
 #include "netfmt.h"
 #include "printk.h"

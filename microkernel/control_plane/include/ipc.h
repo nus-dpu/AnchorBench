@@ -2,8 +2,6 @@
 #define _LYRA_IPC_H_
 
 #include "init.h"
-#include "eth.h"
-#include "ip4.h"
 
 extern int __init ipc_init(void);
 
