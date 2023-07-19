@@ -12,13 +12,13 @@
 
 #include "common.h"
 #include "utils.h"
-#include "compress-and-encrypt.h"
-#include "compress-and-encrypt-core.h"
-#include "compress-and-encrypt-l2p.h"
-#include "compress-and-encrypt-constants.h"
-#include "compress-and-encrypt-port-cfg.h"
+#include "encoding.h"
+#include "encoding-core.h"
+#include "encoding-l2p.h"
+#include "encoding-constants.h"
+#include "encoding-port-cfg.h"
 
-DOCA_LOG_REGISTER(COMPRESS_AND_ENCRYPT);
+DOCA_LOG_REGISTER(ENCODING);
 
 #define BURST_TX_RETRIES 	16
 
@@ -53,7 +53,7 @@ enum layer_name {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t
-compress_init(struct compress_and_encrypt_cfg *app_cfg)
+compress_init(struct encoding_cfg *app_cfg)
 {
 	doca_error_t result;
 	char *rules_file_data;
@@ -73,7 +73,7 @@ compress_init(struct compress_and_encrypt_cfg *app_cfg)
 		return DOCA_ERROR_INITIALIZATION;
 	}
 
-	/* Set hw Compress device to DOCA Compress */
+	/* Set hw SHA device to DOCA SHA */
 	result = doca_ctx_dev_add(doca_compress_as_ctx(app_cfg->doca_compress), app_cfg->dev);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to install SHA device. Reason: %s", doca_get_error_string(result));
@@ -81,44 +81,22 @@ compress_init(struct compress_and_encrypt_cfg *app_cfg)
 		goto compress_cleanup;
 	}
 
-	/* Start DOCA Compress */
+	/* Start DOCA SHA */
 	result = doca_ctx_start(doca_compress_as_ctx(app_cfg->doca_compress));
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to start DOCA SHA");
 		result = DOCA_ERROR_INITIALIZATION;
 		goto compress_cleanup;
 	}
-#if 0
-	/* Create a DOCA SHA instance */
-	result = doca_sha_create(&(app_cfg->doca_sha));
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to create SHA device.");
-		return result;
-	}
-
-	/* Set the SHA device as the main HW accelerator */
-	result = doca_ctx_dev_add(doca_sha_as_ctx(app_cfg->doca_sha), app_cfg->dev);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to set SHA device.Reason: %s", doca_get_error_string(result));
-		return result;
-	}
-
-    /* Start DOCA SHA */
-	result = doca_ctx_start(doca_sha_as_ctx(app_cfg->doca_sha));
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to start DOCA SHA. [%s]", doca_get_error_string(result));
-		return result;
-	}
 	return DOCA_SUCCESS;
-#endif
+
 compress_cleanup:
 	doca_dev_close(app_cfg->dev);
 	doca_compress_destroy(app_cfg->doca_compress);
-	// doca_sha_destroy(app_cfg->doca_sha);
 	return result;
 }
 
-static void pkt_burst_forward(struct compress_and_encrypt_ctx *worker_ctx, int pid, int qid) {
+static void pkt_burst_forward(struct encoding_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx, nb_tx = 0, to_send = 0;
 	uint32_t retry;
@@ -203,8 +181,8 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
     printf("%s\n", buf);
 }
 
-int compress_and_encrypt_ctx_worker(void *arg) {
-	struct compress_and_encrypt_ctx *worker_ctx = (struct compress_and_encrypt_ctx *)arg;
+int encoding_worker(void *arg) {
+	struct encoding_ctx *worker_ctx = (struct encoding_ctx *)arg;
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
@@ -292,7 +270,7 @@ int compress_and_encrypt_ctx_worker(void *arg) {
 	return 0;
 }
 
-static int compress_and_encrypt_ctx_parse_args(int argc, char ** argv) {
+static int encoding_parse_args(int argc, char ** argv) {
 	int opt, option_index;
 	int offset;
 	static struct option lgopts[] = {
@@ -335,17 +313,17 @@ static int compress_and_encrypt_ctx_parse_args(int argc, char ** argv) {
 }
 
 doca_error_t
-compress_and_encrypt_ctx_lcores_run(struct compress_and_encrypt_cfg *app_cfg)
+encoding_lcores_run(struct encoding_cfg *app_cfg)
 {
 	uint16_t lcore_index = 0;
-	struct compress_and_encrypt_ctx *worker_ctx = NULL;
+	struct encoding_ctx *worker_ctx = NULL;
 	doca_error_t result;
 	int lcore_id;
 
 	/* Init DNS workers to start processing packets */
 	RTE_LCORE_FOREACH_WORKER(lcore_id) {
 		/* Create worker context */
-		worker_ctx = (struct compress_and_encrypt_ctx *)rte_zmalloc(NULL, sizeof(struct compress_and_encrypt_ctx), 0);
+		worker_ctx = (struct encoding_ctx *)rte_zmalloc(NULL, sizeof(struct encoding_ctx), 0);
 		if (worker_ctx == NULL) {
 			DOCA_LOG_ERR("RTE malloc failed");
 			return DOCA_ERROR_NO_MEMORY;
@@ -453,7 +431,7 @@ compress_and_encrypt_ctx_lcores_run(struct compress_and_encrypt_cfg *app_cfg)
 		}
 
 		/* Launch the worker to start process packets */
-		if (rte_eal_remote_launch((void *)compress_and_encrypt_ctx_worker, (void *)worker_ctx, lcore_id) != 0) {
+		if (rte_eal_remote_launch((void *)encoding_worker, (void *)worker_ctx, lcore_id) != 0) {
 			DOCA_LOG_ERR("Remote launch failed");
 			result = DOCA_ERROR_DRIVER;
 			goto worker_cleanup;
@@ -486,14 +464,14 @@ destroy_buf_inventory:
 static doca_error_t
 rules_callback(void *param, void *config)
 {
-	struct compress_and_encrypt_cfg *compress_and_encrypt_cfg = (struct compress_and_encrypt_cfg *)config;
+	struct encoding_cfg *encoding_cfg = (struct encoding_cfg *)config;
 	const char *rules_path = (char *)param;
 
 	if (strnlen(rules_path, MAX_FILE_NAME) == MAX_FILE_NAME) {
 		DOCA_LOG_ERR("Denylist rules file name too long max %d", MAX_FILE_NAME - 1);
 		return DOCA_ERROR_INVALID_VALUE;
 	}
-	strlcpy(compress_and_encrypt_cfg->rules_file_path, rules_path, MAX_FILE_NAME);
+	strlcpy(encoding_cfg->rules_file_path, rules_path, MAX_FILE_NAME);
 	return DOCA_SUCCESS;
 }
 
@@ -508,10 +486,10 @@ rules_callback(void *param, void *config)
 static doca_error_t
 pci_address_callback(void *param, void *config)
 {
-	struct compress_and_encrypt_cfg *compress_and_encrypt_cfg = (struct compress_and_encrypt_cfg *)config;
+	struct encoding_cfg *encoding_cfg = (struct encoding_cfg *)config;
 	const char *pci_address = (char *)param;
 
-	if (parse_pci_addr(pci_address, &compress_and_encrypt_cfg->pci_address) != DOCA_SUCCESS) {
+	if (parse_pci_addr(pci_address, &encoding_cfg->pci_address) != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Invalid PCI address: \"%s\"", pci_address);
 		return DOCA_ERROR_INVALID_VALUE;
 	}
@@ -524,7 +502,7 @@ pci_address_callback(void *param, void *config)
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 doca_error_t
-register_compress_and_encrypt_ctx_filter_params(void)
+register_encoding_filter_params(void)
 {
 	doca_error_t result;
 	struct doca_argp_param *pci_address_param;
@@ -653,7 +631,7 @@ int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
 	doca_error_t result;
-	struct compress_and_encrypt_cfg app_cfg = {0};
+	struct encoding_cfg app_cfg = {0};
 	int lcore_id, nr_cores = 0;
 
 	/* initialize EAL */
@@ -665,7 +643,7 @@ int main(int argc, char **argv) {
 	argc -= ret;
 	argv += ret;
 
-	ret = compress_and_encrypt_ctx_parse_args(argc, argv);
+	ret = encoding_parse_args(argc, argv);
 	if (ret < 0) {
 		return -1;
     }
@@ -684,9 +662,9 @@ int main(int argc, char **argv) {
 			DEFAULT_PKT_BURST, DEFAULT_RX_DESC, DEFAULT_TX_DESC, MAX_MBUFS_PER_PORT, MBUF_CACHE_SIZE);
 
 	/* Configure and initialize the ports */
-	compress_and_encrypt_cfg_ports();
+	encoding_cfg_ports();
 
-	result = register_compress_and_encrypt_ctx_filter_params();
+	result = register_encoding_filter_params();
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to register application params: %s", doca_get_error_string(result));
 		doca_argp_destroy();
@@ -714,7 +692,7 @@ int main(int argc, char **argv) {
 
 	dpdk_setup_rss(nr_cores);
 
-	result = compress_and_encrypt_ctx_lcores_run(&app_cfg);
+	result = encoding_lcores_run(&app_cfg);
 
 	rte_delay_ms(250);	/* Wait for the lcores to start up. */
 

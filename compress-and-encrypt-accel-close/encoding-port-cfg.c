@@ -16,8 +16,8 @@
 #include <rte_ethdev.h>
 #include <rte_mempool.h>
 
-#include "compress-and-encrypt-port-cfg.h"
-#include "compress-and-encrypt-l2p.h"
+#include "encoding-port-cfg.h"
+#include "encoding-l2p.h"
 
 // #define SG_MEMPOOL
 
@@ -65,7 +65,7 @@ struct rte_eth_conf port_conf = {
     },
 };
 
-static struct rte_mempool * compress_and_encrypt_ctx_mempool_create(const char *type, uint8_t pid, uint8_t queue_id,
+static struct rte_mempool * encoding_mempool_create(const char *type, uint8_t pid, uint8_t queue_id,
 			uint32_t nb_mbufs, int socket_id, int cache_size){
 	struct rte_mempool * mp;
 	char name[RTE_MEMZONE_NAMESIZE];
@@ -97,7 +97,7 @@ static struct rte_mempool * compress_and_encrypt_ctx_mempool_create(const char *
 	return mp;
 }
 
-void compress_and_encrypt_cfg_ports() {
+void encoding_cfg_ports() {
     struct rte_eth_conf conf = {0};
     uint32_t lid, pid, q;
     rxtx_t rt;
@@ -191,7 +191,7 @@ void compress_and_encrypt_cfg_ports() {
 
         for (q = 0; q < rt.rx; q++) {
             /* Create and initialize the default Receive buffers. */
-			info[pid].q[q].rx_mp = compress_and_encrypt_ctx_mempool_create("Default RX", pid, q,
+			info[pid].q[q].rx_mp = encoding_mempool_create("Default RX", pid, q,
 								   MAX_MBUFS_PER_PORT, SOCKET_ID_ANY, cache_size);
 			if (info[pid].q[q].rx_mp == NULL) {
 				printf("Cannot init port %d for Default RX mbufs\n", pid);

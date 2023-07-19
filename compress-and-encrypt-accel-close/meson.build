@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2018 Intel Corporation
 
-project('compress-and-encrypt', 'C', 
+project('encoding', 'C', 
     license: 'BSD',
     default_options: ['buildtype=debug'],
 	meson_version: '>= 0.51.0'
 )
 
-project_name = 'compress-and-encrypt'
+project_name = 'encoding'
 
 add_project_arguments('-D DOCA_ALLOW_EXPERIMENTAL_API', language: ['c', 'cpp'])
 
@@ -17,7 +17,6 @@ deps += dependency('json-c')
 deps += dependency('doca-argp')
 deps += dependency('doca-common')
 deps += dependency('doca-compress')
-deps += dependency('doca-sha')
 deps += declare_dependency(link_args : '-lresolv')
 
 machine_args = []

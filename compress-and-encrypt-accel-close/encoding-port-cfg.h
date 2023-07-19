@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "compress-and-encrypt-constants.h"
+#include "encoding-constants.h"
 
 struct mbuf_table {
 	uint16_t len;
@@ -26,6 +26,6 @@ typedef struct port_info_s {
 
 extern port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
 
-void compress_and_encrypt_cfg_ports(void);
+void encoding_cfg_ports(void);
 
 #endif  /* _COMPRESS_PORT_CFG_H_ */
