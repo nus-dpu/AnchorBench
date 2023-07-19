@@ -317,8 +317,8 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 
 	while (tx_count < packets_received) {
 		for (; tx_count != packets_received;) {
-			struct doca_buf *src_buf = worker_ctx->dst_buf[tx_count];
-			struct doca_buf *dst_buf = worker_ctx->src_buf[tx_count];
+			struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
+			struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
 
 			clock_gettime(CLOCK_MONOTONIC, &worker_ctx->ts[tx_count]);
 
