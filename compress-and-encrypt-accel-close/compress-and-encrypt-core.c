@@ -61,7 +61,7 @@ extract_payload(struct rte_mbuf *pkt, char **data, int *data_len)
 	struct rte_sft_error error;
 	struct rte_sft_mbuf_info mbuf_info;
 	uint32_t payload_offset = 0;
-	const unsigned char *data;
+	unsigned char *data;
 
 	/* Parse mbuf, and extract the query */
 	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
@@ -325,7 +325,7 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 				.base = (struct doca_job) {
 					.type = DOCA_SHA_JOB_SHA256,
 					.flags = DOCA_JOB_FLAGS_NONE,
-					.ctx = doca_sha_as_ctx(worker_ctx->doca_sha),
+					.ctx = doca_sha_as_ctx(worker_ctx->app_cfg->doca_sha),
 					.user_data = { .ptr = tx_count },
 				},
 				.resp_buf = dst_buf,

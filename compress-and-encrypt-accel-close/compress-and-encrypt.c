@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "utils.h"
-#include "encoding.h"
+#include "compress-and-encrypt.h"
 #include "compress-and-encrypt-core.h"
 #include "compress-and-encrypt-l2p.h"
 #include "compress-and-encrypt-constants.h"
