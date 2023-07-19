@@ -36,7 +36,6 @@ __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
 __thread char * input;
-__thread int input_size;
 __thread char * cur_ptr;
 
 #define MAX_RULES		16
@@ -220,6 +219,7 @@ int compress_and_encrypt_ctx_worker(void *arg) {
 	float max_recv, max_send;
 	uint16_t src_port;
     FILE * fp;
+ 	int input_size;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;

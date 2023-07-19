@@ -55,6 +55,8 @@ struct compress_and_encrypt_ctx {
 extern __thread int start_flag;
 extern __thread int done_flag;
 extern __thread struct timeval start;
+extern __thread char * input;
+extern __thread char * cur_ptr;
 
 #define MAX_NR_LATENCY	(128 * 1024)
 extern __thread int nr_latency;
