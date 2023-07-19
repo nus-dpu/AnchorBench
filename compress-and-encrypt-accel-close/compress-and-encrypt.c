@@ -118,7 +118,7 @@ compress_cleanup:
 	return result;
 }
 
-static void pkt_burst_forward(struct compress_and_encrypt_ctx_ctx *worker_ctx, int pid, int qid) {
+static void pkt_burst_forward(struct compress_and_encrypt_ctx *worker_ctx, int pid, int qid) {
 	struct rte_mbuf * pkts_burst[DEFAULT_PKT_BURST];
 	uint16_t nb_rx, nb_tx = 0, to_send = 0;
 	uint32_t retry;
@@ -204,7 +204,7 @@ static void port_map_info(uint8_t lid, port_info_t **infos, uint8_t *qids, uint8
 }
 
 int compress_and_encrypt_ctx_worker(void *arg) {
-	struct compress_and_encrypt_ctx_ctx *worker_ctx = (struct compress_and_encrypt_ctx_ctx *)arg;
+	struct compress_and_encrypt_ctx *worker_ctx = (struct compress_and_encrypt_ctx *)arg;
     uint8_t lid = rte_lcore_id();
     port_info_t *infos[RTE_MAX_ETHPORTS];
     uint8_t qids[RTE_MAX_ETHPORTS];
@@ -338,14 +338,14 @@ doca_error_t
 compress_and_encrypt_ctx_lcores_run(struct compress_and_encrypt_ctx_cfg *app_cfg)
 {
 	uint16_t lcore_index = 0;
-	struct compress_and_encrypt_ctx_ctx *worker_ctx = NULL;
+	struct compress_and_encrypt_ctx *worker_ctx = NULL;
 	doca_error_t result;
 	int lcore_id;
 
 	/* Init DNS workers to start processing packets */
 	RTE_LCORE_FOREACH_WORKER(lcore_id) {
 		/* Create worker context */
-		worker_ctx = (struct compress_and_encrypt_ctx_ctx *)rte_zmalloc(NULL, sizeof(struct compress_and_encrypt_ctx_ctx), 0);
+		worker_ctx = (struct compress_and_encrypt_ctx *)rte_zmalloc(NULL, sizeof(struct compress_and_encrypt_ctx), 0);
 		if (worker_ctx == NULL) {
 			DOCA_LOG_ERR("RTE malloc failed");
 			return DOCA_ERROR_NO_MEMORY;

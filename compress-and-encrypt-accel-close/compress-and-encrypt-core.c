@@ -39,55 +39,6 @@ __thread uint64_t latency[MAX_NR_LATENCY];
 
 #define NR_TIMESTAMP	3
 
-/*
- * Helper function to extract payload of a packet
- *
- * @pkt [in]: packet to extract
- * @query [out]: a place where to store the pointer of payload data
- * @return: 0 on success and negative value otherwise
- */
-static int
-extract_payload(struct rte_mbuf *pkt, char **query, int *len)
-{
-	int data_len, result;
-	ns_msg handle; /* nameserver struct for DNS packet */
-	struct rte_mbuf mbuf = *pkt;
-	struct rte_sft_error error;
-	struct rte_sft_mbuf_info mbuf_info;
-	uint32_t payload_offset = 0;
-	const unsigned char *data;
-
-	/* Parse mbuf, and extract the query */
-	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
-	if (result) {
-		DOCA_LOG_ERR("rte_sft_parse_mbuf error: %s", error.message);
-		return result;
-	}
-
-	if (pkt->pkt_len <= ETH_HEADER_SIZE + IP_HEADER_SIZE + UDP_HEADER_SIZE) {
-		return -1;
-	}
-
-	/* Calculate the offset of UDP header start */
-	payload_offset += ((mbuf_info.l4_hdr - (void *)mbuf_info.eth_hdr));
-
-	/* Skip UDP header to get DNS (query) start */
-	payload_offset += UDP_HEADER_SIZE;
-
-	/* Get a pointer to start of packet payload */
-	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
-	if (data == NULL) {
-		DOCA_LOG_ERR("Error in pkt mbuf adj");
-		return -1;
-	}
-	data_len = rte_pktmbuf_data_len(&mbuf);
-
-	*query = data + NR_TIMESTAMP * sizeof(uint64_t);
-	*len = data_len  - NR_TIMESTAMP * sizeof(uint64_t);
-
-	return 0;
-}
-
 #define NSEC_PER_SEC    1000000000L
 
 #define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
@@ -285,7 +236,7 @@ stamp_encrypt_ts(struct rte_mbuf *pkt, uint64_t latency)
  * @return: 0 on success and negative value otherwise
  */
 static int
-compress_processing(struct compress_and_encrypt_ctx_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
+compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packets_received, struct rte_mbuf **packets)
 {
 	size_t tx_count, rx_count;
 	doca_error_t result;
@@ -435,7 +386,7 @@ doca_buf_cleanup:
  * @return: 0 on success and negative value otherwise
  */
 int
-handle_packets_received(int pid, struct compress_and_encrypt_ctx_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received)
+handle_packets_received(int pid, struct compress_and_encrypt_ctx *worker_ctx, struct rte_mbuf **packets, uint16_t packets_received)
 {
 	int ret;
 
