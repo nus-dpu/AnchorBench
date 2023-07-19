@@ -537,6 +537,7 @@ register_monitor_filter_params(void)
 }
 
 int dpdk_setup_rss(int nr_queues) {
+	int port_id;
 	struct rte_flow *flow;
 	struct rte_flow_error error;
 	struct rte_flow_attr attr = { /* Holds the flow attributes. */
@@ -545,15 +546,6 @@ int dpdk_setup_rss(int nr_queues) {
 				.priority = 0, }; /* add priority to rule
 				to give the Decap rule higher priority since
 				it is more specific than RSS */
-	/* create flow on first port and first hairpin queue. */
-	uint16_t port_id = rte_eth_find_next_owned_by(0, RTE_ETH_DEV_NO_OWNER);
-	RTE_ASSERT(port_id != RTE_MAX_ETHPORTS);
-	struct rte_eth_dev_info dev_info;
-	int ret = rte_eth_dev_info_get(port_id, &dev_info);
-	if (ret) {
-		rte_exit(EXIT_FAILURE, "Cannot get device info");
-	}
-
 	static struct rte_flow_item pattern[] = {
 		[L2] = { /* ETH type is set since we always start from ETH. */
 			.type = RTE_FLOW_ITEM_TYPE_ETH,
@@ -621,9 +613,11 @@ int dpdk_setup_rss(int nr_queues) {
 
 	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
 
-	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
-	if (!flow) {
-		printf("Can't create flows on port: %u\n", port_id);
+    RTE_ETH_FOREACH_DEV(port_id) {
+		flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
+		if (!flow) {
+            printf("Invalid flow rule! msg: %s\n", error.message);
+		}
 	}
 }
 
