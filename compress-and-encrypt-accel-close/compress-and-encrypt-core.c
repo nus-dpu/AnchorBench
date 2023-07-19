@@ -325,15 +325,15 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 				.base = (struct doca_job) {
 					.type = DOCA_SHA_JOB_SHA256,
 					.flags = DOCA_JOB_FLAGS_NONE,
-					.ctx = doca_sha_as_ctx(ctx->doca_sha),
-					.user_data = { .ptr = buf },
+					.ctx = doca_sha_as_ctx(worker_ctx->doca_sha),
+					.user_data = { .ptr = tx_count },
 				},
 				.resp_buf = dst_buf,
 				.req_buf = src_buf,
 				.flags = DOCA_SHA_JOB_FLAGS_SHA_PARTIAL_FINAL,
 			};
 
-			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&compress_job);
+			result = doca_workq_submit(worker_ctx->workq, (struct doca_job *)&sha_job);
 			if (result == DOCA_ERROR_NO_MEMORY) {
 				break;
 			}
