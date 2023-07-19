@@ -1,4 +1,4 @@
-nr_core=(1,2,3,4,5,6,7)
+nr_core=(1 2 3 4 5 6 7)
 for core in "${nr_core[@]}"; do
     mkdir thp-$core/
 
