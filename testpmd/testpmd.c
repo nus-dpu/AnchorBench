@@ -33,6 +33,8 @@ static void pkt_burst_forward(int pid, int qid) {
 	uint16_t nb_tx;
 	uint32_t retry;
 	uint64_t start_tsc, cur_tsc;
+	char * p;
+	struct rte_mbuf *packet;
 
 	/*
 	 * Receive a burst of packets and forward them.
@@ -50,6 +52,8 @@ static void pkt_burst_forward(int pid, int qid) {
 	nr_recv += nb_rx;
 
 	for (int i = 0; i < nb_rx; i++) {
+		packet = pkts_burst[i];
+		p = rte_pktmbuf_mtod(packet, char *);
 		start_tsc = rte_rdtsc();
 		do {
 			cur_tsc = rte_rdtsc();
@@ -176,7 +180,19 @@ int testpmd_launch_one_lcore(void *arg __rte_unused) {
 	tot_recv_rate = (float)tot_recv / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 	tot_send_rate = (float)tot_send / (TIMEVAL_TO_MSEC(curr) - TIMEVAL_TO_MSEC(start));
 
-	printf("CORE %d ==> RX: %8.2f (KPS), TX: %8.2f (KPS)\n", lid, tot_recv_rate , tot_send_rate);
+	FILE * output_fp;
+	char name[32];
+
+	sprintf(name, "thp-%d.txt", sched_getcpu());
+	output_fp = fopen(name, "w");
+	if (!output_fp) {
+		printf("Error opening throughput output file!\n");
+		return;
+	}
+
+	fprintf(output_fp, "%6.2lf\t%6.2lf\n", tot_recv_rate, tot_send_rate);
+
+	fclose(output_fp);
 }
 
 static int testpmd_parse_args(int argc, char ** argv) {
