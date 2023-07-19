@@ -52,7 +52,7 @@ struct compress_and_encrypt_ctx {
 	struct doca_buf *dst_buf[PACKET_BURST];
 };
 
-#define BUF_SIZE	16384
+#define BUF_SIZE	8192
 #define M_4			(4 * 1024 * 1024 * 1024)
 
 extern __thread int start_flag;
