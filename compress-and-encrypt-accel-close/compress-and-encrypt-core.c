@@ -311,7 +311,7 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 			}
 		}
 	}
-
+#if 0
 	rx_count = tx_count = 0;
 
 	while (tx_count < packets_received) {
@@ -372,7 +372,7 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 			}
 		}
 	}
-	
+#endif
 doca_buf_cleanup:
 	return ret;
 }

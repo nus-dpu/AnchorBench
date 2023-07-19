@@ -88,7 +88,7 @@ compress_init(struct compress_and_encrypt_cfg *app_cfg)
 		result = DOCA_ERROR_INITIALIZATION;
 		goto compress_cleanup;
 	}
-
+#if 0
 	/* Create a DOCA SHA instance */
 	result = doca_sha_create(&(app_cfg->doca_sha));
 	if (result != DOCA_SUCCESS) {
@@ -110,11 +110,11 @@ compress_init(struct compress_and_encrypt_cfg *app_cfg)
 		return result;
 	}
 	return DOCA_SUCCESS;
-
+#endif
 compress_cleanup:
 	doca_dev_close(app_cfg->dev);
 	doca_compress_destroy(app_cfg->doca_compress);
-	doca_sha_destroy(app_cfg->doca_sha);
+	// doca_sha_destroy(app_cfg->doca_sha);
 	return result;
 }
 
