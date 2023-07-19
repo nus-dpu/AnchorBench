@@ -26,7 +26,7 @@ DOCA_LOG_REGISTER(COMPRESS_AND_ENCRYPT);
 #define USEC_PER_MSEC   1000L
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
-#define BUF_SIZE	1024
+#define BUF_SIZE	4096
 
 int delay_cycles = 0;
 
