@@ -53,7 +53,7 @@ enum layer_name {
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t
-compress_init(struct compress_and_encrypt_ctx_cfg *app_cfg)
+compress_init(struct compress_and_encrypt_cfg *app_cfg)
 {
 	doca_error_t result;
 	char *rules_file_data;
@@ -335,7 +335,7 @@ static int compress_and_encrypt_ctx_parse_args(int argc, char ** argv) {
 }
 
 doca_error_t
-compress_and_encrypt_ctx_lcores_run(struct compress_and_encrypt_ctx_cfg *app_cfg)
+compress_and_encrypt_ctx_lcores_run(struct compress_and_encrypt_cfg *app_cfg)
 {
 	uint16_t lcore_index = 0;
 	struct compress_and_encrypt_ctx *worker_ctx = NULL;
@@ -486,14 +486,14 @@ destroy_buf_inventory:
 static doca_error_t
 rules_callback(void *param, void *config)
 {
-	struct compress_and_encrypt_ctx_cfg *compress_and_encrypt_ctx_cfg = (struct compress_and_encrypt_ctx_cfg *)config;
+	struct compress_and_encrypt_cfg *compress_and_encrypt_cfg = (struct compress_and_encrypt_cfg *)config;
 	const char *rules_path = (char *)param;
 
 	if (strnlen(rules_path, MAX_FILE_NAME) == MAX_FILE_NAME) {
 		DOCA_LOG_ERR("Denylist rules file name too long max %d", MAX_FILE_NAME - 1);
 		return DOCA_ERROR_INVALID_VALUE;
 	}
-	strlcpy(compress_and_encrypt_ctx_cfg->rules_file_path, rules_path, MAX_FILE_NAME);
+	strlcpy(compress_and_encrypt_cfg->rules_file_path, rules_path, MAX_FILE_NAME);
 	return DOCA_SUCCESS;
 }
 
@@ -508,10 +508,10 @@ rules_callback(void *param, void *config)
 static doca_error_t
 pci_address_callback(void *param, void *config)
 {
-	struct compress_and_encrypt_ctx_cfg *compress_and_encrypt_ctx_cfg = (struct compress_and_encrypt_ctx_cfg *)config;
+	struct compress_and_encrypt_cfg *compress_and_encrypt_cfg = (struct compress_and_encrypt_cfg *)config;
 	const char *pci_address = (char *)param;
 
-	if (parse_pci_addr(pci_address, &compress_and_encrypt_ctx_cfg->pci_address) != DOCA_SUCCESS) {
+	if (parse_pci_addr(pci_address, &compress_and_encrypt_cfg->pci_address) != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Invalid PCI address: \"%s\"", pci_address);
 		return DOCA_ERROR_INVALID_VALUE;
 	}
@@ -653,7 +653,7 @@ int main(int argc, char **argv) {
 	uint32_t i;
 	int32_t ret;
 	doca_error_t result;
-	struct compress_and_encrypt_ctx_cfg app_cfg = {0};
+	struct compress_and_encrypt_cfg app_cfg = {0};
 	int lcore_id, nr_cores = 0;
 
 	/* initialize EAL */
@@ -684,7 +684,7 @@ int main(int argc, char **argv) {
 			DEFAULT_PKT_BURST, DEFAULT_RX_DESC, DEFAULT_TX_DESC, MAX_MBUFS_PER_PORT, MBUF_CACHE_SIZE);
 
 	/* Configure and initialize the ports */
-	compress_and_encrypt_ctx_cfg_ports();
+	compress_and_encrypt_cfg_ports();
 
 	result = register_compress_and_encrypt_ctx_filter_params();
 	if (result != DOCA_SUCCESS) {

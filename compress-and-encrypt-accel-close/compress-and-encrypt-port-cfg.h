@@ -26,6 +26,6 @@ typedef struct port_info_s {
 
 extern port_info_t info[RTE_MAX_ETHPORTS];	/**< Port information */
 
-void compress_and_encrypt_ctx_cfg_ports(void);
+void compress_and_encrypt_cfg_ports(void);
 
 #endif  /* _COMPRESS_PORT_CFG_H_ */

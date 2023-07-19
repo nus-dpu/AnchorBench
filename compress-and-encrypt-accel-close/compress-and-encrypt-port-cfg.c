@@ -97,7 +97,7 @@ static struct rte_mempool * compress_and_encrypt_ctx_mempool_create(const char *
 	return mp;
 }
 
-void compress_and_encrypt_ctx_cfg_ports() {
+void compress_and_encrypt_cfg_ports() {
     struct rte_eth_conf conf = {0};
     uint32_t lid, pid, q;
     rxtx_t rt;
