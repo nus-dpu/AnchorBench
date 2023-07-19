@@ -231,18 +231,12 @@ sha_processing(struct monitor_ctx *worker_ctx, uint16_t packets_received, struct
 			int index;
 			uint8_t * resp;
 			struct doca_buf *dst_buf;
-			size_t resp_len;
 			
 			result = doca_workq_progress_retrieve(worker_ctx->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
 			if (result == DOCA_SUCCESS) {
 				/* Handle the completed jobs */
 				index = event.user_data.u64;
-				clock_gettime(CLOCK_MONOTONIC, &now);
-
-				dst_buf = worker_ctx->dst_buf[index];
-				doca_buf_get_data(dst_buf, (void **)&resp);
-				doca_buf_get_data_len(dst_buf, &resp_len);
-				printf("compress len: %d\n", resp_len);
+				clock_gettime(CLOCK_MONOTONIC, &now);				
 				stamp_monitor_ts(packets[index], diff_timespec(&worker_ctx->ts[index], &now));
 				++rx_count;
 			} else if (result == DOCA_ERROR_AGAIN) {
