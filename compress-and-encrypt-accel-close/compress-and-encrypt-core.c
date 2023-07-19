@@ -117,7 +117,7 @@ check_packets_marking(struct compress_and_encrypt_ctx *worker_ctx, struct rte_mb
 				gettimeofday(&start, NULL);
 			}
 
-			extract_payload(packets[current_packet], &worker_ctx->queries[index], &worker_ctx->query_len[index]);
+			// extract_payload(packets[current_packet], &worker_ctx->queries[index], &worker_ctx->query_len[index]);
 
 			/* Packet matched by one of pipe entries(rules) */
 			packets[index] = packets[current_packet];
@@ -250,8 +250,15 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 			struct doca_buf *src_buf = worker_ctx->src_buf[tx_count];
 			struct doca_buf *dst_buf = worker_ctx->dst_buf[tx_count];
 			void *mbuf_data;
-			void *data_begin = (void *)worker_ctx->queries[tx_count];
-			size_t data_len = worker_ctx->query_len[tx_count];
+			// void *data_begin = (void *)worker_ctx->queries[tx_count];
+			// size_t data_len = worker_ctx->query_len[tx_count];
+			if (cur_ptr + BUF_SIZE >= M_4) {
+				cur_ptr = input;
+			}
+
+			void *data_begin = (void *)cur_ptr;
+			size_t data_len = BUF_SIZE;
+
 			memcpy(worker_ctx->query_buf[tx_count], data_begin, data_len);
 
 			doca_buf_get_data(src_buf, &mbuf_data);

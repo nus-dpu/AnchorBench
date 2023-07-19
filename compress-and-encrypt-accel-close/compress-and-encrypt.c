@@ -26,7 +26,7 @@ DOCA_LOG_REGISTER(COMPRESS_AND_ENCRYPT);
 #define USEC_PER_MSEC   1000L
 #define TIMEVAL_TO_MSEC(t)  ((t.tv_sec * MSEC_PER_SEC) + (t.tv_usec / USEC_PER_MSEC))
 
-#define BUF_SIZE	4096
+#define BUF_SIZE	8192
 
 int delay_cycles = 0;
 
@@ -35,9 +35,13 @@ __thread int start_flag = 0;
 __thread struct timeval start;
 __thread uint64_t nr_recv;
 __thread uint64_t nr_send;
+__thread char * input;
+__thread int input_size;
+__thread char * cur_ptr;
 
 #define MAX_RULES		16
 #define MAX_RULE_LEN	64
+#define M_4				(4 * 1024 * 1024 * 1024)
 
 enum layer_name {
 	L2,
@@ -225,6 +229,23 @@ int compress_and_encrypt_ctx_worker(void *arg) {
 	port_map_info(lid, infos, qids, &txcnt, &rxcnt, "RX/TX");
 
     pg_lcore_get_rxbuf(lid, infos, rxcnt);
+
+	input = (char *)calloc(M_4, sizeof(char));
+
+    fp = fopen("input.dat", "rb");
+    if (fp == NULL) {
+        return -1;
+	}
+
+	/* Seek to the beginning of the file */
+	fseek(fp, 0, SEEK_SET);
+
+	/* Read and display data */
+	input_size = fread((char **)input, sizeof(char), M_4, fp);
+
+	fclose(fp);
+
+	cur_ptr = input;
 
 	gettimeofday(&start, NULL);
 	gettimeofday(&last_log, NULL);
