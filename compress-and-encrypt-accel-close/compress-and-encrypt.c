@@ -659,7 +659,7 @@ int dpdk_setup_rss(int nr_queues) {
 	pattern[L2].type = RTE_FLOW_ITEM_TYPE_ETH;
 	pattern[L2].spec = NULL;
 
-	pattern[L2].type = RTE_FLOW_ITEM_TYPE_IPV4;
+	pattern[L3].type = RTE_FLOW_ITEM_TYPE_IPV4;
 	pattern[L3].spec = NULL;
 	pattern[L3].mask = NULL;
 
