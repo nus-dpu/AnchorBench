@@ -219,6 +219,7 @@ int compress_and_encrypt_ctx_worker(void *arg) {
 	float sec_recv, sec_send;
 	float max_recv, max_send;
 	uint16_t src_port;
+    FILE * fp;
 
 	tot_recv = tot_send = 0;
 	max_recv = max_send = 0.0;
