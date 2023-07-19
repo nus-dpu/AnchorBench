@@ -623,7 +623,7 @@ int dpdk_setup_rss(int nr_queues) {
 
 	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
 	if (!flow) {
-		printf("Can't create hairpin flows on port: %u\n", port_id);
+		printf("Can't create flows on port: %u\n", port_id);
 	}
 }
 
