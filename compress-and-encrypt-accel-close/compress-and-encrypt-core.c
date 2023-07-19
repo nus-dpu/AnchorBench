@@ -327,7 +327,7 @@ compress_processing(struct compress_and_encrypt_ctx *worker_ctx, uint16_t packet
 					.type = DOCA_SHA_JOB_SHA256,
 					.flags = DOCA_JOB_FLAGS_NONE,
 					.ctx = doca_sha_as_ctx(worker_ctx->app_cfg->doca_sha),
-					.user_data = { .ptr = tx_count },
+					.user_data = { .u64 = tx_count },
 				},
 				.resp_buf = dst_buf,
 				.req_buf = src_buf,
