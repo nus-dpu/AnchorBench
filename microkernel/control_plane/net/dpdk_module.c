@@ -222,7 +222,7 @@ enum layer_name {
 	END
 };
 
-int dpdk_create_flow(struct flow * fl, uint16_t port, uint16_t * queues, int nr_queues) {
+int dpdk_create_flow(uint16_t port, uint16_t * queues, int nr_queues) {
     int port_id;
     struct rte_flow_error error;
 	struct rte_flow_attr attr = { /* Holds the flow attributes. */

@@ -28,23 +28,7 @@ struct ipc_msghdr {
 };
 
 struct flow {
-    char type[16];
-    int prior;
-    uint32_t src_ip;
-    uint32_t src_ip_mask;
-    uint32_t dst_ip;
-    uint32_t dst_ip_mask;
-    uint16_t src_port;
-    uint16_t src_port_mask;
-    uint16_t dst_port;
-    uint16_t dst_port_mask;
+    int port;
 };
-
-struct arp_entry {
-    struct ether_addr hwaddr;   /* Hardware address. */
-    ip4_addr_t ipaddr;  /* IP address.  */
-} __attribute__ ((__packed__));
-
-extern int ipc_update_arp_table(struct arp_entry * entry);
 
 #endif  /* _LYRA_IPC_H_ */

@@ -1,3 +1,25 @@
+#include <errno.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/epoll.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include "opt.h"
+#include "dpdk_module.h"
+#include "core.h"
+#include "cpumask.h"
+#include "ipc.h"
+#include "mm.h"
+#include "printk.h"
+#include "netfmt.h"
+#include "netif.h"
+#include "pbuf.h"
+
+#define MAX_EVENTS  1024
+
 /**
  * Main loop for Lyra
  * * 1. Accept for incoming connections from worker cores 
@@ -27,12 +49,6 @@ int lyra_loop(void) {
     }
 
     while (1) {
-        struct netif * netif;
-        int port_id, recv_cnt, send_cnt, err;
-        uint16_t len;
-        /* Store pbuf on stack */
-        struct pbuf p;
-
         /* Poll epoll IPC events from workers if there is any */
         nevent = epoll_wait(epfd, events, MAX_EVENTS, 0);
         for(int i = 0; i < nevent; i++) {
