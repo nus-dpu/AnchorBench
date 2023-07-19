@@ -85,7 +85,7 @@ static struct rte_mempool * testpmd_mempool_create(const char *type, uint8_t pid
 		RTE_MBUF_DEFAULT_BUF_SIZE);
 
 	/* create the mbuf pool */
-	mp = rte_mempool_create(name, nb_mbufs, MBUF_SIZE, 256,
+	mp = rte_mempool_create(name, nb_mbufs, MBUF_SIZE, MBUF_CACHE_SIZE,
 							sizeof(struct rte_pktmbuf_pool_private), 
 							rte_pktmbuf_pool_init, NULL,
                             rte_pktmbuf_init, NULL,
