@@ -61,7 +61,7 @@ extract_payload(struct rte_mbuf *pkt, char **data, int *data_len)
 	struct rte_sft_error error;
 	struct rte_sft_mbuf_info mbuf_info;
 	uint32_t payload_offset = 0;
-	unsigned char *data;
+	unsigned char *pkt;
 
 	/* Parse mbuf, and extract the query */
 	result = rte_sft_parse_mbuf(&mbuf, &mbuf_info, NULL, &error);
@@ -81,15 +81,15 @@ extract_payload(struct rte_mbuf *pkt, char **data, int *data_len)
 	payload_offset += UDP_HEADER_SIZE;
 
 	/* Get a pointer to start of packet payload */
-	data = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
-	if (data == NULL) {
+	pkt = (const unsigned char *)rte_pktmbuf_adj(&mbuf, payload_offset);
+	if (pkt == NULL) {
 		DOCA_LOG_ERR("Error in pkt mbuf adj");
 		return -1;
 	}
 	len = rte_pktmbuf_data_len(&mbuf);
 
 	/* Get DNS query start from handle field */
-	*data = (char *)(data + NR_TIMESTAMP * sizeof(uint64_t));
+	*data = (char *)(pkt + NR_TIMESTAMP * sizeof(uint64_t));
 	*data_len = len - NR_TIMESTAMP * sizeof(uint64_t);
 
 	return 0;
