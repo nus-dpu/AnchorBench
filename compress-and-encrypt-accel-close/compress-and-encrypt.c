@@ -88,7 +88,7 @@ compress_init(struct compress_and_encrypt_cfg *app_cfg)
 		result = DOCA_ERROR_INITIALIZATION;
 		goto compress_cleanup;
 	}
-#if 0
+
 	/* Create a DOCA SHA instance */
 	result = doca_sha_create(&(app_cfg->doca_sha));
 	if (result != DOCA_SUCCESS) {
@@ -110,11 +110,11 @@ compress_init(struct compress_and_encrypt_cfg *app_cfg)
 		return result;
 	}
 	return DOCA_SUCCESS;
-#endif
+
 compress_cleanup:
 	doca_dev_close(app_cfg->dev);
 	doca_compress_destroy(app_cfg->doca_compress);
-	// doca_sha_destroy(app_cfg->doca_sha);
+	doca_sha_destroy(app_cfg->doca_sha);
 	return result;
 }
 
@@ -378,6 +378,13 @@ compress_and_encrypt_ctx_lcores_run(struct compress_and_encrypt_cfg *app_cfg)
 		if (result != DOCA_SUCCESS) {
 			DOCA_LOG_ERR("Unable to attach workq to compress: %s", doca_get_error_string(result));
 			goto destroy_workq;
+		}
+
+		/* Add workq to SHA */
+		result = doca_ctx_workq_add(doca_sha_as_ctx(app_cfg->doca_sha), worker_ctx->workq);
+		if (result != DOCA_SUCCESS) {
+			printf("Unable to attach work queue to SHA. Reason: %s", doca_get_error_string(result));
+			return result;
 		}
 
 		/* Setup memory map
