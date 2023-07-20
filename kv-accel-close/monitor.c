@@ -537,7 +537,7 @@ register_monitor_filter_params(void)
 }
 
 int dpdk_setup_rss(int nr_queues) {
-	int port_id;
+	int port_id = 0;
 	struct rte_flow *flow;
 	struct rte_flow_error error;
 	struct rte_flow_attr attr = { /* Holds the flow attributes. */
@@ -613,11 +613,9 @@ int dpdk_setup_rss(int nr_queues) {
 
 	pattern[END].type = RTE_FLOW_ITEM_TYPE_END;
 
-    RTE_ETH_FOREACH_DEV(port_id) {
-		flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
-		if (!flow) {
-            printf("Invalid flow rule! msg: %s\n", error.message);
-		}
+	flow = rte_flow_create(port_id, &attr, pattern, actions, &error);
+	if (!flow) {
+		printf("Invalid flow rule! msg: %s\n", error.message);
 	}
 }
 
