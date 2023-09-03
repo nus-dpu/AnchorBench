@@ -92,7 +92,7 @@ main(int argc, char **argv)
 		goto destroy_resources;
 	}
 
-	result = host_start_dma_copy(&dma_cfg, &core_state, ep, &peer_addr);
+	result = dpu_start_dma_copy(&dma_cfg, &core_state, ep, &peer_addr);
 	if (result != DOCA_SUCCESS)
 		exit_status = EXIT_FAILURE;
 
