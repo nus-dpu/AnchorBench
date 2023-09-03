@@ -26,8 +26,7 @@
 #include <doca_dma.h>
 #include <doca_mmap.h>
 
-#include <samples/common.h>
-
+#include "common.h"
 #include "pack.h"
 #include "utils.h"
 
@@ -174,42 +173,6 @@ rep_pci_addr_callback(void *param, void *config)
 		}
 
 		strlcpy(cfg->cc_dev_rep_pci_addr, rep_pci_addr, DOCA_DEVINFO_REP_PCI_ADDR_SIZE);
-	}
-
-	return DOCA_SUCCESS;
-}
-
-/*
- * Wait for status message
- *
- * @ep [in]: Comm Channel endpoint
- * @peer_addr [in]: Comm Channel peer address
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
-static doca_error_t
-wait_for_successful_status_msg(struct doca_comm_channel_ep_t *ep, struct doca_comm_channel_addr_t **peer_addr)
-{
-	struct cc_msg_dma_status msg_status;
-	doca_error_t result;
-	size_t msg_len, status_msg_len = sizeof(struct cc_msg_dma_status);
-	struct timespec ts = {
-		.tv_nsec = SLEEP_IN_NANOS,
-	};
-
-	msg_len = status_msg_len;
-	while ((result = doca_comm_channel_ep_recvfrom(ep, (void *)&msg_status, &msg_len, DOCA_CC_MSG_FLAG_NONE,
-						       peer_addr)) == DOCA_ERROR_AGAIN) {
-		nanosleep(&ts, &ts);
-		msg_len = status_msg_len;
-	}
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Status message was not received: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	if (!msg_status.is_success) {
-		DOCA_LOG_ERR("Failure status received");
-		return DOCA_ERROR_INVALID_VALUE;
 	}
 
 	return DOCA_SUCCESS;
