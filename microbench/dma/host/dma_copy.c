@@ -30,6 +30,7 @@ struct dma_copy_cfg dma_cfg;
 void * 
 host_task_main(void * arg) 
 {
+	doca_error_t result;
 	struct doca_dev *cc_dev = NULL;
 	struct doca_dev_rep *cc_dev_rep = NULL;
 	struct core_state core_state = {0};
@@ -40,7 +41,7 @@ host_task_main(void * arg)
 	result = init_cc(&dma_cfg, &ep, &cc_dev, &cc_dev_rep);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to Initiate Comm Channel");
-		return EXIT_FAILURE;
+		return NULL;
 	}
 
 	/* Open DOCA dma device */
@@ -72,6 +73,7 @@ host_task_main(void * arg)
 		exit_status = EXIT_FAILURE;
 	}
 
+destroy_resources:
 	/* Destroy Comm Channel */
 	destroy_cc(ep, peer_addr, cc_dev, cc_dev_rep);
 
@@ -119,14 +121,14 @@ main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	for (int i = 0; i < nr_cores; i++) {
+	for (int i = 0; i < dma_cfg.nr_cores; i++) {
 		if (pthread_create(&pids[i], NULL, host_task_main, NULL) != 0) {
 			perror("pthread_create() error");
 			goto destroy_resources;
 		}
 	}
 
-	for (int i = 0; i < nr_cores; i++) {
+	for (int i = 0; i < dma_cfg.nr_cores; i++) {
 		if (pthread_join(pids[i], NULL) != 0) {
 			perror("pthread_join() error");
 			goto destroy_resources;

@@ -108,6 +108,22 @@ args_validation_callback(void *config)
 }
 
 /*
+ * ARGP Callback - Handle nr cores parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+nr_cores_callback(void *param, void *config)
+{
+	struct dma_copy_cfg *cfg = (struct dma_copy_cfg *)config;
+	cfg->nr_cores = *(int *)param;
+
+	return DOCA_SUCCESS;
+}
+
+/*
  * ARGP Callback - Handle Comm Channel DOCA device PCI address parameter
  *
  * @param [in]: Input parameter
