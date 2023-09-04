@@ -45,6 +45,7 @@ struct dma_copy_cfg {
 	char file_path[MAX_ARG_SIZE];				  /* File path to copy from (host) or path the save DMA result (dpu) */
 	char cc_dev_pci_addr[DOCA_DEVINFO_PCI_ADDR_SIZE];	  /* Comm Channel DOCA device PCI address */
 	char cc_dev_rep_pci_addr[DOCA_DEVINFO_REP_PCI_ADDR_SIZE]; /* Comm Channel DOCA device representor PCI address */
+	int nr_cores;	/* Number of server worker cores */
 	bool is_file_found_locally;				  /* Indicate DMA copy direction */
 	uint32_t file_size;					  /* File size in bytes */
 };

@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <errno.h>
 #include <sys/epoll.h>
@@ -37,6 +38,8 @@
 #define SLEEP_IN_NANOS (10 * 1000) /* Sample the job every 10 microseconds  */
 #define STATUS_SUCCESS true	   /* Successful status */
 #define STATUS_FAILURE false	   /* Unsuccessful status */
+#define USEC_PER_SEC   	1000000L
+#define TIMEVAL_TO_USEC(t)  ((t.tv_sec * USEC_PER_SEC) + t.tv_usec)
 
 DOCA_LOG_REGISTER(DMA_COPY_CORE);
 
@@ -124,6 +127,22 @@ dev_pci_addr_callback(void *param, void *config)
 	}
 
 	strlcpy(cfg->cc_dev_pci_addr, dev_pci_addr, DOCA_DEVINFO_PCI_ADDR_SIZE);
+
+	return DOCA_SUCCESS;
+}
+
+/*
+ * ARGP Callback - Handle nr cores parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+nr_cores_callback(void *param, void *config)
+{
+	struct dma_copy_cfg *cfg = (struct dma_copy_cfg *)config;
+	cfg->nr_cores = *(int *)param;
 
 	return DOCA_SUCCESS;
 }
@@ -561,10 +580,11 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 	void *data;
 	struct doca_buf *src_buf;
 	struct doca_buf *dst_buf;
-	struct timespec ts = {
-		.tv_sec = 0,
-		.tv_nsec = SLEEP_IN_NANOS,
-	};
+	// struct timespec ts = {
+	// 	.tv_sec = 0,
+	// 	.tv_nsec = SLEEP_IN_NANOS,
+	// };
+	struct timeval start, end;
 
 	/* Construct DMA job */
 	dma_job.base.type = DOCA_DMA_JOB_MEMCPY;
@@ -595,6 +615,8 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 	dma_job.src_buff = src_buf;
 	dma_job.dst_buff = dst_buf;
 
+	gettimeofday(&start, NULL);
+
 	/* Enqueue DMA job */
 	result = doca_workq_submit(core_state->workq, &dma_job.base);
 	if (result != DOCA_SUCCESS) {
@@ -605,8 +627,12 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 	/* Wait for job completion */
 	while ((result = doca_workq_progress_retrieve(core_state->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE)) ==
 	       DOCA_ERROR_AGAIN) {
-		nanosleep(&ts, &ts);
+		// nanosleep(&ts, &ts);
 	}
+
+	gettimeofday(&end, NULL);
+
+	DOCA_LOG_INFO("Throughput: %.2f Mbps\n", cfg->file_size * 8.0 / (TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(start)));
 
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to retrieve DMA job: %s", doca_get_error_string(result));
@@ -766,7 +792,26 @@ doca_error_t
 register_dma_copy_params(void)
 {
 	doca_error_t result;
-	struct doca_argp_param *file_path_param, *dev_pci_addr_param, *rep_pci_addr_param;
+	struct doca_argp_param *nr_cores_param, *file_path_param, *dev_pci_addr_param, *rep_pci_addr_param;
+
+	/* Create and register string to number of cores param */
+	result = doca_argp_param_create(&nr_cores_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(nr_cores_param, "f");
+	doca_argp_param_set_long_name(nr_cores_param, "file");
+	doca_argp_param_set_description(nr_cores_param,
+					"Full path to file to be copied/created after a successful DMA copy");
+	doca_argp_param_set_callback(nr_cores_param, nr_cores_callback);
+	doca_argp_param_set_type(nr_cores_param, DOCA_ARGP_TYPE_INT);
+	doca_argp_param_set_mandatory(nr_cores_param);
+	result = doca_argp_register_param(nr_cores_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
 
 	/* Create and register string to dma copy param */
 	result = doca_argp_param_create(&file_path_param);

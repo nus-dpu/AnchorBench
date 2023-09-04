@@ -627,7 +627,26 @@ doca_error_t
 register_dma_copy_params(void)
 {
 	doca_error_t result;
-	struct doca_argp_param *file_path_param, *dev_pci_addr_param, *rep_pci_addr_param;
+	struct doca_argp_param *nr_cores_param, *file_path_param, *dev_pci_addr_param, *rep_pci_addr_param;
+
+	/* Create and register string to number of cores param */
+	result = doca_argp_param_create(&nr_cores_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(nr_cores_param, "f");
+	doca_argp_param_set_long_name(nr_cores_param, "file");
+	doca_argp_param_set_description(nr_cores_param,
+					"Full path to file to be copied/created after a successful DMA copy");
+	doca_argp_param_set_callback(nr_cores_param, nr_cores_callback);
+	doca_argp_param_set_type(nr_cores_param, DOCA_ARGP_TYPE_INT);
+	doca_argp_param_set_mandatory(nr_cores_param);
+	result = doca_argp_register_param(nr_cores_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
 
 	/* Create and register string to dma copy param */
 	result = doca_argp_param_create(&file_path_param);
