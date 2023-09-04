@@ -94,7 +94,6 @@ int
 main(int argc, char **argv)
 {
 	doca_error_t result;
-	int exit_status = EXIT_SUCCESS;
 	pthread_t pids[MAX_NR_CORES];
 
 #ifdef DOCA_ARCH_DPU
