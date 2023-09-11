@@ -11,6 +11,8 @@
  *
  */
 
+#define _GNU_SOURCE
+#include <sched.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -235,6 +237,7 @@ send_status_msg(struct doca_comm_channel_ep_t *ep, struct doca_comm_channel_addr
  * @buffer [in]: Buffer to read information from
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
+#if 0
 static doca_error_t
 save_buffer_into_a_file(struct dma_copy_cfg *cfg, const char *buffer)
 {
@@ -256,6 +259,7 @@ save_buffer_into_a_file(struct dma_copy_cfg *cfg, const char *buffer)
 
 	return DOCA_SUCCESS;
 }
+#endif
 
 /*
  * Fill local buffer with file content
@@ -348,6 +352,7 @@ dpu_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, struct doca_comm_
 	};
 	doca_error_t result;
 	size_t msg_len;
+	char server_name[32] = {0};
 
 	if (cfg->is_file_found_locally) {
 		DOCA_LOG_INFO("File was found locally, it will be DMA copied to the Host");
@@ -358,7 +363,10 @@ dpu_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, struct doca_comm_
 		dpu_dma_direction.file_in_host = true;
 	}
 
-	result = doca_comm_channel_ep_listen(ep, SERVER_NAME);
+	sprintf(server_name, "%s-%d", SERVER_NAME, sched_getcpu());
+	DOCA_LOG_INFO("Listen to server %s", server_name);
+
+	result = doca_comm_channel_ep_listen(ep, server_name);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Comm Channel endpoint couldn't start listening: %s", doca_get_error_string(result));
 		return result;
@@ -377,7 +385,11 @@ dpu_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, struct doca_comm_
 		DOCA_LOG_ERR("Response message was not received: %s", doca_get_error_string(result));
 		send_status_msg(ep, peer_addr, STATUS_FAILURE);
 		return result;
+	} else {
+		DOCA_LOG_INFO("Response message len: %ld", msg_len);
 	}
+
+	DOCA_LOG_INFO("Host dma direction {%u, %u}", host_dma_direction.file_in_host, htonl(host_dma_direction.file_size));
 
 	if (msg_len != sizeof(struct cc_msg_dma_direction)) {
 		DOCA_LOG_ERR("Response negotiation message was not received correctly");
@@ -455,8 +467,6 @@ dpu_receive_export_desc(struct doca_comm_channel_ep_t *ep, struct doca_comm_chan
 		.tv_nsec = SLEEP_IN_NANOS,
 	};
 
-	DOCA_LOG_INFO("Waiting for Host to send export descriptor");
-
 	/* Receive exported descriptor from Host */
 	msg_len = CC_MAX_MSG_SIZE;
 	while ((result = doca_comm_channel_ep_recvfrom(ep, (void *)export_desc_buffer, &msg_len,
@@ -523,7 +533,7 @@ dpu_receive_addr_and_offset(struct doca_comm_channel_ep_t *ep, struct doca_comm_
 	}
 	*host_addr = (char *)received_addr;
 
-	DOCA_DLOG_INFO("Remote address received successfully from Host: %" PRIu64 "", received_addr);
+	DOCA_LOG_INFO("Remote address received successfully from Host: %lx", received_addr);
 
 	result = send_status_msg(ep, peer_addr, STATUS_SUCCESS);
 	if (result != DOCA_SUCCESS)
@@ -632,7 +642,7 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 
 	gettimeofday(&end, NULL);
 
-	DOCA_LOG_INFO("Throughput: %.2f Mbps\n", cfg->file_size * 8.0 / (TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(start)));
+	DOCA_LOG_INFO("Throughput: %.2f Mbps", cfg->file_size * 8.0 / (TIMEVAL_TO_USEC(end) - TIMEVAL_TO_USEC(start)));
 
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to retrieve DMA job: %s", doca_get_error_string(result));
@@ -649,12 +659,12 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 	DOCA_LOG_INFO("DMA copy was done Successfully");
 
 	/* If the buffer was copied into to DPU, save it as a file */
-	if (!cfg->is_file_found_locally) {
-		DOCA_LOG_INFO("Writing DMA buffer into a file on %s", cfg->file_path);
-		result = save_buffer_into_a_file(cfg, buffer);
-		if (result != DOCA_SUCCESS)
-			return result;
-	}
+	// if (!cfg->is_file_found_locally) {
+	// 	DOCA_LOG_INFO("Writing DMA buffer into a file on %s", cfg->file_path);
+	// 	result = save_buffer_into_a_file(cfg, buffer);
+	// 	if (result != DOCA_SUCCESS)
+	// 		return result;
+	// }
 
 	return result;
 }
@@ -800,10 +810,9 @@ register_dma_copy_params(void)
 		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
 		return result;
 	}
-	doca_argp_param_set_short_name(nr_cores_param, "f");
-	doca_argp_param_set_long_name(nr_cores_param, "file");
-	doca_argp_param_set_description(nr_cores_param,
-					"Full path to file to be copied/created after a successful DMA copy");
+	doca_argp_param_set_short_name(nr_cores_param, "c");
+	doca_argp_param_set_long_name(nr_cores_param, "cores");
+	doca_argp_param_set_description(nr_cores_param, "Number of host worker cores");
 	doca_argp_param_set_callback(nr_cores_param, nr_cores_callback);
 	doca_argp_param_set_type(nr_cores_param, DOCA_ARGP_TYPE_INT);
 	doca_argp_param_set_mandatory(nr_cores_param);

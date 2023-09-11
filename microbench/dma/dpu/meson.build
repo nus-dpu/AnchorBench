@@ -24,14 +24,16 @@ cflags = default_cflags
 
 inc_dirs = [
 	include_directories('..'),
+	include_directories('../common'),
 ]
 
 sources = files(
     project_name + '.c',
     project_name + '_core.c',
-    'common.c',
-    'utils.c',
-    'pack.c',
+    '../common/common.c',
+    '../common/mempool.c',
+    '../common/pack.c',
+    '../common/utils.c',
 )
 
 executable(project_name,
