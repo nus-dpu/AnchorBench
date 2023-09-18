@@ -627,17 +627,20 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 
 	gettimeofday(&start, NULL);
 
-	/* Enqueue DMA job */
-	result = doca_workq_submit(core_state->workq, &dma_job.base);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to submit DMA job: %s", doca_get_error_string(result));
-		return result;
-	}
+	for (int i = 0; i < 1024; i++) {
+		DOCA_LOG_INFO("Round %d >", i);
+		/* Enqueue DMA job */
+		result = doca_workq_submit(core_state->workq, &dma_job.base);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Failed to submit DMA job: %s", doca_get_error_string(result));
+			return result;
+		}
 
-	/* Wait for job completion */
-	while ((result = doca_workq_progress_retrieve(core_state->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE)) ==
-	       DOCA_ERROR_AGAIN) {
-		// nanosleep(&ts, &ts);
+		/* Wait for job completion */
+		while ((result = doca_workq_progress_retrieve(core_state->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE)) ==
+			DOCA_ERROR_AGAIN) {
+			// nanosleep(&ts, &ts);
+		}
 	}
 
 	gettimeofday(&end, NULL);
