@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES, ALL RIGHTS RESERVED.
+ * Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES, ALL RIGHTS RESERVED.
  *
  * This software product is a proprietary product of NVIDIA CORPORATION &
  * AFFILIATES (the "Company") and all right, title, and interest in and to the
@@ -27,14 +27,12 @@
 
 DOCA_LOG_REGISTER(COMMON);
 
-#define MAX_REP_PROPERTY_LEN 128
-
 doca_error_t
-open_doca_device_with_pci(const struct doca_pci_bdf *value, jobs_check func, struct doca_dev **retval)
+open_doca_device_with_pci(const char *pci_addr, jobs_check func, struct doca_dev **retval)
 {
 	struct doca_devinfo **dev_list;
 	uint32_t nb_devs;
-	struct doca_pci_bdf buf = {};
+	uint8_t is_addr_equal = 0;
 	int res;
 	size_t i;
 
@@ -49,8 +47,8 @@ open_doca_device_with_pci(const struct doca_pci_bdf *value, jobs_check func, str
 
 	/* Search */
 	for (i = 0; i < nb_devs; i++) {
-		res = doca_devinfo_get_pci_addr(dev_list[i], &buf);
-		if (res == DOCA_SUCCESS && buf.raw == value->raw) {
+		res = doca_devinfo_get_is_pci_addr_equal(dev_list[i], pci_addr, &is_addr_equal);
+		if (res == DOCA_SUCCESS && is_addr_equal) {
 			/* If any special capabilities are needed */
 			if (func != NULL && func(dev_list[i]) != DOCA_SUCCESS)
 				continue;
@@ -64,7 +62,7 @@ open_doca_device_with_pci(const struct doca_pci_bdf *value, jobs_check func, str
 		}
 	}
 
-	DOCA_LOG_ERR("Matching device not found.");
+	DOCA_LOG_WARN("Matching device not found");
 	res = DOCA_ERROR_NOT_FOUND;
 
 	doca_devinfo_list_destroy(dev_list);
@@ -87,7 +85,7 @@ open_doca_device_with_ibdev_name(const uint8_t *value, size_t val_size, jobs_che
 
 	/* Setup */
 	if (val_size > DOCA_DEVINFO_IBDEV_NAME_SIZE) {
-		DOCA_LOG_ERR("Value size too large. Failed to locate device.");
+		DOCA_LOG_ERR("Value size too large. Failed to locate device");
 		return DOCA_ERROR_INVALID_VALUE;
 	}
 	memcpy(val_copy, value, val_size);
@@ -101,7 +99,7 @@ open_doca_device_with_ibdev_name(const uint8_t *value, size_t val_size, jobs_che
 	/* Search */
 	for (i = 0; i < nb_devs; i++) {
 		res = doca_devinfo_get_ibdev_name(dev_list[i], buf, DOCA_DEVINFO_IBDEV_NAME_SIZE);
-		if (res == DOCA_SUCCESS && memcmp(buf, val_copy, DOCA_DEVINFO_IBDEV_NAME_SIZE) == 0) {
+		if (res == DOCA_SUCCESS && strncmp(buf, val_copy, val_size) == 0) {
 			/* If any special capabilities are needed */
 			if (func != NULL && func(dev_list[i]) != DOCA_SUCCESS)
 				continue;
@@ -115,7 +113,58 @@ open_doca_device_with_ibdev_name(const uint8_t *value, size_t val_size, jobs_che
 		}
 	}
 
-	DOCA_LOG_ERR("Matching device not found.");
+	DOCA_LOG_WARN("Matching device not found");
+	res = DOCA_ERROR_NOT_FOUND;
+
+	doca_devinfo_list_destroy(dev_list);
+	return res;
+}
+
+doca_error_t
+open_doca_device_with_iface_name(const uint8_t *value, size_t val_size, jobs_check func,
+				struct doca_dev **retval)
+{
+	struct doca_devinfo **dev_list;
+	uint32_t nb_devs;
+	char buf[DOCA_DEVINFO_IFACE_NAME_SIZE] = {};
+	char val_copy[DOCA_DEVINFO_IFACE_NAME_SIZE] = {};
+	int res;
+	size_t i;
+
+	/* Set default return value */
+	*retval = NULL;
+
+	/* Setup */
+	if (val_size > DOCA_DEVINFO_IFACE_NAME_SIZE) {
+		DOCA_LOG_ERR("Value size too large. Failed to locate device");
+		return DOCA_ERROR_INVALID_VALUE;
+	}
+	memcpy(val_copy, value, val_size);
+
+	res = doca_devinfo_list_create(&dev_list, &nb_devs);
+	if (res != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to load doca devices list. Doca_error value: %d", res);
+		return res;
+	}
+
+	/* Search */
+	for (i = 0; i < nb_devs; i++) {
+		res = doca_devinfo_get_iface_name(dev_list[i], buf, DOCA_DEVINFO_IFACE_NAME_SIZE);
+		if (res == DOCA_SUCCESS && strncmp(buf, val_copy, val_size) == 0) {
+			/* If any special capabilities are needed */
+			if (func != NULL && func(dev_list[i]) != DOCA_SUCCESS)
+				continue;
+
+			/* if device can be opened */
+			res = doca_dev_open(dev_list[i], retval);
+			if (res == DOCA_SUCCESS) {
+				doca_devinfo_list_destroy(dev_list);
+				return res;
+			}
+		}
+	}
+
+	DOCA_LOG_WARN("Matching device not found");
 	res = DOCA_ERROR_NOT_FOUND;
 
 	doca_devinfo_list_destroy(dev_list);
@@ -152,7 +201,7 @@ open_doca_device_with_capabilities(jobs_check func, struct doca_dev **retval)
 		}
 	}
 
-	DOCA_LOG_ERR("Matching device not found.");
+	DOCA_LOG_WARN("Matching device not found");
 	doca_devinfo_list_destroy(dev_list);
 	return DOCA_ERROR_NOT_FOUND;
 }
@@ -173,7 +222,7 @@ open_doca_device_rep_with_vuid(struct doca_dev *local, enum doca_dev_rep_filter 
 
 	/* Setup */
 	if (val_size > DOCA_DEVINFO_REP_VUID_SIZE) {
-		DOCA_LOG_ERR("Value size too large. Ignored.");
+		DOCA_LOG_ERR("Value size too large. Ignored");
 		return DOCA_ERROR_INVALID_VALUE;
 	}
 	memcpy(val_copy, value, val_size);
@@ -181,31 +230,31 @@ open_doca_device_rep_with_vuid(struct doca_dev *local, enum doca_dev_rep_filter 
 	/* Search */
 	result = doca_devinfo_rep_list_create(local, filter, &rep_dev_list, &nb_rdevs);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create devinfo representor list. Representor devices are available only on DPU, do not run on Host.");
+		DOCA_LOG_ERR("Failed to create devinfo representor list. Representor devices are available only on DPU, do not run on Host");
 		return DOCA_ERROR_INVALID_VALUE;
 	}
 
 	for (i = 0; i < nb_rdevs; i++) {
 		result = doca_devinfo_rep_get_vuid(rep_dev_list[i], buf, DOCA_DEVINFO_REP_VUID_SIZE);
-		if (result == DOCA_SUCCESS && memcmp(buf, val_copy, DOCA_DEVINFO_REP_VUID_SIZE) == 0 &&
+		if (result == DOCA_SUCCESS && strncmp(buf, val_copy, DOCA_DEVINFO_REP_VUID_SIZE) == 0 &&
 		    doca_dev_rep_open(rep_dev_list[i], retval) == DOCA_SUCCESS) {
 			doca_devinfo_rep_list_destroy(rep_dev_list);
 			return DOCA_SUCCESS;
 		}
 	}
 
-	DOCA_LOG_ERR("Matching device not found.");
+	DOCA_LOG_WARN("Matching device not found");
 	doca_devinfo_rep_list_destroy(rep_dev_list);
 	return DOCA_ERROR_NOT_FOUND;
 }
 
 doca_error_t
-open_doca_device_rep_with_pci(struct doca_dev *local, enum doca_dev_rep_filter filter, struct doca_pci_bdf *pci_bdf,
+open_doca_device_rep_with_pci(struct doca_dev *local, enum doca_dev_rep_filter filter, const char *pci_addr,
 			      struct doca_dev_rep **retval)
 {
 	uint32_t nb_rdevs = 0;
 	struct doca_devinfo_rep **rep_dev_list = NULL;
-	struct doca_pci_bdf queried_pci_bdf;
+	uint8_t is_addr_equal = 0;
 	doca_error_t result;
 	size_t i;
 
@@ -215,61 +264,70 @@ open_doca_device_rep_with_pci(struct doca_dev *local, enum doca_dev_rep_filter f
 	result = doca_devinfo_rep_list_create(local, filter, &rep_dev_list, &nb_rdevs);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR(
-			"Failed to create devinfo representors list. Representor devices are available only on DPU, do not run on Host.");
+			"Failed to create devinfo representors list. Representor devices are available only on DPU, do not run on Host");
 		return DOCA_ERROR_INVALID_VALUE;
 	}
 
 	for (i = 0; i < nb_rdevs; i++) {
-		result = doca_devinfo_rep_get_pci_addr(rep_dev_list[i], &queried_pci_bdf);
-		if (result == DOCA_SUCCESS && queried_pci_bdf.raw == pci_bdf->raw &&
+		result = doca_devinfo_rep_get_is_pci_addr_equal(rep_dev_list[i], pci_addr, &is_addr_equal);
+		if (result == DOCA_SUCCESS && is_addr_equal &&
 		    doca_dev_rep_open(rep_dev_list[i], retval) == DOCA_SUCCESS) {
 			doca_devinfo_rep_list_destroy(rep_dev_list);
 			return DOCA_SUCCESS;
 		}
 	}
 
-	DOCA_LOG_ERR("Matching device not found.");
+	DOCA_LOG_WARN("Matching device not found");
 	doca_devinfo_rep_list_destroy(rep_dev_list);
 	return DOCA_ERROR_NOT_FOUND;
 }
 
 doca_error_t
-init_core_objects(struct program_core_objects *state, uint32_t extensions, uint32_t workq_depth, uint32_t max_chunks)
+init_core_objects(struct program_core_objects *state, uint32_t workq_depth, uint32_t max_bufs)
 {
 	doca_error_t res;
-	struct doca_workq *workq;
 
-	res = doca_mmap_create(NULL, &state->mmap);
+	res = create_core_objects(state, max_bufs);
+	if (res != DOCA_SUCCESS)
+		return res;
+	res = start_context(state, workq_depth);
+	return res;
+}
+
+doca_error_t
+create_core_objects(struct program_core_objects *state, uint32_t max_bufs)
+{
+	doca_error_t res;
+
+	res = doca_mmap_create(NULL, &state->src_mmap);
 	if (res != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to create mmap: %s", doca_get_error_string(res));
+		DOCA_LOG_ERR("Unable to create source mmap: %s", doca_get_error_string(res));
+		return res;
+	}
+	res = doca_mmap_dev_add(state->src_mmap, state->dev);
+	if (res != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add device to source mmap: %s", doca_get_error_string(res));
+		doca_mmap_destroy(state->src_mmap);
+		state->src_mmap = NULL;
 		return res;
 	}
 
-	res = doca_buf_inventory_create(NULL, max_chunks, extensions, &state->buf_inv);
+	res = doca_mmap_create(NULL, &state->dst_mmap);
+	if (res != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to create destination mmap: %s", doca_get_error_string(res));
+		return res;
+	}
+	res = doca_mmap_dev_add(state->dst_mmap, state->dev);
+	if (res != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Unable to add device to destination mmap: %s", doca_get_error_string(res));
+		doca_mmap_destroy(state->dst_mmap);
+		state->dst_mmap = NULL;
+		return res;
+	}
+
+	res = doca_buf_inventory_create(NULL, max_bufs, DOCA_BUF_EXTENSION_NONE, &state->buf_inv);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to create buffer inventory: %s", doca_get_error_string(res));
-		return res;
-	}
-
-	res = doca_mmap_set_max_num_chunks(state->mmap, max_chunks);
-	if (res != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to set memory map nb chunks: %s", doca_get_error_string(res));
-		return res;
-	}
-
-	res = doca_mmap_start(state->mmap);
-	if (res != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to start memory map: %s", doca_get_error_string(res));
-		doca_mmap_destroy(state->mmap);
-		state->mmap = NULL;
-		return res;
-	}
-
-	res = doca_mmap_dev_add(state->mmap, state->dev);
-	if (res != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to add device to mmap: %s", doca_get_error_string(res));
-		doca_mmap_destroy(state->mmap);
-		state->mmap = NULL;
 		return res;
 	}
 
@@ -285,6 +343,15 @@ init_core_objects(struct program_core_objects *state, uint32_t extensions, uint3
 		state->ctx = NULL;
 		return res;
 	}
+
+	return res;
+}
+
+doca_error_t
+start_context(struct program_core_objects *state, uint32_t workq_depth)
+{
+	doca_error_t res;
+	struct doca_workq *workq;
 
 	res = doca_ctx_start(state->ctx);
 	if (res != DOCA_SUCCESS) {
@@ -303,7 +370,7 @@ init_core_objects(struct program_core_objects *state, uint32_t extensions, uint3
 	res = doca_ctx_workq_add(state->ctx, workq);
 	if (res != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to register work queue with context: %s", doca_get_error_string(res));
-		doca_workq_destroy(state->workq);
+		doca_workq_destroy(workq);
 		state->workq = NULL;
 	} else
 		state->workq = workq;
@@ -340,19 +407,22 @@ destroy_core_objects(struct program_core_objects *state)
 		state->buf_inv = NULL;
 	}
 
-	if (state->mmap != NULL) {
-		tmp_result = doca_mmap_dev_rm(state->mmap, state->dev);
+	if (state->src_mmap != NULL) {
+		tmp_result = doca_mmap_destroy(state->src_mmap);
 		if (tmp_result != DOCA_SUCCESS) {
 			DOCA_ERROR_PROPAGATE(result, tmp_result);
-			DOCA_LOG_ERR("Failed to remove device from mmap: %s", doca_get_error_string(tmp_result));
+			DOCA_LOG_ERR("Failed to destroy source mmap: %s", doca_get_error_string(tmp_result));
 		}
+		state->src_mmap = NULL;
+	}
 
-		tmp_result = doca_mmap_destroy(state->mmap);
+	if (state->dst_mmap != NULL) {
+		tmp_result = doca_mmap_destroy(state->dst_mmap);
 		if (tmp_result != DOCA_SUCCESS) {
 			DOCA_ERROR_PROPAGATE(result, tmp_result);
-			DOCA_LOG_ERR("Failed to destroy mmap: %s", doca_get_error_string(tmp_result));
+			DOCA_LOG_ERR("Failed to destroy destination mmap: %s", doca_get_error_string(tmp_result));
 		}
-		state->mmap = NULL;
+		state->dst_mmap = NULL;
 	}
 
 	if (state->ctx != NULL) {
@@ -390,7 +460,7 @@ hex_dump(const void *data, size_t size)
 	 *    8     2         8 * 3          1          8 * 3         1       16       1
 	 */
 	const size_t line_size = 8 + 2 + 8 * 3 + 1 + 8 * 3 + 1 + 16 + 1;
-	int i, j, r, read_index;
+	size_t i, j, r, read_index;
 	size_t num_lines, buffer_size;
 	char *buffer, *write_head;
 	unsigned char cur_char, printable;
@@ -409,7 +479,7 @@ hex_dump(const void *data, size_t size)
 
 	for (i = 0; i < num_lines; i++)	{
 		/* Offset */
-		snprintf(write_head, buffer_size, "%08X: ", i * 16);
+		snprintf(write_head, buffer_size, "%08lX: ", i * 16);
 		write_head += 8 + 2;
 		buffer_size -= 8 + 2;
 		/* Hex print - 2 chunks of 8 bytes */

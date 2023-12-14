@@ -1,0 +1,1 @@
+./build/dma_copy -c 1 -p 03:00.1 -r ca:00.1 -f /tmp/file_to_read.txt
