@@ -1,0 +1,1 @@
+ sudo ./build/firewall -l 0-7 -n 4 -a 03:00.0,dv_flow_en=2 -a 03:00.1,dv_flow_en=2 -- -r 22 -c 8 -q 8

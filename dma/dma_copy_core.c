@@ -1058,20 +1058,6 @@ register_dma_copy_params(void)
 		return result;
 	}
 
-	/* Register validation callback */
-	result = doca_argp_register_validation_callback(args_validation_callback);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register program validation callback: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	/* Register version callback for DOCA SDK & RUNTIME */
-	result = doca_argp_register_version_callback(sdk_version_callback);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to register version callback: %s", doca_get_error_string(result));
-		return result;
-	}
-
 	return DOCA_SUCCESS;
 }
 
