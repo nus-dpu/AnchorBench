@@ -1,1 +1,1 @@
-./build/dma_copy -p ca:00.1 -f /tmp/file_to_create.txt
+./build/dma_copy -c 1 -p ca:00.1 -f /tmp/file_to_create.txt

@@ -323,7 +323,7 @@ fill_buffer_with_file_content(struct dma_copy_cfg *cfg, char *buffer)
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t
-host_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, struct doca_comm_channel_ep_t *ep,
+host_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, int core_id, struct doca_comm_channel_ep_t *ep,
 				      struct doca_comm_channel_addr_t **peer_addr)
 {
 	struct cc_msg_dma_direction host_dma_direction = {0};
@@ -333,8 +333,11 @@ host_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, struct doca_comm
 	};
 	doca_error_t result;
 	size_t msg_len;
+	char name[32] = {0};
 
-	result = doca_comm_channel_ep_connect(ep, SERVER_NAME, peer_addr);
+	sprintf(name, SERVER_NAME " %d", core_id);
+
+	result = doca_comm_channel_ep_connect(ep, name, peer_addr);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to establish a connection with the DPU: %s", doca_get_error_string(result));
 		return result;
@@ -1068,71 +1071,71 @@ register_dma_copy_params(void)
 	return DOCA_SUCCESS;
 }
 
-doca_error_t
-host_start_dma_copy(struct dma_copy_cfg *cfg, struct core_state *core_state, struct doca_comm_channel_ep_t *ep,
-		    struct doca_comm_channel_addr_t **peer_addr)
-{
+void * host_start_dma_copy(void * arg) {
+    struct core_state * state = (struct core_state *)arg;
+    struct doca_comm_channel_ep_t *ep = state->ep;
+    struct doca_comm_channel_addr_t *peer_addr;
 	doca_error_t result;
 	char *buffer = NULL;
 	const void *export_desc = NULL;
 
 	/* Negotiate DMA copy direction with DPU */
-	result = host_negotiate_dma_direction_and_size(cfg, ep, peer_addr);
+	result = host_negotiate_dma_direction_and_size(&dma_cfg, state->core_id, ep, peer_addr);
 	if (result != DOCA_SUCCESS)
-		return result;
+		return NULL;
 
 	/* Allocate memory to be used for read operation in case file is found locally, otherwise grant write access */
-	uint32_t dpu_access = cfg->is_file_found_locally ? DOCA_ACCESS_DPU_READ_ONLY : DOCA_ACCESS_DPU_READ_WRITE;
+	uint32_t dpu_access = dma_cfg.is_file_found_locally ? DOCA_ACCESS_DPU_READ_ONLY : DOCA_ACCESS_DPU_READ_WRITE;
 
-	result = memory_alloc_and_populate(core_state, cfg->file_size, dpu_access, &buffer);
+	result = memory_alloc_and_populate(state, dma_cfg.file_size, dpu_access, &buffer);
 	if (result != DOCA_SUCCESS)
-		return result;
+		return NULL;
 
 	/* Export memory map and send it to DPU */
-	result = host_export_memory_map_to_dpu(core_state, ep, peer_addr, &export_desc);
+	result = host_export_memory_map_to_dpu(state, ep, peer_addr, &export_desc);
 	if (result != DOCA_SUCCESS) {
 		free(buffer);
-		return result;
+		return NULL;
 	}
 
 	/* Fill the buffer before DPU starts DMA operation */
-	if (cfg->is_file_found_locally) {
-		result = fill_buffer_with_file_content(cfg, buffer);
+	if (dma_cfg.is_file_found_locally) {
+		result = fill_buffer_with_file_content(&dma_cfg, buffer);
 		if (result != DOCA_SUCCESS) {
 			free(buffer);
-			return result;
+			return NULL;
 		}
 	}
 
 	/* Send source buffer address and offset (entire buffer) to enable DMA and wait until DPU is done */
-	result = host_send_addr_and_offset(buffer, cfg->file_size, ep, peer_addr);
+	result = host_send_addr_and_offset(buffer, dma_cfg.file_size, ep, peer_addr);
 	if (result != DOCA_SUCCESS) {
 		free(buffer);
-		return result;
+		return NULL;
 	}
 
 	/* Wait to DPU status message to indicate DMA was ended */
 	result = wait_for_successful_status_msg(ep, peer_addr);
 	if (result != DOCA_SUCCESS) {
 		free(buffer);
-		return result;
+		return NULL;
 	}
 
 	DOCA_LOG_INFO("Final status message was successfully received");
 
-	if (!cfg->is_file_found_locally) {
+	if (!dma_cfg.is_file_found_locally) {
 		/*  File was copied successfully into the buffer, save it into file */
-		DOCA_LOG_INFO("Writing DMA buffer into a file on %s", cfg->file_path);
-		result = save_buffer_into_a_file(cfg, buffer);
+		DOCA_LOG_INFO("Writing DMA buffer into a file on %s", dma_cfg.file_path);
+		result = save_buffer_into_a_file(&dma_cfg, buffer);
 		if (result != DOCA_SUCCESS) {
 			free(buffer);
-			return result;
+			return NULL;
 		}
 	}
 
 	free(buffer);
 
-	return DOCA_SUCCESS;
+	return NULL;
 }
 
 void * dpu_start_dma_copy(void * arg) {

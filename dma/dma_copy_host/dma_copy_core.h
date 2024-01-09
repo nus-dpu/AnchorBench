@@ -114,8 +114,7 @@ void destroy_cc(struct doca_comm_channel_ep_t *ep, struct doca_comm_channel_addr
  * @peer_addr [in]: Comm Channel peer address
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
-doca_error_t host_start_dma_copy(struct dma_copy_cfg *cfg, struct core_state *core_state,
-				 struct doca_comm_channel_ep_t *ep, struct doca_comm_channel_addr_t **peer_addr);
+void * host_start_dma_copy(void * arg);
 
 /*
  * Start DMA operation on the DPU

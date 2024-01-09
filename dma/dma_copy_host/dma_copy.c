@@ -187,7 +187,7 @@ main(int argc, char **argv)
     cpu_set_t cpu;
 	int ret;
 
-	dma_cfg.mode = DMA_COPY_MODE_DPU;
+	dma_cfg.mode = DMA_COPY_MODE_HOST;
 
 	/* Register a logger backend */
 	result = doca_log_create_standard_backend();
@@ -241,7 +241,7 @@ main(int argc, char **argv)
 		state->cc_dev = cc_dev;
 		state->cc_dev_rep = cc_dev_rep;
 
-		ret = pthread_create(&pids[i], &pattr, &dpu_start_dma_copy, (void *)state);
+		ret = pthread_create(&pids[i], &pattr, &host_start_dma_copy, (void *)state);
         if (ret != 0) {
             printf("pthread_create failed!(err: %d)\n", errno);
         }
