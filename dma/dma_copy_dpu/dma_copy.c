@@ -187,9 +187,7 @@ main(int argc, char **argv)
     cpu_set_t cpu;
 	int ret;
 
-#ifdef DOCA_ARCH_DPU
 	dma_cfg.mode = DMA_COPY_MODE_DPU;
-#endif
 
 	/* Register a logger backend */
 	result = doca_log_create_standard_backend();
