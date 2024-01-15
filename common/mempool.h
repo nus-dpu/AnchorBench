@@ -35,12 +35,13 @@
  */
 #define __aligned(a)        __attribute__((__aligned__(a)))
 
-/* Mempool element structure */
-struct mempool_elt {
+/* ====================================================================== */
+/* Mempool element structure with single DOCA buf */
+struct sgl_mempool_elt {
     /* Entry for element list */
     struct list_head    list;
     /* Mempool this element belongs to */
-    struct mempool      * mp;
+    struct sgl_mempool  * mp;
     /* DOCA buf that holds the element data */
     struct doca_buf     * buf;
     /* Timestamp */
@@ -50,7 +51,7 @@ struct mempool_elt {
 };
 
 /* Mempool structure */
-struct mempool {
+struct sgl_mempool {
     /* Size of one element (start from addr) */
     uint32_t            elt_size;
     /* Size of memory pool */
@@ -61,14 +62,52 @@ struct mempool {
     /* List of used objects */
     struct list_head    elt_used_list;
 
-    /* Address of memory pool */     
-    struct mempool_elt  elts[0];
+    /* Address of memory pool */
+    struct sgl_mempool_elt  elts[0];
 };
 
-extern int is_mempool_empty(struct mempool * mp);
-extern struct mempool * mempool_create(int num_elt, size_t elt_size);
-extern void mempool_free(struct mempool * mp);
-extern int mempool_get(struct mempool * mp, struct mempool_elt ** obj);
-extern void mempool_put(struct mempool * mp, struct mempool_elt * addr);
+extern int is_sgl_mempool_empty(struct sgl_mempool * mp);
+extern struct sgl_mempool * sgl_mempool_create(int num_elt, size_t elt_size);
+extern void sgl_mempool_free(struct sgl_mempool * mp);
+extern int sgl_mempool_get(struct sgl_mempool * mp, struct sgl_mempool_elt ** obj);
+extern void sgl_mempool_put(struct sgl_mempool * mp, struct sgl_mempool_elt * addr);
+
+/* ====================================================================== */
+/* Mempool element structure with single DOCA buf */
+struct dbl_mempool_elt {
+    /* Entry for element list */
+    struct list_head    list;
+    /* Mempool this element belongs to */
+    struct sgl_mempool  * mp;
+    /* DOCA buf that holds the element data */
+    struct doca_buf     * buf1;
+    struct doca_buf     * buf2;
+    /* Timestamp */
+    struct timespec     ts;
+    void                * response;
+    char                addr[0];
+};
+
+/* Mempool structure */
+struct dbl_mempool {
+    /* Size of one element (start from addr) */
+    uint32_t            elt_size;
+    /* Size of memory pool */
+    size_t              total_size;
+
+    /* List of free objects */
+    struct list_head    elt_free_list;
+    /* List of used objects */
+    struct list_head    elt_used_list;
+
+    /* Address of memory pool */
+    struct dbl_mempool_elt  elts[0];
+};
+
+extern int is_dbl_mempool_empty(struct dbl_mempool * mp);
+extern struct dbl_mempool * dbl_mempool_create(int num_elt, size_t elt_size);
+extern void dbl_mempool_free(struct dbl_mempool * mp);
+extern int dbl_mempool_get(struct dbl_mempool * mp, struct dbl_mempool_elt ** obj);
+extern void dbl_mempool_put(struct dbl_mempool * mp, struct dbl_mempool_elt * addr);
 
 #endif  /* _COMMON_MEMPOOL_H_ */

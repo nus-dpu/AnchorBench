@@ -30,8 +30,8 @@ inc_dirs = [
 sources = files(
     project_name + '.c',
     project_name + '_core.c',
+	'mempool.c',
 	common_path + '/utils.c',
-	common_path + '/mempool.c',
 	common_path + '/pack.c',
 	common_path + '/common.c',
 )
@@ -41,5 +41,5 @@ executable(project_name,
 	    include_directories : inc_dirs,
         dependencies: deps,
         c_args: cflags,
-        link_args: ['-lpthread'],
+        link_args: ['-lpthread','-lm'],
         install: false)

@@ -56,6 +56,7 @@ struct dma_copy_cfg {
 	char cc_dev_rep_pci_addr[DOCA_DEVINFO_REP_PCI_ADDR_SIZE]; /* Comm Channel DOCA device representor PCI address */
 	bool is_file_found_locally;				  /* Indicate DMA copy direction */
 	uint32_t file_size;					  /* File size in bytes */
+	double rate;
 };
 
 extern struct dma_copy_cfg dma_cfg;
@@ -74,6 +75,9 @@ struct core_state {
 	struct doca_ctx *ctx;					/* DOCA context */
 	struct doca_dma *dma_ctx;				/* DOCA DMA context */
 	struct doca_workq *workq;				/* DOCA work queue */
+
+	int nb_enqueued;
+	int nb_dequeued;
 } __attribute__((__aligned__(64)));
 
 /*
@@ -104,18 +108,6 @@ doca_error_t init_cc(struct dma_copy_cfg *cfg, struct doca_comm_channel_ep_t **e
  */
 void destroy_cc(struct doca_comm_channel_ep_t *ep, struct doca_comm_channel_addr_t *peer,
 	   struct doca_dev *dev, struct doca_dev_rep *dev_rep);
-
-/*
- * Start DMA operation on the Host
- *
- * @dma_cfg [in]: App configuration structure
- * @core_state [in]: DOCA core structure
- * @ep [in]: Comm Channel endpoint
- * @peer_addr [in]: Comm Channel peer address
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
-doca_error_t host_start_dma_copy(struct dma_copy_cfg *cfg, struct core_state *core_state,
-				 struct doca_comm_channel_ep_t *ep, struct doca_comm_channel_addr_t **peer_addr);
 
 /*
  * Start DMA operation on the DPU

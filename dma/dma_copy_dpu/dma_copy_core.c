@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <doca_buf.h>
 #include <doca_buf_inventory.h>
@@ -31,9 +32,40 @@
 #include "pack.h"
 #include "utils.h"
 
+#include "dma_copy.h"
 #include "dma_copy_core.h"
 
 DOCA_LOG_REGISTER(DMA_COPY_CORE);
+
+#define NSEC_PER_SEC    1000000000L
+
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
+#define MAX_NR_LATENCY	(32 * 1024)
+
+struct lat_info {
+	uint64_t start;
+	uint64_t end;
+};
+
+__thread int nr_latency = 0;
+__thread bool start_record = false;
+__thread struct lat_info * latency;
+
+__thread unsigned int seed;
+__thread struct drand48_data drand_buf;
+
+#define NSEC_PER_SEC    1000000000L
+#define TIMESPEC_TO_NSEC(t)	((t.tv_sec * NSEC_PER_SEC) + (t.tv_nsec))
+
+uint64_t diff_timespec(struct timespec * t1, struct timespec * t2) {
+	struct timespec diff = {.tv_sec = t2->tv_sec - t1->tv_sec, .tv_nsec = t2->tv_nsec - t1->tv_nsec};
+	if (diff.tv_nsec < 0) {
+		diff.tv_nsec += NSEC_PER_SEC;
+		diff.tv_sec--;
+	}
+	return TIMESPEC_TO_NSEC(diff);
+}
 
 /*
  * Validate file size
@@ -190,6 +222,25 @@ rep_pci_addr_callback(void *param, void *config)
 }
 
 /*
+ * ARGP Callback - Handle nr cores parameter
+ *
+ * @param [in]: Input parameter
+ * @config [in/out]: Program configuration context
+ * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
+ */
+static doca_error_t
+rate_callback(void *param, void *config)
+{
+	struct dma_copy_cfg *cfg = (struct dma_copy_cfg *)config;
+	char *rate_str = (char *)param;
+    char *ptr;
+
+	cfg->rate = strtod(rate_str, &ptr);
+
+	return DOCA_SUCCESS;
+}
+
+/*
  * Wait for status message
  *
  * @ep [in]: Comm Channel endpoint
@@ -315,141 +366,24 @@ fill_buffer_with_file_content(struct dma_copy_cfg *cfg, char *buffer)
 }
 
 /*
- * Host side function for file size and location negotiation
- *
- * @cfg [in]: Application configuration
- * @ep [in]: Comm Channel endpoint
- * @peer_addr [in]: Comm Channel peer address
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
-static doca_error_t
-host_negotiate_dma_direction_and_size(struct dma_copy_cfg *cfg, struct doca_comm_channel_ep_t *ep,
-				      struct doca_comm_channel_addr_t **peer_addr)
-{
-	struct cc_msg_dma_direction host_dma_direction = {0};
-	struct cc_msg_dma_direction dpu_dma_direction = {0};
-	struct timespec ts = {
-		.tv_nsec = SLEEP_IN_NANOS,
-	};
-	doca_error_t result;
-	size_t msg_len;
-
-	result = doca_comm_channel_ep_connect(ep, SERVER_NAME, peer_addr);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to establish a connection with the DPU: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	while ((result = doca_comm_channel_peer_addr_update_info(*peer_addr)) == DOCA_ERROR_CONNECTION_INPROGRESS)
-		nanosleep(&ts, &ts);
-
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to validate the connection with the DPU: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	DOCA_LOG_INFO("Connection to DPU was established successfully");
-
-	/* First byte indicates if file is located on Host, other 4 bytes determine file size */
-	if (cfg->is_file_found_locally) {
-		DOCA_LOG_INFO("File was found locally, it will be DMA copied to the DPU");
-		host_dma_direction.file_size = htonl(cfg->file_size);
-		host_dma_direction.file_in_host = true;
-	} else {
-		DOCA_LOG_INFO("File was not found locally, it will be DMA copied from the DPU");
-		host_dma_direction.file_in_host = false;
-	}
-
-	while ((result = doca_comm_channel_ep_sendto(ep, &host_dma_direction, sizeof(host_dma_direction),
-						     DOCA_CC_MSG_FLAG_NONE, *peer_addr)) == DOCA_ERROR_AGAIN)
-		nanosleep(&ts, &ts);
-
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to send negotiation buffer to DPU: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	DOCA_LOG_INFO("Waiting for DPU to send negotiation message");
-
-	msg_len = sizeof(struct cc_msg_dma_direction);
-	while ((result = doca_comm_channel_ep_recvfrom(ep, (void *)&dpu_dma_direction, &msg_len,
-						       DOCA_CC_MSG_FLAG_NONE, peer_addr)) == DOCA_ERROR_AGAIN) {
-		nanosleep(&ts, &ts);
-		msg_len = sizeof(struct cc_msg_dma_direction);
-	}
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Negotiation message was not received: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	if (msg_len != sizeof(struct cc_msg_dma_direction)) {
-		DOCA_LOG_ERR("Negotiation with DPU on file location and size failed");
-		return DOCA_ERROR_INVALID_VALUE;
-	}
-
-	if (!cfg->is_file_found_locally)
-		cfg->file_size = ntohl(dpu_dma_direction.file_size);
-
-	DOCA_LOG_INFO("Negotiation with DPU on file location and size ended successfully");
-	return DOCA_SUCCESS;
-}
-
-/*
- * Host side function for exporting memory map to DPU side with Comm Channel
- *
- * @core_state [in]: DOCA core structure
- * @ep [in]: Comm Channel endpoint
- * @peer_addr [in]: Comm Channel peer address
- * @export_desc [out]: Export descriptor to send
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
-static doca_error_t
-host_export_memory_map_to_dpu(struct core_state *core_state, struct doca_comm_channel_ep_t *ep,
-			      struct doca_comm_channel_addr_t **peer_addr, const void **export_desc)
-{
-	doca_error_t result;
-	size_t export_desc_len;
-	struct timespec ts = {
-		.tv_nsec = SLEEP_IN_NANOS,
-	};
-
-	/* Export memory map to allow access to this memory region from DPU */
-	result = doca_mmap_export_dpu(core_state->mmap, core_state->dev, export_desc, &export_desc_len);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to export DOCA mmap: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	/* Send the memory map export descriptor to DPU */
-	while ((result = doca_comm_channel_ep_sendto(ep, *export_desc, export_desc_len, DOCA_CC_MSG_FLAG_NONE,
-						     *peer_addr)) == DOCA_ERROR_AGAIN)
-		nanosleep(&ts, &ts);
-
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to send config files to DPU: %s", doca_get_error_string(result));
-		return result;
-	}
-
-	result = wait_for_successful_status_msg(ep, peer_addr);
-	if (result != DOCA_SUCCESS)
-		return result;
-
-	return DOCA_SUCCESS;
-}
-
-/*
  * Allocate memory and populate it into the memory map
  *
  * @core_state [in]: DOCA core structure
+ * @nb_buffer [in]: Number of buffer
  * @buffer_len [in]: Allocated buffer length
  * @access_flags [in]: The access permissions of the mmap
- * @buffer [out]: Allocated buffer
+ * @mp [out]: Mempool
  * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
  */
 static doca_error_t
-memory_alloc_and_populate(struct core_state *core_state, size_t buffer_len, uint32_t access_flags, char **buffer)
-{
+memory_alloc_and_populate(struct core_state *core_state, int nb_buffer, size_t buffer_len, uint32_t access_flags, struct mempool ** mp)
+{	
 	doca_error_t result;
+
+	*mp = mempool_create(nb_buffer, buffer_len);
+	if (*mp == NULL) {
+		return DOCA_ERROR_NO_MEMORY;
+	}
 
 	result = doca_mmap_set_permissions(core_state->mmap, access_flags);
 	if (result != DOCA_SUCCESS) {
@@ -457,16 +391,9 @@ memory_alloc_and_populate(struct core_state *core_state, size_t buffer_len, uint
 		return result;
 	}
 
-	*buffer = (char *)malloc(buffer_len);
-	if (*buffer == NULL) {
-		DOCA_LOG_ERR("Failed to allocate memory for source buffer");
-		return DOCA_ERROR_NO_MEMORY;
-	}
-
-	result = doca_mmap_set_memrange(core_state->mmap, *buffer, buffer_len);
+	result = doca_mmap_set_memrange(core_state->mmap, *mp, sizeof(struct mempool) + (*mp)->total_size);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to set memrange of memory map: %s", doca_get_error_string(result));
-		free(*buffer);
 		return result;
 	}
 
@@ -474,64 +401,56 @@ memory_alloc_and_populate(struct core_state *core_state, size_t buffer_len, uint
 	result = doca_mmap_start(core_state->mmap);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Unable to populate memory map: %s", doca_get_error_string(result));
-		free(*buffer);
 	}
 
 	return result;
 }
 
-/*
- * Host side function to send buffer address and offset
- *
- * @src_buffer [in]: Buffer to send info on
- * @src_buffer_size [in]: Buffer size
- * @ep [in]: Comm Channel endpoint
- * @peer_addr [in]: Comm Channel peer address
- * @return: DOCA_SUCCESS on success and DOCA_ERROR otherwise
- */
 static doca_error_t
-host_send_addr_and_offset(const char *src_buffer, size_t src_buffer_size, struct doca_comm_channel_ep_t *ep,
-			  struct doca_comm_channel_addr_t **peer_addr)
+mempool_buf_inventory(struct core_state *core_state, struct mempool * mp, char * export_desc_buf, size_t export_desc_len, char * host_dma_addr, size_t host_dma_offset)
 {
+	struct doca_mmap *remote_mmap;
+	struct doca_buf *remote_doca_buf;
+	struct doca_buf *local_doca_buf;
 	doca_error_t result;
-	struct timespec ts = {
-		.tv_nsec = SLEEP_IN_NANOS,
-	};
 
-	/* Send the full buffer address and length */
-	uint64_t addr_to_send = htonq((uintptr_t)src_buffer);
-	uint64_t length_to_send = htonq((uint64_t)src_buffer_size);
+	printf("Core %02d| Create a local DOCA mmap from export descriptor...\n", core_state->core_id);
 
-	while ((result = doca_comm_channel_ep_sendto(ep, &addr_to_send, sizeof(addr_to_send),
-						     DOCA_CC_MSG_FLAG_NONE, *peer_addr)) == DOCA_ERROR_AGAIN)
-		nanosleep(&ts, &ts);
-
+	/* Create a local DOCA mmap from export descriptor */
+	result = doca_mmap_create_from_export(NULL, (const void *)export_desc_buf, export_desc_len,
+						core_state->dev, &remote_mmap);
 	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to send address to start DMA from: %s", doca_get_error_string(result));
+		DOCA_LOG_ERR("Failed to create memory map from export descriptor");
 		return result;
 	}
 
-	result = wait_for_successful_status_msg(ep, peer_addr);
-	if (result != DOCA_SUCCESS)
-		return result;
+	for (int i = 0; i < mp->nb_elt; i++) {
+		struct mempool_elt * elt = (struct mempool_elt *)(mp->elts + i * mp->elt_size);
 
-	while ((result = doca_comm_channel_ep_sendto(ep, &length_to_send, sizeof(length_to_send),
-						     DOCA_CC_MSG_FLAG_NONE, *peer_addr)) == DOCA_ERROR_AGAIN)
-		nanosleep(&ts, &ts);
+		/* Construct DOCA buffer for remote (Host) address range */
+		result = doca_buf_inventory_buf_by_addr(core_state->buf_inv, remote_mmap, host_dma_addr, host_dma_offset,
+							&remote_doca_buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to acquire DOCA remote buffer: %s", doca_get_error_string(result));
+			doca_mmap_destroy(remote_mmap);
+			return result;
+		}
 
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to send config files to DPU: %s", doca_get_error_string(result));
-		return result;
+		/* Construct DOCA buffer for local (DPU) address range */
+		result = doca_buf_inventory_buf_by_addr(core_state->buf_inv, core_state->mmap, elt->addr, host_dma_offset,
+							&local_doca_buf);
+		if (result != DOCA_SUCCESS) {
+			DOCA_LOG_ERR("Unable to acquire DOCA local buffer: %s", doca_get_error_string(result));
+			doca_buf_refcount_rm(remote_doca_buf, NULL);
+			doca_mmap_destroy(remote_mmap);
+			return result;
+		}
+
+		elt->buf1 = local_doca_buf;
+		elt->buf2 = remote_doca_buf;
 	}
 
-	result = wait_for_successful_status_msg(ep, peer_addr);
-	if (result != DOCA_SUCCESS)
-		return result;
-
-	DOCA_LOG_INFO(
-		"Address and offset to start DMA from sent successfully, waiting for DPU to Ack that DMA finished");
-
-	return result;
+	return DOCA_SUCCESS;
 }
 
 /*
@@ -849,6 +768,9 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 
 	DOCA_LOG_INFO("DMA copy was done Successfully");
 
+	doca_buf_reset_data_len(local_doca_buf);
+	doca_buf_reset_data_len(remote_doca_buf);
+
 	/* If the buffer was copied into to DPU, save it as a file */
 	if (!cfg->is_file_found_locally) {
 		DOCA_LOG_INFO("Writing DMA buffer into a file on %s", cfg->file_path);
@@ -859,6 +781,110 @@ dpu_submit_dma_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size
 
 	return result;
 }
+
+static int
+dma_enq_job(struct dma_copy_cfg *cfg, struct core_state *core_state, size_t bytes_to_copy) {
+	struct mempool_elt * mbuf;
+	struct doca_event event = {0};
+	struct doca_dma_job_memcpy dma_job = {0};
+	doca_error_t result;
+	void *data;
+	struct doca_buf *src_buf;
+	struct doca_buf *dst_buf;
+
+	mempool_get(core_state->mp, &mbuf);
+	if (!mbuf) {
+		return -1;
+	}
+
+	/* Construct DMA job */
+	dma_job.base.type = DOCA_DMA_JOB_MEMCPY;
+	dma_job.base.flags = DOCA_JOB_FLAGS_NONE;
+	dma_job.base.ctx = core_state->ctx;
+	dma_job.base.user_data.ptr = (void *)mbuf;
+
+	/* Determine DMA copy direction */
+	if (cfg->is_file_found_locally) {
+		// src_buf = local_doca_buf;
+		// dst_buf = remote_doca_buf;
+		src_buf = mbuf->buf1;
+		dst_buf = mbuf->buf2;
+	} else {
+		// src_buf = remote_doca_buf;
+		// dst_buf = local_doca_buf;
+		src_buf = mbuf->buf2;
+		dst_buf = mbuf->buf1;
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &mbuf->ts);
+
+	/* Set data position in src_buf */
+	result = doca_buf_get_data(src_buf, &data);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to get data address from DOCA buffer: %s", doca_get_error_string(result));
+		return result;
+	}
+	result = doca_buf_set_data(src_buf, data, bytes_to_copy);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to set data for DOCA buffer: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	dma_job.src_buff = src_buf;
+	dma_job.dst_buff = dst_buf;
+
+	/* Enqueue DMA job */
+	result = doca_workq_submit(core_state->workq, &dma_job.base);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to submit DMA job: %s", doca_get_error_string(result));
+		return result;
+	}
+
+	return result;
+}
+
+static int
+dma_deq_job(struct dma_copy_cfg *cfg, struct core_state *core_state) {
+	struct mempool_elt * mbuf;
+	struct doca_event event = {0};
+	doca_error_t result, dma_job_result;
+	int nb_dequeue = 0;
+	struct timespec now;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	do {
+		result = doca_workq_progress_retrieve(core_state->workq, &event, DOCA_WORKQ_RETRIEVE_FLAGS_NONE);
+		if (result == DOCA_SUCCESS) {
+			mbuf = (struct mempool_elt *)event.user_data.ptr;
+			doca_buf_reset_data_len(mbuf->buf1);
+			doca_buf_reset_data_len(mbuf->buf2);
+			mempool_put(core_state->mp, mbuf);
+			/* event result is valid */
+			dma_job_result = (doca_error_t)event.result.u64;
+			if (dma_job_result != DOCA_SUCCESS) {
+				DOCA_LOG_ERR("DMA job event returned unsuccessfully: %s", doca_get_error_string(result));
+				return dma_job_result;
+			} else {
+				if (start_record && nr_latency < MAX_NR_LATENCY) {
+					latency[nr_latency].start = TIMESPEC_TO_NSEC(mbuf->ts);
+					latency[nr_latency].end = TIMESPEC_TO_NSEC(now);
+					nr_latency++;
+				}
+
+				nb_dequeue++;
+			}
+		} else if (result == DOCA_ERROR_AGAIN) {
+			break;
+		} else {
+			DOCA_LOG_ERR("Failed to dequeue results. Reason: %s", doca_get_error_string(result));
+			return -1;
+		}
+	} while (result == DOCA_SUCCESS);
+
+	return nb_dequeue;
+}
+
 
 /*
  * Set Comm Channel properties
@@ -981,7 +1007,7 @@ doca_error_t
 register_dma_copy_params(void)
 {
 	doca_error_t result;
-	struct doca_argp_param *nr_cores_param, *file_path_param, *dev_pci_addr_param, *rep_pci_addr_param;
+	struct doca_argp_param *nr_cores_param, *file_path_param, *dev_pci_addr_param, *rep_pci_addr_param, *rate_param;
 
     /* Number of worker cores callback */
 	result = doca_argp_param_create(&nr_cores_param);
@@ -1058,6 +1084,23 @@ register_dma_copy_params(void)
 		return result;
 	}
 
+	/* Create and register Comm Channel DOCA device representor PCI address */
+	result = doca_argp_param_create(&rate_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to create ARGP param: %s", doca_get_error_string(result));
+		return result;
+	}
+	doca_argp_param_set_short_name(rate_param, "s");
+	doca_argp_param_set_long_name(rate_param, "submit rate");
+	doca_argp_param_set_description(rate_param, "Job submission rate");
+	doca_argp_param_set_callback(rate_param, rate_callback);
+	doca_argp_param_set_type(rate_param, DOCA_ARGP_TYPE_STRING);
+	result = doca_argp_register_param(rate_param);
+	if (result != DOCA_SUCCESS) {
+		DOCA_LOG_ERR("Failed to register program param: %s", doca_get_error_string(result));
+		return result;
+	}
+
 	/* Register validation callback */
 	result = doca_argp_register_validation_callback(args_validation_callback);
 	if (result != DOCA_SUCCESS) {
@@ -1068,71 +1111,12 @@ register_dma_copy_params(void)
 	return DOCA_SUCCESS;
 }
 
-doca_error_t
-host_start_dma_copy(struct dma_copy_cfg *cfg, struct core_state *core_state, struct doca_comm_channel_ep_t *ep,
-		    struct doca_comm_channel_addr_t **peer_addr)
-{
-	doca_error_t result;
-	char *buffer = NULL;
-	const void *export_desc = NULL;
+#define NUM_WORKER	16
 
-	/* Negotiate DMA copy direction with DPU */
-	result = host_negotiate_dma_direction_and_size(cfg, ep, peer_addr);
-	if (result != DOCA_SUCCESS)
-		return result;
-
-	/* Allocate memory to be used for read operation in case file is found locally, otherwise grant write access */
-	uint32_t dpu_access = cfg->is_file_found_locally ? DOCA_ACCESS_DPU_READ_ONLY : DOCA_ACCESS_DPU_READ_WRITE;
-
-	result = memory_alloc_and_populate(core_state, cfg->file_size, dpu_access, &buffer);
-	if (result != DOCA_SUCCESS)
-		return result;
-
-	/* Export memory map and send it to DPU */
-	result = host_export_memory_map_to_dpu(core_state, ep, peer_addr, &export_desc);
-	if (result != DOCA_SUCCESS) {
-		free(buffer);
-		return result;
-	}
-
-	/* Fill the buffer before DPU starts DMA operation */
-	if (cfg->is_file_found_locally) {
-		result = fill_buffer_with_file_content(cfg, buffer);
-		if (result != DOCA_SUCCESS) {
-			free(buffer);
-			return result;
-		}
-	}
-
-	/* Send source buffer address and offset (entire buffer) to enable DMA and wait until DPU is done */
-	result = host_send_addr_and_offset(buffer, cfg->file_size, ep, peer_addr);
-	if (result != DOCA_SUCCESS) {
-		free(buffer);
-		return result;
-	}
-
-	/* Wait to DPU status message to indicate DMA was ended */
-	result = wait_for_successful_status_msg(ep, peer_addr);
-	if (result != DOCA_SUCCESS) {
-		free(buffer);
-		return result;
-	}
-
-	DOCA_LOG_INFO("Final status message was successfully received");
-
-	if (!cfg->is_file_found_locally) {
-		/*  File was copied successfully into the buffer, save it into file */
-		DOCA_LOG_INFO("Writing DMA buffer into a file on %s", cfg->file_path);
-		result = save_buffer_into_a_file(cfg, buffer);
-		if (result != DOCA_SUCCESS) {
-			free(buffer);
-			return result;
-		}
-	}
-
-	free(buffer);
-
-	return DOCA_SUCCESS;
+double ran_expo(double mean) {
+    double u, x;
+    drand48_r(&drand_buf, &x);
+    return -log(1 - x) * mean;
 }
 
 void * dpu_start_dma_copy(void * arg) {
@@ -1147,6 +1131,12 @@ void * dpu_start_dma_copy(void * arg) {
 	struct doca_mmap *remote_mmap;
 	size_t host_dma_offset, export_desc_len;
 	doca_error_t result;
+	struct worker worker[NUM_WORKER];
+    struct timespec begin, end, current_time;
+
+	double interval;
+	double mean = NUM_WORKER * dma_cfg.nr_cores * 1.0e6 / dma_cfg.rate;
+	int ret;
 
 	printf("Core %02d| Negotiate DMA copy direction with Host...\n", state->core_id);
 
@@ -1159,10 +1149,12 @@ void * dpu_start_dma_copy(void * arg) {
 
 	printf("Core %02d| Allocate memory...\n", state->core_id);
 
+	latency = (struct lat_info *)calloc(MAX_NR_LATENCY, sizeof(struct lat_info));
+
 	/* Allocate memory to be used for read operation in case file is found locally, otherwise grant write access */
 	uint32_t access = dma_cfg.is_file_found_locally ? DOCA_ACCESS_LOCAL_READ_ONLY : DOCA_ACCESS_LOCAL_READ_WRITE;
 
-	result = memory_alloc_and_populate(state, dma_cfg.file_size, access, &buffer);
+	result = memory_alloc_and_populate(state, 128, dma_cfg.file_size, access, &(state->mp));
 	if (result != DOCA_SUCCESS) {
 		dpu_cleanup_core_objs(state);
 		return NULL;
@@ -1174,19 +1166,6 @@ void * dpu_start_dma_copy(void * arg) {
 	result = dpu_receive_export_desc(ep, &peer_addr, export_desc_buf, &export_desc_len);
 	if (result != DOCA_SUCCESS) {
 		dpu_cleanup_core_objs(state);
-		free(buffer);
-		return NULL;
-	}
-
-	printf("Core %02d| Create a local DOCA mmap from export descriptor...\n", state->core_id);
-
-	/* Create a local DOCA mmap from export descriptor */
-	result = doca_mmap_create_from_export(NULL, (const void *)export_desc_buf, export_desc_len,
-					      state->dev, &remote_mmap);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Failed to create memory map from export descriptor");
-		dpu_cleanup_core_objs(state);
-		free(buffer);
 		return NULL;
 	}
 
@@ -1196,45 +1175,19 @@ void * dpu_start_dma_copy(void * arg) {
 	result = dpu_receive_addr_and_offset(ep, &peer_addr, &host_dma_addr, &host_dma_offset);
 	if (result != DOCA_SUCCESS) {
 		DOCA_LOG_ERR("Failed to create memory map from export");
-		doca_mmap_destroy(remote_mmap);
 		dpu_cleanup_core_objs(state);
-		free(buffer);
 		return NULL;
 	}
 
 	printf("Core %02d| Construct DOCA buffer for remote (Host) address range...\n", state->core_id);
 
-	/* Construct DOCA buffer for remote (Host) address range */
-	result = doca_buf_inventory_buf_by_addr(state->buf_inv, remote_mmap, host_dma_addr, host_dma_offset,
-						&remote_doca_buf);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to acquire DOCA remote buffer: %s", doca_get_error_string(result));
-		send_status_msg(ep, &peer_addr, STATUS_FAILURE);
-		doca_mmap_destroy(remote_mmap);
-		dpu_cleanup_core_objs(state);
-		free(buffer);
-		return NULL;
-	}
-
-	printf("Core %02d| Construct DOCA buffer for local (DPU) address range...\n", state->core_id);
-
-	/* Construct DOCA buffer for local (DPU) address range */
-	result = doca_buf_inventory_buf_by_addr(state->buf_inv, state->mmap, buffer, host_dma_offset,
-						&local_doca_buf);
-	if (result != DOCA_SUCCESS) {
-		DOCA_LOG_ERR("Unable to acquire DOCA local buffer: %s", doca_get_error_string(result));
-		send_status_msg(ep, &peer_addr, STATUS_FAILURE);
-		doca_buf_refcount_rm(remote_doca_buf, NULL);
-		doca_mmap_destroy(remote_mmap);
-		dpu_cleanup_core_objs(state);
-		free(buffer);
-		return NULL;
-	}
+	mempool_buf_inventory(state, state->mp, export_desc_buf, export_desc_len, host_dma_addr, host_dma_offset);
 
 	printf("Core %02d| Fill buffer in file content if relevant...\n", state->core_id);
 
 	/* Fill buffer in file content if relevant */
 	if (dma_cfg.is_file_found_locally) {
+		buffer = (char *)malloc(dma_cfg.file_size);
 		result = fill_buffer_with_file_content(&dma_cfg, buffer);
 		if (result != DOCA_SUCCESS) {
 			send_status_msg(ep, &peer_addr, STATUS_FAILURE);
@@ -1242,37 +1195,140 @@ void * dpu_start_dma_copy(void * arg) {
 			doca_buf_refcount_rm(remote_doca_buf, NULL);
 			doca_mmap_destroy(remote_mmap);
 			dpu_cleanup_core_objs(state);
-			free(buffer);
 			return NULL;
 		}
+
+		for (int i = 0; i < state->mp->nb_elt; i++) {
+			struct mempool_elt * elt = (struct mempool_elt *)(state->mp->elts + i * state->mp->elt_size);
+	        memcpy(&elt->addr, buffer, dma_cfg.file_size);
+		}
 	}
+
+	printf("Core %02d| Initialize workers...\n", state->core_id);
+
+	for (int i = 0; i < NUM_WORKER; i++) {
+		worker[i].interval = 0;
+		clock_gettime(CLOCK_MONOTONIC, &worker[i].last_enq_time);
+	}
+
+	// int i = 0;
+	// struct mempool_elt * elt;
+    // list_for_each_entry(elt, &state->mp->elt_free_list, list) {
+    //     printf("%02d > elt(%p) buf1: %p, buf2: %p\n", i++, elt, elt->buf1, elt->buf2);
+    // }
 
 	printf("Core %02d| Submit DMA job into the queue and wait until job completion...\n", state->core_id);
 
 	/* Submit DMA job into the queue and wait until job completion */
-	result = dpu_submit_dma_job(&dma_cfg, state, host_dma_offset, buffer, local_doca_buf, remote_doca_buf);
-	if (result != DOCA_SUCCESS) {
-		send_status_msg(ep, &peer_addr, STATUS_FAILURE);
-		doca_buf_refcount_rm(local_doca_buf, NULL);
-		doca_buf_refcount_rm(remote_doca_buf, NULL);
-		doca_mmap_destroy(remote_mmap);
-		dpu_cleanup_core_objs(state);
-		free(buffer);
-		return NULL;
+	// for (int i = 0; i < 10; i++) {
+	// 	result = dpu_submit_dma_job(&dma_cfg, state, host_dma_offset, buffer, local_doca_buf, remote_doca_buf);
+	// 	if (result != DOCA_SUCCESS) {
+	// 		send_status_msg(ep, &peer_addr, STATUS_FAILURE);
+	// 		doca_buf_refcount_rm(local_doca_buf, NULL);
+	// 		doca_buf_refcount_rm(remote_doca_buf, NULL);
+	// 		doca_mmap_destroy(remote_mmap);
+	// 		dpu_cleanup_core_objs(state);
+	// 		free(buffer);
+	// 		return NULL;
+	// 	}
+	// }
+
+	clock_gettime(CLOCK_MONOTONIC, &begin);
+
+	while (1) {
+    	clock_gettime(CLOCK_MONOTONIC, &current_time);
+		if (current_time.tv_sec - begin.tv_sec > 5) {
+			start_record = true;
+		}
+
+		if (current_time.tv_sec - begin.tv_sec > 10) {
+            clock_gettime(CLOCK_MONOTONIC, &end);
+			// FILE * output_fp;
+			// char name[32];
+
+			// sprintf(name, "thp-%d.txt", sched_getcpu());
+			// output_fp = fopen(name, "w");
+			// if (!output_fp) {
+			// 	printf("Error opening throughput output file!\n");
+			// 	return;
+			// }
+
+			// fprintf(output_fp, "%6.2lf\t%6.2lf\n", 
+			// 	nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)), 
+			// 	nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin)));
+
+			// fclose(output_fp);
+			break;
+		}
+
+		for (int i = 0; i < NUM_WORKER; i++) {
+			if (diff_timespec(&worker[i].last_enq_time, &current_time) > worker[i].interval) {
+				ret = dma_enq_job(&dma_cfg, state, host_dma_offset);
+				if (ret < 0) {
+					continue;
+				} else {
+					state->nb_enqueued++;
+					interval = ran_expo(mean);
+					worker[i].interval = (uint64_t)round(interval);
+					worker[i].last_enq_time = current_time;
+				}
+			}
+		}
+
+		ret = dma_deq_job(&dma_cfg, state);
+		if (ret < 0) {
+			DOCA_LOG_ERR("Failed to dequeue jobs responses");
+			continue;
+		} else {
+			state->nb_dequeued += ret;
+		}
 	}
 
 	send_status_msg(ep, &peer_addr, STATUS_SUCCESS);
+
+	int lat_start = (int)(0.15 * nr_latency);
+	FILE * latency_fp, * thp_fp;
+	char name[32];
+
+	sprintf(name, "latency-%d.txt", sched_getcpu());
+	latency_fp = fopen(name, "w");
+	if (!latency_fp) {
+		printf("Error opening latency output file!\n");
+		return NULL;
+	}
+
+	for (int i = lat_start; i < nr_latency; i++) {
+		fprintf(latency_fp, "%lu\t%lu\t%lu\n", latency[i].start, latency[i].end, latency[i].end - latency[i].start);
+	}
+
+	fclose(latency_fp);
+
+	sprintf(name, "thp-%d.txt", sched_getcpu());
+	thp_fp = fopen(name, "w");
+	if (!thp_fp) {
+		printf("Error opening latency output file!\n");
+		return NULL;
+	}
+
+	double enqueue_rate, dequeue_rate;
+	enqueue_rate = state->nb_enqueued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin));
+	dequeue_rate = state->nb_dequeued * 1000000000.0 / (double)(TIMESPEC_TO_NSEC(end) - TIMESPEC_TO_NSEC(begin));
+	
+	printf("Enqueue: %u, %6.2lf(RPS), dequeue: %u, %6.2lf(RPS)\n", 
+			state->nb_enqueued, enqueue_rate, state->nb_dequeued, dequeue_rate);
+
+	fprintf(thp_fp, "%.2lf\t%.2lf\n", enqueue_rate, dequeue_rate);
+
+	fclose(thp_fp);
 
 	printf("Core %02d| Destroy Comm Channel...\n", state->core_id);
 
 	/* Destroy Comm Channel */
 	destroy_cc(ep, peer_addr, state->cc_dev, state->cc_dev_rep);
 
-	doca_buf_refcount_rm(remote_doca_buf, NULL);
-	doca_buf_refcount_rm(local_doca_buf, NULL);
+	// doca_buf_refcount_rm(remote_doca_buf, NULL);
+	// doca_buf_refcount_rm(local_doca_buf, NULL);
 	doca_mmap_destroy(remote_mmap);
 	dpu_cleanup_core_objs(state);
-	free(buffer);
-
 	return NULL;
 }

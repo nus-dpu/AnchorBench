@@ -58,7 +58,7 @@ static doca_error_t init_dma(struct doca_dev **dev)
 
 static doca_error_t create_dma_objs(struct core_state * state, enum dma_copy_mode mode) {
 	doca_error_t result;
-	size_t num_elements = 2;
+	size_t num_elements = 512;
 
 	result = doca_mmap_create(NULL, &state->mmap);
 	if (result != DOCA_SUCCESS) {
@@ -251,12 +251,12 @@ main(int argc, char **argv)
 	for (int i = 0; i < dma_cfg.nr_cores; i++) {
 		pthread_join(pids[i], NULL);
 	}
-
+#if 0
 	for (int i = 0; i < dma_cfg.nr_cores; i++) {
 		struct core_state * state = &core_states[i];
 		destroy_objs(state, dma_cfg.mode);
 	}
-
+#endif
 	/* ARGP destroy_resources */
 	doca_argp_destroy();
 
